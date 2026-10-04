@@ -13,6 +13,7 @@ const SCROLL_BLOCK = "center";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const CUE_SEPARATOR = " ";
 const ABORT_ERROR = "AbortError";
+const CLIP_LOADED_STATUSES = new Set([PlayerStatus.Playing, PlayerStatus.Paused, PlayerStatus.Finished]);
 
 interface NarratedCard {
   elCard: HTMLElement;
@@ -71,6 +72,10 @@ function startNarration(data: NarrationData) {
   let playRequest = 0;
 
   const elCards = [...document.querySelectorAll<HTMLElement>(`[${NarrationAttribute.Script}]`)];
+  if (elCards.length !== data.clips.length) {
+    console.warn(`Narration: ${elCards.length} narrated cards but ${data.clips.length} clips - re-run the narrate CLI`);
+  }
+
   const panel = createTourPanel({
     cardCount: Math.min(elCards.length, data.clips.length),
     onAction: action => void handlePanelAction(action)
@@ -100,23 +105,24 @@ function startNarration(data: NarrationData) {
     return iActive === null ? undefined : cards[iActive];
   }
 
+  // Follows the playhead both ways, so a seek back un-cues what has not been said yet
   function markCues(card: NarratedCard) {
     const cuedAttribute = card.elCard.getAttribute(NarrationAttribute.Cued) ?? "";
     const previouslyCued = new Set(cuedAttribute.split(CUE_SEPARATOR).filter(Boolean));
+    const playhead = elAudio.ended ? Infinity : elAudio.currentTime;
     const reachedCueNames = new Set<string>();
     for (const [name, time] of card.clip.cues) {
-      if (time <= elAudio.currentTime) {
+      if (time <= playhead) {
         reachedCueNames.add(name);
       }
     }
 
-    const newCueNames = [...reachedCueNames].filter(name => !previouslyCued.has(name));
-    if (newCueNames.length === 0) {
-      return;
+    const reachedAttribute = [...reachedCueNames].join(CUE_SEPARATOR);
+    if (reachedAttribute !== cuedAttribute) {
+      card.elCard.setAttribute(NarrationAttribute.Cued, reachedAttribute);
     }
 
-    card.elCard.setAttribute(NarrationAttribute.Cued, [...reachedCueNames].join(CUE_SEPARATOR));
-    for (const cue of newCueNames) {
+    for (const cue of reachedCueNames.difference(previouslyCued)) {
       card.elCard.dispatchEvent(
         new CustomEvent(NARRATION_CUE_EVENT, {
           bubbles: true,
@@ -144,8 +150,8 @@ function startNarration(data: NarrationData) {
       return;
     }
 
-    const isClipRunning = status === PlayerStatus.Playing || status === PlayerStatus.Paused;
-    if (isClipRunning) {
+    const isClipLoaded = CLIP_LOADED_STATUSES.has(status);
+    if (isClipLoaded) {
       markCues(card);
     }
 
@@ -213,6 +219,10 @@ function startNarration(data: NarrationData) {
     });
     elAudio.src = card.clip.audio;
     render();
+    await play();
+  }
+
+  async function play() {
     playRequest += 1;
     const thisPlayRequest = playRequest;
     await elAudio.play().catch((playError: unknown) => {
@@ -228,18 +238,23 @@ function startNarration(data: NarrationData) {
   }
 
   async function handleCardButton(iCard: number) {
-    isTouring = false;
     const isThisCardActive = iActive === iCard;
+    const isThisCardStarting = isThisCardActive && status === PlayerStatus.Loading;
     if (isThisCardActive && status === PlayerStatus.Playing) {
       elAudio.pause();
       return;
     }
 
     if (isThisCardActive && status === PlayerStatus.Paused) {
-      await elAudio.play();
+      await play();
       return;
     }
 
+    if (isThisCardStarting) {
+      return;
+    }
+
+    isTouring = false;
     await narrateCard(iCard);
   }
 
@@ -259,7 +274,7 @@ function startNarration(data: NarrationData) {
         elAudio.pause();
         return;
       case PanelAction.Resume:
-        await elAudio.play();
+        await play();
         return;
       case PanelAction.Stop:
         stop();
@@ -268,6 +283,7 @@ function startNarration(data: NarrationData) {
 
   elAudio.addEventListener("playing", () => {
     status = PlayerStatus.Playing;
+    cancelAnimationFrame(frameRequest);
     followAudio();
   });
   elAudio.addEventListener("pause", () => {
@@ -278,6 +294,7 @@ function startNarration(data: NarrationData) {
     status = PlayerStatus.Paused;
     render();
   });
+  elAudio.addEventListener("seeked", render);
   elAudio.addEventListener("ended", () => {
     status = PlayerStatus.Finished;
     render();

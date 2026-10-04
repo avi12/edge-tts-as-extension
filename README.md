@@ -20,6 +20,25 @@ Ways to send it text:
 - **Other extensions** - `chrome.runtime.sendMessage(EXTENSION_ID, { type: 'speak', text, voice?, rate? })`;
   also `pause`, `resume`, `stop`, `get-state`
 
+## Claude artifacts
+
+Inside Claude artifact pages (published `claude.ai/artifact/...` pages and artifacts in a chat) every card
+with a `data-narrate` script gets a play button, and a panel offers a tour of all cards with live subtitles.
+Pages without scripts fall back to reading each captioned card. Page authors can sync animation to the voice:
+
+```html
+<section data-narrate="The popup sends a request [[wire]] across the wire to the speech service">
+  <svg>... <path data-cue="wire" /> ...</svg>
+</section>
+<style>
+  [data-narrating]:not([data-cued~="wire"]) [data-cue="wire"] { opacity: 0.2 }
+</style>
+```
+
+The narrator sets `data-narrating` on the card while it speaks and adds each cue to `data-cued` the
+moment its word is spoken. It also posts `{ source: "edge-read-aloud", type: "narration", card, cue, status }`
+to the page. Without the extension the page is unchanged.
+
 ## Layout
 
 | Path | Role |
@@ -29,6 +48,8 @@ Ways to send it text:
 | `entrypoints/background.ts` | Header-rewrite rule, context menu, shortcut, message routing |
 | `entrypoints/offscreen/` | Player: streams audio into a `MediaSource`, tracks the spoken word |
 | `entrypoints/popup/` | UI with read-along highlighting |
+| `entrypoints/artifact-narrator.content/` | Narration buttons, tour panel and cue sync inside Claude artifact frames |
+| `lib/narration.ts` | Narration contract and the `[[cue]]` script parser |
 
 ## Tests
 

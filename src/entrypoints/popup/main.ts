@@ -132,10 +132,10 @@ function fillVoices({ voices, selectedVoice }: {
 }) {
   const sortedVoices = voices.toSorted((left, right) => left.LocaleName.localeCompare(right.LocaleName));
   const elGroups: HTMLOptGroupElement[] = [];
-  for (const [language, languageVoices] of Map.groupBy(sortedVoices, voice => voice.LocaleName)) {
+  for (const localeVoices of Map.groupBy(sortedVoices, voice => voice.Locale).values()) {
     const elGroup = document.createElement("optgroup");
-    elGroup.label = language;
-    elGroup.append(...languageVoices.map(createVoiceOption));
+    elGroup.label = localeVoices[0]?.LocaleName ?? "";
+    elGroup.append(...localeVoices.map(createVoiceOption));
     elGroups.push(elGroup);
   }
 
@@ -144,10 +144,14 @@ function fillVoices({ voices, selectedVoice }: {
 }
 
 async function updateSettings(patch: Partial<Settings>) {
-  await settings.setValue({
-    ...await settings.getValue(),
-    ...patch
-  });
+  try {
+    await settings.setValue({
+      ...await settings.getValue(),
+      ...patch
+    });
+  } catch (error) {
+    elError.textContent = `Couldn't save settings: ${getErrorMessage(error)}`;
+  }
 }
 
 function bindControlButton({ id, type }: { id: ElementId } & ControlRequest) {
@@ -191,11 +195,10 @@ browser.runtime.onMessage.addListener(message => {
 
 elText.addEventListener("input", () => draft.setValue(elText.value));
 elVoice.addEventListener("change", () => updateSettings({ voice: elVoice.value }));
-elRate.addEventListener("input", async () => {
-  const rate = Number(elRate.value);
-  elRateValue.textContent = formatRate(rate);
-  await updateSettings({ rate });
+elRate.addEventListener("input", () => {
+  elRateValue.textContent = formatRate(Number(elRate.value));
 });
+elRate.addEventListener("change", () => updateSettings({ rate: Number(elRate.value) }));
 
 getElement({
   id: ElementId.Speak,
@@ -203,7 +206,9 @@ getElement({
 }).addEventListener("click", async () => render(
   await send({
     type: Command.Speak,
-    text: elText.value
+    text: elText.value,
+    voice: elVoice.value || undefined,
+    rate: Number(elRate.value)
   })
 ));
 bindControlButton({

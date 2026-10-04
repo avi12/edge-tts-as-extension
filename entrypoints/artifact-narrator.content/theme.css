@@ -1,0 +1,79 @@
+/* The cyberpunk HUD skin the artifacts use, reduced to what the narrator draws */
+:host {
+  --narrator-ground: #edf5fc;
+  --narrator-ink: #06182b;
+  --narrator-muted: #2a4a66;
+  --narrator-fill: #8ee6ff;
+  --narrator-on-fill: #06182b;
+  --narrator-mark: #00b3e6;
+  --narrator-glow: none;
+  --narrator-shadow: 3px 3px 0 rgb(6 24 43 / 22%);
+  --narrator-danger: #c4004e;
+  --narrator-sans: "Chakra Petch", system-ui, sans-serif;
+  --narrator-mono: "Share Tech Mono", ui-monospace, monospace;
+  --narrator-chamfer: 7px;
+  --narrator-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (prefers-color-scheme: dark) {
+    --narrator-ground: #0c1620;
+    --narrator-ink: #00e5ff;
+    --narrator-muted: #93b2c2;
+    --narrator-fill: #00e5ff;
+    --narrator-on-fill: #001820;
+    --narrator-mark: #04323e;
+    --narrator-glow: 0 0 14px rgb(0 229 255 / 45%);
+    --narrator-shadow: 0 0 0 1px rgb(0 229 255 / 24%), 0 12px 32px rgb(0 0 0 / 70%);
+    --narrator-danger: #ff2a4d;
+  }
+}
+
+button {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 2px solid var(--narrator-ink);
+  background: var(--narrator-ground);
+  color: var(--narrator-ink);
+  clip-path:
+    polygon(
+      var(--narrator-chamfer) 0,
+      100% 0,
+      100% calc(100% - var(--narrator-chamfer)),
+      calc(100% - var(--narrator-chamfer)) 100%,
+      0 100%,
+      0 var(--narrator-chamfer)
+    );
+  font: 600 11px/1 var(--narrator-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 120ms var(--narrator-ease);
+
+  &:hover {
+    background: var(--narrator-fill);
+    color: var(--narrator-on-fill);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--narrator-ink);
+    outline-offset: 2px;
+  }
+}
+
+svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+}

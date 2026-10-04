@@ -45,6 +45,9 @@ importers:
       globals:
         specifier: ^17.13.0
         version: 17.13.0
+      linkedom:
+        specifier: ^0.18.13
+        version: 0.18.13
       oxlint:
         specifier: 1.72.0
         version: 1.72.0(oxlint-tsgolint@0.24.0)

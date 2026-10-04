@@ -9,7 +9,8 @@ export enum NarrationAttribute {
   Script = "data-narrate",
   Title = "data-narrate-title",
   Narrating = "data-narrating",
-  Cued = "data-cued"
+  Cued = "data-cued",
+  Cue = "data-cue"
 }
 
 export const NARRATION_DATA_ID = "narration-data";

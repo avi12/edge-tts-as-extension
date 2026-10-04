@@ -15,12 +15,14 @@ import {
 import { openEdgeSocket } from "@/lib/edge-tts/node-socket";
 import {
   NARRATION_DATA_ID,
+  NarrationAttribute,
   type NarrationClip,
   type NarrationData,
   parseNarrationScript,
   timeNarration
 } from "@/lib/narration";
 import { build, type Plugin } from "esbuild";
+import { parseHTML } from "linkedom";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
@@ -28,23 +30,12 @@ import { parseArgs } from "node:util";
 const RUNTIME_ENTRY = path.join(import.meta.dirname, "..", "narration-runtime", "runtime.ts");
 const RAW_SUFFIX = /\?raw$/;
 const RAW_NAMESPACE = "raw";
-const NARRATE_ATTRIBUTE = /\sdata-narrate="([^"]*)"/g;
 const BLOCK_START = "<!-- narration:start -->";
 const BLOCK_END = "<!-- narration:end -->";
 const EXISTING_BLOCK = new RegExp(`\\n?${BLOCK_START}[\\s\\S]*?${BLOCK_END}`);
 const BITS_PER_BYTE = 8;
 const SLUG_LENGTH = 40;
 const NON_SLUG_CHARACTERS = /[^a-z0-9]+/g;
-const HTML_ENTITIES: Record<string, string> = {
-  "&amp;": "&",
-  "&quot;": "\"",
-  "&apos;": "'",
-  "&#39;": "'",
-  "&lt;": "<",
-  "&gt;": ">"
-};
-const HTML_ENTITY = /&(?:amp|quot|apos|#39|lt|gt);/g;
-
 const rawTextPlugin: Plugin = {
   name: "raw-text",
   setup(pluginBuild) {
@@ -62,12 +53,30 @@ const rawTextPlugin: Plugin = {
   }
 };
 
-function decodeAttribute(value: string) {
-  return value.replace(HTML_ENTITY, entity => HTML_ENTITIES[entity] ?? entity);
+// The same query the runtime runs in the browser, so scripts and clips pair up card by card
+function readCards(html: string) {
+  const { document } = parseHTML(html);
+  return [...document.querySelectorAll(`[${NarrationAttribute.Script}]`)].map(elCard => ({
+    script: elCard.getAttribute(NarrationAttribute.Script) ?? "",
+    cueNames: new Set([...elCard.querySelectorAll(`[${NarrationAttribute.Cue}]`)].map(elCue => elCue.getAttribute(NarrationAttribute.Cue) ?? ""))
+  }));
 }
 
-function findScripts(html: string) {
-  return [...html.matchAll(NARRATE_ATTRIBUTE)].map(match => decodeAttribute(match[1] ?? ""));
+function checkCard({ script, cueNames, iCard }: ReturnType<typeof readCards>[number] & { iCard: number }) {
+  const { text, cues } = parseNarrationScript(script);
+  const label = `Card ${iCard + 1}`;
+  if (!text) {
+    throw new Error(`${label} has nothing to say - its data-narrate script is empty`);
+  }
+
+  const markerNames = new Set(cues.map(cue => cue.name));
+  for (const name of markerNames.difference(cueNames)) {
+    console.warn(`${label}: [[${name}]] has no data-cue="${name}" element`);
+  }
+
+  for (const name of cueNames.difference(markerNames)) {
+    console.warn(`${label}: data-cue="${name}" has no [[${name}]] marker`);
+  }
 }
 
 async function bundleRuntime() {
@@ -185,20 +194,27 @@ async function main() {
   }
 
   const html = await readFile(input, "utf8");
-  const scripts = findScripts(html);
-  if (scripts.length === 0) {
+  const cards = readCards(html);
+  if (cards.length === 0) {
     throw new Error(`No data-narrate scripts in ${input}`);
   }
 
+  for (const [iCard, card] of cards.entries()) {
+    checkCard({
+      ...card,
+      iCard
+    });
+  }
+
   const clips: Awaited<ReturnType<typeof synthesizeClip>>[] = [];
-  for (const [iScript, script] of scripts.entries()) {
+  for (const [iCard, { script }] of cards.entries()) {
     const synthesized = await synthesizeClip({
       script,
       voice: values.voice,
       rate: Number(values.rate)
     });
     clips.push(synthesized);
-    console.log(`${iScript + 1}/${scripts.length}  ${synthesized.clip.duration.toFixed(1)}s  cues: ${synthesized.clip.cues.map(([name, time]) => `${name}@${time}`).join(" ") || "-"}`);
+    console.log(`${iCard + 1}/${cards.length}  ${synthesized.clip.duration.toFixed(1)}s  cues: ${synthesized.clip.cues.map(([name, time]) => `${name}@${time}`).join(" ") || "-"}`);
   }
 
   if (values.export) {

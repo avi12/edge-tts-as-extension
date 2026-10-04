@@ -3,5 +3,11 @@
   "extends": ["./.oxlintrc.json"],
   "rules": {
     "typescript/no-unused-vars": "off"
-  }
+  },
+  "ignorePatterns": [
+    "node_modules/**",
+    ".output/**",
+    ".wxt/**",
+    "research/edge-microsoft-voices/**"
+  ]
 }

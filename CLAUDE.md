@@ -65,7 +65,7 @@ The user's global rules (SSOT/DRY, pure CSS over JavaScript, digestible commits 
 # Linting
 After each modification, run the checks (`pnpm check` runs all of them in order):
 - `pnpm compile` - `tsc --noEmit`
-- `pnpm lint` runs `oxlint --type-aware --fix && eslint --fix` (then a final plain oxlint as the gate) - oxlint owns the logic and type-aware rules (`.oxlintrc.json`, with `oxlint-tsgolint`), ESLint owns the stylistic ones (`eslint.config.js` + local rules in `eslint-rules/`); always run with `--fix`
+- `pnpm lint` runs `oxlint --type-aware --fix && eslint --fix` (then a final plain oxlint as the gate) - oxlint owns the logic and type-aware rules (`.oxlintrc.json`, with `oxlint-tsgolint`), ESLint owns the stylistic ones (`eslint.config.js` + local rules in `eslint-rules/`); always run with `--fix`. oxlint does not inherit `ignorePatterns` through `extends`, so `.oxlintrc.fix.json` repeats the list - keep the two in sync
 - `pnpm stylelint` runs `stylelint "**/*.css" --fix`
 - `pnpm test`
 - After every bug fix, feature, or refactor - anything that removes or rewires code - run a fallow dead-code audit and clean up what it flags as newly unused (imports, helpers, exports, whole files) so changes never leave orphans behind. Never run `fallow fix` automatically - act on the audit by hand

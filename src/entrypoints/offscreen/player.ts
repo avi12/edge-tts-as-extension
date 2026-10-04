@@ -1,6 +1,7 @@
 import {
   AUDIO_MIME_TYPE,
   chunkText,
+  createWordLocator,
   type Prosody,
   sanitizeText,
   synthesize,
@@ -8,7 +9,7 @@ import {
   type WordBoundary
 } from "@/lib/edge-tts";
 import { getErrorMessage } from "@/lib/errors";
-import { IDLE_STATE, type PlayerState, PlayerStatus } from "@/lib/messages";
+import { IDLE_STATE, type PlayerState, PlayerStatus } from "@/lib/player-status";
 
 const WORD_TICK_MS = 50;
 const KEEP_BEHIND_SECONDS = 10;
@@ -193,19 +194,21 @@ export function createPlayer(onChange: (state: PlayerState) => void) {
     appender: ReturnType<typeof createAppender>;
   }) {
     let chunkStartTime: number | null = null;
-    let iCursor = chunk.start;
+    const locateWord = createWordLocator({
+      text: spokenText,
+      iStart: chunk.start
+    });
     const pendingBoundaries: WordBoundary[] = [];
 
     function placeWord({ boundary, startTime }: {
       boundary: WordBoundary;
       startTime: number;
     }) {
-      const iWord = spokenText.indexOf(boundary.text, iCursor);
-      if (iWord < 0) {
+      const iWord = locateWord(boundary.text);
+      if (iWord === null) {
         return;
       }
 
-      iCursor = iWord + boundary.text.length;
       words.push({
         time: startTime + boundary.time,
         start: iWord,

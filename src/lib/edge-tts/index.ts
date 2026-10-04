@@ -4,3 +4,4 @@ export * from "./constants";
 export * from "./gec";
 export * from "./protocol";
 export * from "./ssml";
+export * from "./words";

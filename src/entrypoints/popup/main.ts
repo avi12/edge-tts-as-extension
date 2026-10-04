@@ -1,13 +1,7 @@
 import { fetchVoices, type Voice } from "@/lib/edge-tts";
 import { getErrorMessage } from "@/lib/errors";
-import {
-  Command,
-  type ControlRequest,
-  type PlayerState,
-  PlayerStatus,
-  type Request,
-  stateEventSchema
-} from "@/lib/messages";
+import { Command, type ControlRequest, type Request, stateEventSchema } from "@/lib/messages";
+import { type PlayerState, PlayerStatus } from "@/lib/player-status";
 import {
   draft,
   RATE,

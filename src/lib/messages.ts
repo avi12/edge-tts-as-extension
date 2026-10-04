@@ -1,4 +1,5 @@
 import type { Prosody } from "@/lib/edge-tts";
+import { type PlayerState, PlayerStatus } from "@/lib/player-status";
 import { z } from "@/lib/zod";
 
 export enum Command {
@@ -7,15 +8,6 @@ export enum Command {
   Pause = "pause",
   Resume = "resume",
   GetState = "get-state"
-}
-
-export enum PlayerStatus {
-  Idle = "idle",
-  Loading = "loading",
-  Playing = "playing",
-  Paused = "paused",
-  Finished = "finished",
-  Error = "error"
 }
 
 export const STATE_EVENT = "state";
@@ -67,7 +59,7 @@ const playerStateSchema = z.object({
     length: z.number()
   }).nullable(),
   error: z.string().nullable()
-});
+}) satisfies z.ZodType<PlayerState>;
 
 export const stateEventSchema = z.object({
   type: z.literal(STATE_EVENT),
@@ -78,12 +70,4 @@ export type Request = z.infer<typeof requestSchema>;
 export type SpeakRequest = z.infer<typeof speakRequestSchema>;
 export type ControlRequest = z.infer<typeof controlRequestSchema>;
 export type PlayerRequest = z.infer<typeof playerRequestSchema>;
-export type PlayerState = z.infer<typeof playerStateSchema>;
 export type StateEvent = z.infer<typeof stateEventSchema>;
-
-export const IDLE_STATE: PlayerState = {
-  status: PlayerStatus.Idle,
-  text: "",
-  word: null,
-  error: null
-};

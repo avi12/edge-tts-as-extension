@@ -104,7 +104,8 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     tickerId = setInterval(reportCurrentWord, WORD_TICK_MS);
   }
 
-  function stop() {
+  // Silent, so replacing or finishing a reading never flashes an idle state - idle means stopped
+  function release() {
     session?.abort();
     session = null;
     elAudio.pause();
@@ -117,6 +118,10 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     words = [];
     clearInterval(tickerId);
     tickerId = undefined;
+  }
+
+  function stop() {
+    release();
 
     if (state.status !== PlayerStatus.Idle) {
       setState(IDLE_STATE);
@@ -125,7 +130,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
   function finish() {
     const { text, voice } = state;
-    stop();
+    release();
     setState({
       ...IDLE_STATE,
       status: PlayerStatus.Finished,
@@ -287,7 +292,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
   }
 
   async function speak({ text, voice, prosody }: SpeakOptions) {
-    stop();
+    release();
     const controller = new AbortController();
     session = controller;
     setState({
@@ -309,7 +314,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
         return;
       }
 
-      stop();
+      release();
       setState({
         ...IDLE_STATE,
         status: PlayerStatus.Error,

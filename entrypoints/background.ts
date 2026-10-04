@@ -8,7 +8,9 @@ import {
   playerTargetSchema,
   type Request,
   requestSchema,
-  type SpeakRequest
+  type SpeakRequest,
+  type StateEvent,
+  stateEventSchema
 } from "@/lib/messages";
 import { settings } from "@/lib/settings";
 import { KeyboardCommand } from "@/lib/shortcuts";
@@ -27,7 +29,13 @@ const OFFSCREEN_PATH = "/offscreen.html";
 const HEADER_RULE_ID = 1;
 const HEADER_RULE_PRIORITY = 1;
 
+interface RequesterFrame {
+  tabId: number;
+  frameId: number;
+}
+
 let offscreenCreation: Promise<void> | null = null;
+let speakerFrame: RequesterFrame | null = null;
 
 // The service only accepts handshakes that carry Edge's extension Origin and an Edge User-Agent -
 // rewrite both, but only for this extension's requests
@@ -99,7 +107,11 @@ async function ensureOffscreen() {
   await offscreenCreation;
 }
 
-async function speak(request: SpeakRequest) {
+async function speak({ request, frame }: {
+  request: SpeakRequest;
+  frame?: RequesterFrame;
+}) {
+  speakerFrame = frame ?? null;
   const text = request.text.trim();
   if (!text) {
     return IDLE_STATE;
@@ -118,9 +130,15 @@ async function speak(request: SpeakRequest) {
   });
 }
 
-async function handle(request: Request) {
+async function handle({ request, frame }: {
+  request: Request;
+  frame?: RequesterFrame;
+}) {
   if (request.type === Command.Speak) {
-    return speak(request);
+    return speak({
+      request,
+      frame
+    });
   }
 
   const isPlayerOpen = await hasOffscreen();
@@ -131,8 +149,31 @@ async function handle(request: Request) {
   return sendToPlayer(request);
 }
 
-function respondToRequest({ message, sendResponse }: {
+function getRequesterFrame(sender: Browser.runtime.MessageSender) {
+  const tabId = sender.tab?.id;
+  const { frameId } = sender;
+  const isFromTab = tabId !== undefined && frameId !== undefined;
+  return isFromTab
+    ? {
+      tabId,
+      frameId
+    }
+    : undefined;
+}
+
+function ignoreClosedFrame() {}
+
+function forwardToSpeakerFrame(event: StateEvent) {
+  if (!speakerFrame) {
+    return;
+  }
+
+  browser.tabs.sendMessage(speakerFrame.tabId, event, { frameId: speakerFrame.frameId }).catch(ignoreClosedFrame);
+}
+
+function respondToRequest({ message, frame, sendResponse }: {
   message: unknown;
+  frame?: RequesterFrame;
   sendResponse: (state: PlayerState) => void;
 }) {
   const parsed = requestSchema.safeParse(message);
@@ -140,7 +181,10 @@ function respondToRequest({ message, sendResponse }: {
     return false;
   }
 
-  void handle(parsed.data).then(sendResponse);
+  void handle({
+    request: parsed.data,
+    frame
+  }).then(sendResponse);
   return true;
 }
 
@@ -162,7 +206,11 @@ export default defineBackground(() => {
 
   browser.contextMenus.onClicked.addListener(({ menuItemId, selectionText }) => {
     if (menuItemId === MenuItemId.StopReading) {
-      void handle({ type: Command.Stop });
+      void handle({
+        request: {
+          type: Command.Stop
+        }
+      });
       return;
     }
 
@@ -172,8 +220,10 @@ export default defineBackground(() => {
     }
 
     void handle({
-      type: Command.Speak,
-      text: selectionText
+      request: {
+        type: Command.Speak,
+        text: selectionText
+      }
     });
   });
 
@@ -196,19 +246,28 @@ export default defineBackground(() => {
     }
 
     await handle({
-      type: Command.Speak,
-      text
+      request: {
+        type: Command.Speak,
+        text
+      }
     });
   });
 
-  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const isForPlayer = playerTargetSchema.safeParse(message).success;
     if (isForPlayer) {
       return false;
     }
 
+    const parsedStateEvent = stateEventSchema.safeParse(message);
+    if (parsedStateEvent.success) {
+      forwardToSpeakerFrame(parsedStateEvent.data);
+      return false;
+    }
+
     return respondToRequest({
       message,
+      frame: getRequesterFrame(sender),
       sendResponse
     });
   });

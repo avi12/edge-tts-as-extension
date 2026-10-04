@@ -1,4 +1,10 @@
 /* The cyberpunk HUD skin the artifacts use, reduced to what the narrator draws */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :host {
   --narrator-ground: #edf5fc;
   --narrator-ink: #06182b;

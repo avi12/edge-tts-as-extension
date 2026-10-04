@@ -122,6 +122,8 @@ function renderSubtitle({ elSubtitle, state }: {
   const elMark = document.createElement("mark");
   elMark.textContent = text.slice(word.start, word.start + word.length);
   elSubtitle.replaceChildren(text.slice(0, word.start), elMark, text.slice(word.start + word.length));
+  const centeredScrollTop = elMark.offsetTop - (elSubtitle.clientHeight - elMark.offsetHeight) / 2;
+  elSubtitle.scrollTop = Math.max(centeredScrollTop, 0);
 }
 
 export function createTourPanel({ cardCount, onAction }: {

@@ -12,6 +12,7 @@ const HEADING_SELECTOR = "h1, h2, h3, h4, .card-head";
 const SCROLL_BLOCK = "center";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const CUE_SEPARATOR = " ";
+const ABORT_ERROR = "AbortError";
 
 interface NarratedCard {
   elCard: HTMLElement;
@@ -67,6 +68,7 @@ function startNarration(data: NarrationData) {
   let status = PlayerStatus.Idle;
   let error: string | null = null;
   let frameRequest = 0;
+  let playRequest = 0;
 
   const elCards = [...document.querySelectorAll<HTMLElement>(`[${NarrationAttribute.Script}]`)];
   const panel = createTourPanel({
@@ -142,7 +144,11 @@ function startNarration(data: NarrationData) {
       return;
     }
 
-    markCues(card);
+    const isClipRunning = status === PlayerStatus.Playing || status === PlayerStatus.Paused;
+    if (isClipRunning) {
+      markCues(card);
+    }
+
     card.overlay.setStatus(status);
     const state: PlayerState = {
       status,
@@ -205,9 +211,17 @@ function startNarration(data: NarrationData) {
       block: SCROLL_BLOCK,
       behavior: matchMedia(REDUCED_MOTION_QUERY).matches ? "instant" : "smooth"
     });
-    render();
     elAudio.src = card.clip.audio;
+    render();
+    playRequest += 1;
+    const thisPlayRequest = playRequest;
     await elAudio.play().catch((playError: unknown) => {
+      const isReplacedByNewerPlay = thisPlayRequest !== playRequest;
+      const isInterrupted = playError instanceof DOMException && playError.name === ABORT_ERROR;
+      if (isReplacedByNewerPlay || isInterrupted) {
+        return;
+      }
+
       error = playError instanceof Error ? playError.message : String(playError);
       stop();
     });

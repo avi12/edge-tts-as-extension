@@ -37,6 +37,7 @@ header {
 }
 
 .subtitle {
+  position: relative;
   overflow-y: auto;
   max-height: 7.5em;
   margin: 0;

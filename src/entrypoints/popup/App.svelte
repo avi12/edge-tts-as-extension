@@ -18,6 +18,7 @@
   import { onMount } from "svelte";
 
   const isReading = $derived(isReadingStatus(popup.player.status));
+  const readingVoice = $derived(popup.voices.find(voice => voice.ShortName === popup.player.voice));
 
   onMount(startPopup);
 </script>
@@ -36,7 +37,9 @@
 <ErrorMessage message={popup.player.error ?? popup.error} />
 
 <VoicePicker
-  onchange={voice => updateSettings({ voice })}
+  isMatchingLanguage={popup.settings.isMatchingLanguage}
+  onchange={updateSettings}
+  {readingVoice}
   voice={popup.settings.voice}
   voices={popup.voices}
 />

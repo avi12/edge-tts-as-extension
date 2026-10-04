@@ -6,7 +6,8 @@ import { storage } from "wxt/utils/storage";
 // Each field falls back on its own, so settings stored before a field existed still load
 const settingsSchema = z.object({
   voice: z.string().catch(DEFAULT_VOICE),
-  rate: z.number().min(RATE.min).max(RATE.max).catch(DEFAULT_PROSODY.rate)
+  rate: z.number().min(RATE.min).max(RATE.max).catch(DEFAULT_PROSODY.rate),
+  isMatchingLanguage: z.boolean().catch(false)
 });
 
 export type Settings = z.infer<typeof settingsSchema>;

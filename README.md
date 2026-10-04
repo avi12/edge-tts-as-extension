@@ -49,8 +49,9 @@ pnpm build          # â†’ .output/chrome-mv3, load it via chrome://extensions â†
 pnpm dev            # opens a Chrome with the extension and hot reload
 ```
 
-- **Popup** - paste text, pick a voice and speed, press *Read aloud*
-- **Other extensions** - `chrome.runtime.sendMessage(EXTENSION_ID, { type: 'speak', text, voice?, rate? })`;
+- **Popup** - paste text, pick a voice and speed, press *Read aloud*. *Match the text's language* swaps in a voice
+  that speaks the text's script (Hebrew text gets a Hebrew voice), keeping your voice for text it already speaks
+- **Other extensions** - `chrome.runtime.sendMessage(EXTENSION_ID, { type: 'speak', text, voice?, rate?, isMatchingLanguage? })`;
   also `pause`, `resume`, `stop`, `get-state`
 
 ## Layout

@@ -19,11 +19,17 @@ export interface PlayerState {
   error: string | null;
 }
 
-export const IDLE_STATE: PlayerState = {
+// The extension's player also says which voice reads - with language matching on, not always the one picked
+export interface SpeakingState extends PlayerState {
+  voice: string | null;
+}
+
+export const IDLE_STATE: SpeakingState = {
   status: PlayerStatus.Idle,
   text: "",
   word: null,
-  error: null
+  error: null,
+  voice: null
 };
 
 const READING_STATUSES: ReadonlySet<PlayerStatus> = new Set([

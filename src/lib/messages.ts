@@ -1,5 +1,5 @@
 import type { Prosody } from "@/lib/edge-tts";
-import { type PlayerState, PlayerStatus } from "@/lib/player-status";
+import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 import { z } from "@/lib/zod";
 import { browser } from "wxt/browser";
 
@@ -18,7 +18,8 @@ const speakRequestSchema = z.object({
   type: z.literal(Command.Speak),
   text: z.string().default(""),
   voice: z.string().optional(),
-  rate: z.number().optional()
+  rate: z.number().optional(),
+  isMatchingLanguage: z.boolean().optional()
 });
 
 const controlRequestSchema = z.object({
@@ -59,8 +60,9 @@ const playerStateSchema = z.object({
     start: z.number(),
     length: z.number()
   }).nullable(),
-  error: z.string().nullable()
-}) satisfies z.ZodType<PlayerState>;
+  error: z.string().nullable(),
+  voice: z.string().nullable()
+}) satisfies z.ZodType<SpeakingState>;
 
 export const stateEventSchema = z.object({
   type: z.literal(STATE_EVENT),
@@ -76,6 +78,6 @@ type PlayerMessage = z.infer<typeof playerMessageSchema>;
 
 // Every request, to the background or the player, is answered with the player's state
 export async function sendRequest(request: Request | PlayerMessage) {
-  const state: PlayerState = await browser.runtime.sendMessage(request);
+  const state: SpeakingState = await browser.runtime.sendMessage(request);
   return state;
 }

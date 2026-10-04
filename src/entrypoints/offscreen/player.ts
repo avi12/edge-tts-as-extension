@@ -9,7 +9,7 @@ import {
   type WordBoundary
 } from "@/lib/edge-tts";
 import { getErrorMessage } from "@/lib/errors";
-import { IDLE_STATE, type PlayerState, PlayerStatus } from "@/lib/player-status";
+import { IDLE_STATE, PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
 const WORD_TICK_MS = 50;
 const KEEP_BEHIND_SECONDS = 10;
@@ -62,14 +62,14 @@ function tryAppendBuffer({ sourceBuffer, bytes }: {
 // Plays text the way Edge does: streams WebM/Opus from the service straight into a MediaSource, so
 // speech starts before the whole text is synthesized. Long text is split into several requests, and
 // the SourceBuffer runs in "sequence" mode so each request's audio lands right after the previous one
-export function createPlayer(onChange: (state: PlayerState) => void) {
+export function createPlayer(onChange: (state: SpeakingState) => void) {
   const elAudio = new Audio();
   let state = IDLE_STATE;
   let session: AbortController | null = null;
   let words: TimedWord[] = [];
   let tickerId: ReturnType<typeof setInterval> | undefined;
 
-  function setState(patch: Partial<PlayerState>) {
+  function setState(patch: Partial<SpeakingState>) {
     state = {
       ...state,
       ...patch
@@ -128,12 +128,13 @@ export function createPlayer(onChange: (state: PlayerState) => void) {
   }
 
   function finish() {
-    const { text } = state;
+    const { text, voice } = state;
     stop();
     setState({
       ...IDLE_STATE,
       status: PlayerStatus.Finished,
-      text
+      text,
+      voice
     });
   }
 
@@ -296,7 +297,8 @@ export function createPlayer(onChange: (state: PlayerState) => void) {
     setState({
       ...IDLE_STATE,
       status: PlayerStatus.Loading,
-      text
+      text,
+      voice
     });
 
     try {
@@ -316,6 +318,7 @@ export function createPlayer(onChange: (state: PlayerState) => void) {
         ...IDLE_STATE,
         status: PlayerStatus.Error,
         text,
+        voice,
         error: getErrorMessage(error)
       });
     }

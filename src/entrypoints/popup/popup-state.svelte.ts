@@ -7,7 +7,7 @@ import {
   sendRequest,
   stateEventSchema
 } from "@/lib/messages";
-import { IDLE_STATE, type PlayerState } from "@/lib/player-status";
+import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
 import {
   DEFAULT_SETTINGS,
   draft,
@@ -22,7 +22,7 @@ interface PopupState {
   text: string;
   voices: Voice[];
   settings: Settings;
-  player: PlayerState;
+  player: SpeakingState;
   error: string | null;
 }
 
@@ -43,7 +43,8 @@ export function speak() {
     type: Command.Speak,
     text: popup.text,
     voice: popup.settings.voice,
-    rate: popup.settings.rate
+    rate: popup.settings.rate,
+    isMatchingLanguage: popup.settings.isMatchingLanguage
   });
 }
 

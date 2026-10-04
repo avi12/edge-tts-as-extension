@@ -1,4 +1,5 @@
 import { EDGE_EXTENSION_ORIGIN, EDGE_USER_AGENT, SERVICE_HOST } from "@/lib/edge-tts/constants";
+import { detectLanguage, pickVoice } from "@/lib/edge-tts/language";
 import { DEFAULT_PROSODY } from "@/lib/edge-tts/ssml";
 import {
   Command,
@@ -10,8 +11,9 @@ import {
   sendRequest,
   type SpeakRequest
 } from "@/lib/messages";
-import { IDLE_STATE, type PlayerState } from "@/lib/player-status";
+import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
 import { readSettings } from "@/lib/settings";
+import { loadVoices } from "@/lib/voices";
 
 enum HeaderName {
   Origin = "Origin",
@@ -93,6 +95,24 @@ async function ensureOffscreen() {
   await offscreenCreation;
 }
 
+// Without the voice list there is nothing to switch to, so the picked voice reads
+async function chooseVoice({ text, voice, isMatchingLanguage }: {
+  text: string;
+  voice: string;
+  isMatchingLanguage: boolean;
+}) {
+  const language = isMatchingLanguage ? detectLanguage(text) : null;
+  if (language === null) {
+    return voice;
+  }
+
+  return pickVoice({
+    voices: await loadVoices().catch(() => []),
+    locale: language,
+    preferredVoice: voice
+  });
+}
+
 async function speak(request: SpeakRequest) {
   const text = request.text.trim();
   if (!text) {
@@ -100,11 +120,18 @@ async function speak(request: SpeakRequest) {
   }
 
   const savedSettings = await readSettings();
-  await ensureOffscreen();
+  const [voice] = await Promise.all([
+    chooseVoice({
+      text,
+      voice: request.voice ?? savedSettings.voice,
+      isMatchingLanguage: request.isMatchingLanguage ?? savedSettings.isMatchingLanguage
+    }),
+    ensureOffscreen()
+  ]);
   return sendToPlayer({
     type: Command.Speak,
     text,
-    voice: request.voice ?? savedSettings.voice,
+    voice,
     prosody: {
       ...DEFAULT_PROSODY,
       rate: request.rate ?? savedSettings.rate
@@ -127,7 +154,7 @@ async function handle(request: Request) {
 
 function respondToRequest({ message, sendResponse }: {
   message: unknown;
-  sendResponse: (state: PlayerState) => void;
+  sendResponse: (state: SpeakingState) => void;
 }) {
   const parsed = requestSchema.safeParse(message);
   if (!parsed.success) {

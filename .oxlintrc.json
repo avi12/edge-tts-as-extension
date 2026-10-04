@@ -52,6 +52,13 @@
   },
   "overrides": [
     {
+      "files": ["**/*.svelte"],
+      "rules": {
+        "prefer-const": "off",
+        "no-unassigned-vars": "off"
+      }
+    },
+    {
       "files": ["research/*.mjs", "src/cli/**", "eslint-rules/*.js", "**/*.config.ts", "**/*.config.js", "**/*.config.mjs", "**/*.test.ts"],
       "env": {
         "node": true

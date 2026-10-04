@@ -1,12 +1,15 @@
 import expandNestedObjectExpression from "./eslint-rules/expand-nested-object-expression.js";
 import expandNestedTypeLiteral from "./eslint-rules/expand-nested-type-literal.js";
+import expandSvelteBlock from "./eslint-rules/expand-svelte-block.js";
 import multilineArgParenNewline from "./eslint-rules/multiline-arg-paren-newline.js";
 import stylistic from "@stylistic/eslint-plugin";
 import importNewlines from "eslint-plugin-import-newlines";
 import perfectionist from "eslint-plugin-perfectionist";
+import svelteEslint from "eslint-plugin-svelte";
 import unusedImports from "eslint-plugin-unused-imports";
 import { globalIgnores } from "eslint/config";
 import globals from "globals";
+import svelteParser from "svelte-eslint-parser";
 import tsEslint from "typescript-eslint";
 
 // Logic and correctness rules live in oxlint (.oxlintrc.json) - ESLint only
@@ -230,6 +233,7 @@ const sharedPlugins = {
     rules: {
       "expand-nested-object-expression": expandNestedObjectExpression,
       "expand-nested-type-literal": expandNestedTypeLiteral,
+      "expand-svelte-block": expandSvelteBlock,
       "multiline-arg-paren-newline": multilineArgParenNewline
     }
   }
@@ -246,6 +250,7 @@ const browserGlobals = {
 const nodeFiles = ["research/*.mjs", "eslint-rules/*.js", "**/*.config.ts", "**/*.config.js", "**/*.config.mjs", "**/*.test.ts"];
 
 export default [
+  ...svelteEslint.configs["flat/recommended"],
   globalIgnores([
     "node_modules/",
     ".output/",
@@ -266,6 +271,27 @@ export default [
     files: nodeFiles,
     languageOptions: {
       globals: globals.node
+    }
+  },
+  {
+    files: ["**/*.svelte", "**/*.svelte.ts"],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        parser: tsEslint.parser,
+        extraFileExtensions: [".svelte"]
+      },
+      globals: browserGlobals
+    },
+    plugins: sharedPlugins,
+    rules: {
+      ...tsStyleRules,
+      "svelte/indent": ["error", { indent: 2 }],
+      "svelte/sort-attributes": "error",
+      "svelte/shorthand-directive": "error",
+      "svelte/first-attribute-linebreak": ["error"],
+      "svelte/shorthand-attribute": ["error", { prefer: "always" }],
+      "local/expand-svelte-block": "error"
     }
   }
 ];

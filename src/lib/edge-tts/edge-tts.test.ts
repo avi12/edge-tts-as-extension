@@ -1,8 +1,6 @@
 import {
   buildSsml,
   chunkText,
-  EDGE_EXTENSION_ORIGIN,
-  EDGE_USER_AGENT,
   fetchVoices,
   parseBinaryFrame,
   parseTextFrame,
@@ -12,8 +10,9 @@ import {
   TRUSTED_CLIENT_TOKEN,
   type WordBoundary
 } from ".";
+import { openEdgeSocket } from "./node-socket";
 import { createHash } from "node:crypto";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 const WINDOWS_EPOCH_OFFSET_SECONDS = 11_644_473_600;
 const TICKS_PER_SECOND = 10_000_000n;
@@ -147,7 +146,6 @@ describe("chunkText", () => {
   });
 });
 
-// Node's WebSocket can set headers, which stands in for the extension's declarativeNetRequest rewrite
 describe.runIf(process.env.LIVE)("live service", () => {
   it("lists voices", async () => {
     const voices = await fetchVoices();
@@ -155,21 +153,6 @@ describe.runIf(process.env.LIVE)("live service", () => {
   });
 
   it("streams audio and word boundaries", async () => {
-    const NativeWebSocket = globalThis.WebSocket;
-    vi.stubGlobal(
-      "WebSocket",
-      class extends NativeWebSocket {
-        constructor(url: string) {
-          super(url, {
-            // @ts-expect-error undici accepts a headers option
-            headers: {
-              Origin: EDGE_EXTENSION_ORIGIN,
-              "User-Agent": EDGE_USER_AGENT
-            }
-          });
-        }
-      }
-    );
     let byteCount = 0;
     const words: WordBoundary[] = [];
     await synthesize({
@@ -183,9 +166,9 @@ describe.runIf(process.env.LIVE)("live service", () => {
       onAudio(chunk) {
         byteCount += chunk.byteLength;
       },
-      onWordBoundary: boundary => words.push(boundary)
+      onWordBoundary: boundary => words.push(boundary),
+      openSocket: openEdgeSocket
     });
-    vi.unstubAllGlobals();
     expect(byteCount).toBeGreaterThan(MIN_LIVE_AUDIO_BYTES);
     expect(words.map(word => word.text)).toEqual(["Hello", "from", "Chrome"]);
   });

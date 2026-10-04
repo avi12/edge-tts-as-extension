@@ -44,6 +44,8 @@ interface SynthesizeOptions {
   onAudio: (chunk: Uint8Array<ArrayBuffer>) => void;
   onWordBoundary?: (boundary: WordBoundary) => void;
   signal?: AbortSignal;
+  outputFormat?: string;
+  openSocket?: (url: string) => WebSocket;
 }
 
 async function createSynthesizeUrl() {
@@ -57,10 +59,19 @@ async function createSynthesizeUrl() {
 }
 
 // Streams one request and resolves on turn.end. The browser sets Origin and User-Agent itself -
-// the extension rewrites them with declarativeNetRequest so the server accepts the handshake
-export async function synthesize({ text, voice, prosody, onAudio, onWordBoundary, signal }: SynthesizeOptions) {
+// the extension rewrites them with declarativeNetRequest, Node passes openEdgeSocket
+export async function synthesize({
+  text,
+  voice,
+  prosody,
+  onAudio,
+  onWordBoundary,
+  signal,
+  outputFormat,
+  openSocket = url => new WebSocket(url)
+}: SynthesizeOptions) {
   signal?.throwIfAborted();
-  const socket = new WebSocket(await createSynthesizeUrl());
+  const socket = openSocket(await createSynthesizeUrl());
   socket.binaryType = SOCKET_BINARY_TYPE;
 
   return new Promise<void>((resolve, reject) => {
@@ -118,7 +129,7 @@ export async function synthesize({ text, voice, prosody, onAudio, onWordBoundary
     signal?.addEventListener(ABORT_EVENT, onAbort);
 
     socket.onopen = () => {
-      socket.send(configMessage());
+      socket.send(configMessage(outputFormat));
       socket.send(
         ssmlMessage({
           requestId: createId(),

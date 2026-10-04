@@ -22,6 +22,11 @@ export const EDGE_USER_AGENT = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleW
 export const OUTPUT_FORMAT = "webm-24khz-16bit-mono-opus";
 export const AUDIO_MIME_TYPE = "audio/webm; codecs=opus";
 
+// MP3 plays everywhere, for audio embedded in pages
+export const MP3_OUTPUT_FORMAT = "audio-24khz-48kbitrate-mono-mp3";
+export const MP3_MIME_TYPE = "audio/mpeg";
+export const MP3_BITS_PER_SECOND = 48_000;
+
 // Word boundary offsets arrive in 100 ns ticks
 export const TICKS_PER_SECOND = 10_000_000;
 

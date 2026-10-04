@@ -71,7 +71,7 @@ function formatTextFrame({ headers, body }: {
   return `${head}${LINE_BREAK}${body}`;
 }
 
-export function configMessage() {
+export function configMessage(outputFormat = OUTPUT_FORMAT) {
   const config = {
     context: {
       synthesis: {
@@ -80,7 +80,7 @@ export function configMessage() {
             sentenceBoundaryEnabled: "false",
             wordBoundaryEnabled: "true"
           },
-          outputFormat: OUTPUT_FORMAT
+          outputFormat
         }
       }
     }

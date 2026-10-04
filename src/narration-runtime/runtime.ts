@@ -1,3 +1,6 @@
+import type { NarrationEngine } from "./engine";
+import { createLiveEngine } from "./live-engine";
+import { createRecordedEngine } from "./recorded-engine";
 import { createCardOverlay, createTourPanel, PanelAction } from "./ui";
 import {
   NARRATION_CUE_EVENT,
@@ -6,15 +9,13 @@ import {
   type NarrationClip,
   type NarrationData
 } from "@/lib/narration";
-import { type PlayerState, PlayerStatus, type SpokenWord } from "@/lib/player-status";
+import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
 const HEADING_SELECTOR = "h1, h2, h3, h4, .card-head";
 // Narration walks a card from the top, and tall cards on phones cannot fit beside the panel anyway
 const SCROLL_BLOCK = "start";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const CUE_SEPARATOR = " ";
-const ABORT_ERROR = "AbortError";
-const CLIP_LOADED_STATUSES = new Set([PlayerStatus.Playing, PlayerStatus.Paused, PlayerStatus.Finished]);
 
 interface NarratedCard {
   elCard: HTMLElement;
@@ -43,34 +44,73 @@ function getCardTitle({ elCard, iCard }: {
   return explicitTitle ?? headingText ?? `Part ${iCard + 1}`;
 }
 
-function getSpokenWord({ clip, seconds }: {
+// A cue is reached once the voice is on (or past) the word it sits before - by text position, which a
+// recorded clip and a live voice both report
+function getReachedCueNames({ clip, state }: {
   clip: NarrationClip;
-  seconds: number;
+  state: SpeakingState;
 }) {
-  let spokenWord: SpokenWord | null = null;
-  for (const [time, start, length] of clip.words) {
-    if (time > seconds) {
-      break;
+  const reachedCueNames = new Set<string>();
+  const isFinished = state.status === PlayerStatus.Finished;
+  const spokenStart = state.word?.start ?? -1;
+  for (const [name, , start] of clip.cues) {
+    if (isFinished || start <= spokenStart) {
+      reachedCueNames.add(name);
     }
-
-    spokenWord = {
-      start,
-      length
-    };
   }
 
-  return spokenWord;
+  return reachedCueNames;
+}
+
+function markCues({ card, state }: {
+  card: NarratedCard;
+  state: SpeakingState;
+}) {
+  const cuedAttribute = card.elCard.getAttribute(NarrationAttribute.Cued) ?? "";
+  const previouslyCued = new Set(cuedAttribute.split(CUE_SEPARATOR).filter(Boolean));
+  const reachedCueNames = getReachedCueNames({
+    clip: card.clip,
+    state
+  });
+  const reachedAttribute = [...reachedCueNames].join(CUE_SEPARATOR);
+  if (reachedAttribute !== cuedAttribute) {
+    card.elCard.setAttribute(NarrationAttribute.Cued, reachedAttribute);
+    for (const elCue of card.elCard.querySelectorAll(`[${NarrationAttribute.Cue}]`)) {
+      elCue.toggleAttribute(NarrationAttribute.CueReached, reachedCueNames.has(elCue.getAttribute(NarrationAttribute.Cue) ?? ""));
+    }
+  }
+
+  for (const cue of reachedCueNames.difference(previouslyCued)) {
+    card.elCard.dispatchEvent(
+      new CustomEvent(NARRATION_CUE_EVENT, {
+        bubbles: true,
+        detail: {
+          cue
+        }
+      })
+    );
+  }
+}
+
+function releaseCard(card: NarratedCard) {
+  card.elCard.removeAttribute(NarrationAttribute.Narrating);
+  card.elCard.removeAttribute(NarrationAttribute.Cued);
+  for (const elCue of card.elCard.querySelectorAll(`[${NarrationAttribute.CueReached}]`)) {
+    elCue.removeAttribute(NarrationAttribute.CueReached);
+  }
+
+  card.overlay.setStatus(PlayerStatus.Idle);
 }
 
 function startNarration(data: NarrationData) {
-  const elAudio = new Audio();
-  elAudio.preload = "auto";
   let iActive: number | null = null;
   let isTouring = false;
-  let status = PlayerStatus.Idle;
+  let state: SpeakingState | null = null;
   let error: string | null = null;
-  let frameRequest = 0;
-  let playRequest = 0;
+
+  const recordedEngine = createRecordedEngine(followEngine);
+  const liveEngine = createLiveEngine(followEngine);
+  let engine: NarrationEngine = recordedEngine;
 
   const elCards = [...document.querySelectorAll<HTMLElement>(`[${NarrationAttribute.Script}]`)];
   if (elCards.length !== data.clips.length) {
@@ -106,47 +146,20 @@ function startNarration(data: NarrationData) {
     return iActive === null ? undefined : cards[iActive];
   }
 
-  // Follows the playhead both ways, so a seek back un-cues what has not been said yet
-  function markCues(card: NarratedCard) {
-    const cuedAttribute = card.elCard.getAttribute(NarrationAttribute.Cued) ?? "";
-    const previouslyCued = new Set(cuedAttribute.split(CUE_SEPARATOR).filter(Boolean));
-    const playhead = elAudio.ended ? Infinity : elAudio.currentTime;
-    const reachedCueNames = new Set<string>();
-    for (const [name, time] of card.clip.cues) {
-      if (time <= playhead) {
-        reachedCueNames.add(name);
-      }
-    }
-
-    const reachedAttribute = [...reachedCueNames].join(CUE_SEPARATOR);
-    if (reachedAttribute !== cuedAttribute) {
-      card.elCard.setAttribute(NarrationAttribute.Cued, reachedAttribute);
-      for (const elCue of card.elCard.querySelectorAll(`[${NarrationAttribute.Cue}]`)) {
-        elCue.toggleAttribute(NarrationAttribute.CueReached, reachedCueNames.has(elCue.getAttribute(NarrationAttribute.Cue) ?? ""));
-      }
-    }
-
-    for (const cue of reachedCueNames.difference(previouslyCued)) {
-      card.elCard.dispatchEvent(
-        new CustomEvent(NARRATION_CUE_EVENT, {
-          bubbles: true,
-          detail: {
-            cue
-          }
-        })
-      );
-    }
+  function getStatus() {
+    return state?.status ?? PlayerStatus.Idle;
   }
 
   function render() {
     const card = getActiveCard();
-    if (!card) {
+    if (!card || !state) {
       panel.render({
         state: error === null ? null : {
           status: PlayerStatus.Error,
           text: "",
           word: null,
-          error
+          error,
+          voice: null
         },
         title: null,
         iCard: null,
@@ -155,21 +168,11 @@ function startNarration(data: NarrationData) {
       return;
     }
 
-    const isClipLoaded = CLIP_LOADED_STATUSES.has(status);
-    if (isClipLoaded) {
-      markCues(card);
-    }
-
-    card.overlay.setStatus(status);
-    const state: PlayerState = {
-      status,
-      text: card.clip.text,
-      word: getSpokenWord({
-        clip: card.clip,
-        seconds: elAudio.currentTime
-      }),
-      error
-    };
+    markCues({
+      card,
+      state
+    });
+    card.overlay.setStatus(state.status);
     panel.render({
       state,
       title: card.title,
@@ -178,35 +181,16 @@ function startNarration(data: NarrationData) {
     });
   }
 
-  function followAudio() {
-    render();
-
-    if (status === PlayerStatus.Playing) {
-      frameRequest = requestAnimationFrame(followAudio);
-    }
-  }
-
-  function releaseActiveCard() {
-    cancelAnimationFrame(frameRequest);
+  function stop() {
+    isTouring = false;
+    engine.stop();
     const card = getActiveCard();
     if (card) {
-      card.elCard.removeAttribute(NarrationAttribute.Narrating);
-      card.elCard.removeAttribute(NarrationAttribute.Cued);
-      for (const elCue of card.elCard.querySelectorAll(`[${NarrationAttribute.CueReached}]`)) {
-        elCue.removeAttribute(NarrationAttribute.CueReached);
-      }
-
-      card.overlay.setStatus(PlayerStatus.Idle);
+      releaseCard(card);
     }
 
     iActive = null;
-  }
-
-  function stop() {
-    isTouring = false;
-    elAudio.pause();
-    releaseActiveCard();
-    status = PlayerStatus.Idle;
+    state = null;
     render();
   }
 
@@ -217,50 +201,86 @@ function startNarration(data: NarrationData) {
       return;
     }
 
-    releaseActiveCard();
+    const previousCard = getActiveCard();
+    if (previousCard) {
+      releaseCard(previousCard);
+    }
+
     iActive = iCard;
     error = null;
-    status = PlayerStatus.Loading;
     card.elCard.setAttribute(NarrationAttribute.Narrating, "");
     card.elCard.setAttribute(NarrationAttribute.Cued, "");
     card.elCard.scrollIntoView({
       block: SCROLL_BLOCK,
       behavior: matchMedia(REDUCED_MOTION_QUERY).matches ? "instant" : "smooth"
     });
-    elAudio.src = card.clip.audio;
-    render();
-    await play();
+    // Each engine replaces its own clip in place; stopping first would read as the player being stopped
+    const nextEngine = liveEngine.isAvailable() ? liveEngine : recordedEngine;
+    if (nextEngine !== engine) {
+      engine.stop();
+      engine = nextEngine;
+    }
+
+    await engine.play(card.clip);
   }
 
-  async function play() {
-    playRequest += 1;
-    const thisPlayRequest = playRequest;
-    await elAudio.play().catch((playError: unknown) => {
-      const isReplacedByNewerPlay = thisPlayRequest !== playRequest;
-      const isInterrupted = playError instanceof DOMException && playError.name === ABORT_ERROR;
-      if (isReplacedByNewerPlay || isInterrupted) {
-        return;
-      }
+  // Both engines report here; only the active card's own text counts
+  function followEngine(nextState: SpeakingState) {
+    const card = getActiveCard();
+    if (!card || nextState.text !== card.clip.text && nextState.status !== PlayerStatus.Idle) {
+      return;
+    }
 
-      error = playError instanceof Error ? playError.message : String(playError);
+    const isLiveFailure = engine === liveEngine && nextState.status === PlayerStatus.Error;
+    if (isLiveFailure) {
+      engine = recordedEngine;
+      void recordedEngine.play(card.clip);
+      return;
+    }
+
+    if (nextState.status === PlayerStatus.Idle) {
       stop();
-    });
+      return;
+    }
+
+    state = nextState;
+
+    if (nextState.status === PlayerStatus.Error) {
+      error = nextState.error;
+      stop();
+      return;
+    }
+
+    render();
+
+    if (nextState.status !== PlayerStatus.Finished) {
+      return;
+    }
+
+    const iNext = (iActive ?? 0) + 1;
+    const isTourContinuing = isTouring && iNext < cards.length;
+    if (isTourContinuing) {
+      void narrateCard(iNext);
+      return;
+    }
+
+    stop();
   }
 
   async function handleCardButton(iCard: number) {
     const isThisCardActive = iActive === iCard;
-    const isThisCardStarting = isThisCardActive && status === PlayerStatus.Loading;
+    const status = getStatus();
     if (isThisCardActive && status === PlayerStatus.Playing) {
-      elAudio.pause();
+      engine.pause();
       return;
     }
 
     if (isThisCardActive && status === PlayerStatus.Paused) {
-      await play();
+      await engine.resume();
       return;
     }
 
-    if (isThisCardStarting) {
+    if (isThisCardActive && status === PlayerStatus.Loading) {
       return;
     }
 
@@ -281,42 +301,15 @@ function startNarration(data: NarrationData) {
         await narrateCard((iActive ?? -1) + 1);
         return;
       case PanelAction.Pause:
-        elAudio.pause();
+        engine.pause();
         return;
       case PanelAction.Resume:
-        await play();
+        await engine.resume();
         return;
       case PanelAction.Stop:
         stop();
     }
   }
-
-  elAudio.addEventListener("playing", () => {
-    status = PlayerStatus.Playing;
-    cancelAnimationFrame(frameRequest);
-    followAudio();
-  });
-  elAudio.addEventListener("pause", () => {
-    if (elAudio.ended || iActive === null) {
-      return;
-    }
-
-    status = PlayerStatus.Paused;
-    render();
-  });
-  elAudio.addEventListener("seeked", render);
-  elAudio.addEventListener("ended", () => {
-    status = PlayerStatus.Finished;
-    render();
-    const iNext = (iActive ?? 0) + 1;
-    const isTourContinuing = isTouring && iNext < cards.length;
-    if (isTourContinuing) {
-      void narrateCard(iNext);
-      return;
-    }
-
-    stop();
-  });
 
   render();
 }

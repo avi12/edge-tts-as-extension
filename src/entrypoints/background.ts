@@ -1,7 +1,7 @@
+import { Command } from "@/lib/command";
 import { EDGE_EXTENSION_ORIGIN, EDGE_USER_AGENT, SERVICE_HOST } from "@/lib/edge-tts/constants";
 import { detectLanguage, pickVoice } from "@/lib/edge-tts/language";
 import { DEFAULT_PROSODY } from "@/lib/edge-tts/ssml";
-import { Command } from "@/lib/command";
 import {
   OFFSCREEN_TARGET,
   type PlayerRequest,
@@ -9,8 +9,10 @@ import {
   type Request,
   requestSchema,
   sendRequest,
-  type SpeakRequest
+  type SpeakRequest,
+  stateEventSchema
 } from "@/lib/messages";
+import { NARRATION_PORT } from "@/lib/narration-bridge";
 import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
 import { readSettings } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
@@ -25,6 +27,7 @@ const HEADER_RULE_ID = 1;
 const HEADER_RULE_PRIORITY = 1;
 
 let offscreenCreation: Promise<void> | null = null;
+const narrationPorts = new Set<Browser.runtime.Port>();
 
 // The service only accepts handshakes that carry Edge's extension Origin and an Edge User-Agent -
 // rewrite both, but only for this extension's requests
@@ -96,12 +99,13 @@ async function ensureOffscreen() {
 }
 
 // Without the voice list there is nothing to switch to, so the picked voice reads
-async function chooseVoice({ text, voice, isMatchingLanguage }: {
+async function chooseVoice({ text, voice, isMatchingLanguage, locale }: {
   text: string;
   voice: string;
   isMatchingLanguage: boolean;
+  locale: string | undefined;
 }) {
-  const language = isMatchingLanguage ? detectLanguage(text) : null;
+  const language = (isMatchingLanguage ? detectLanguage(text) : null) ?? locale ?? null;
   if (language === null) {
     return voice;
   }
@@ -124,7 +128,8 @@ async function speak(request: SpeakRequest) {
     chooseVoice({
       text,
       voice: request.voice ?? savedSettings.voice,
-      isMatchingLanguage: request.isMatchingLanguage ?? savedSettings.isMatchingLanguage
+      isMatchingLanguage: request.isMatchingLanguage ?? savedSettings.isMatchingLanguage,
+      locale: request.locale
     }),
     ensureOffscreen()
   ]);
@@ -165,12 +170,44 @@ function respondToRequest({ message, sendResponse }: {
   return true;
 }
 
+// Narrated pages reach the player through the bridge content script's port; every state the player
+// broadcasts goes back to all of them, and each page follows only the text it asked for
+function acceptNarrationPort(port: Browser.runtime.Port) {
+  if (port.name !== NARRATION_PORT) {
+    return;
+  }
+
+  narrationPorts.add(port);
+  port.onDisconnect.addListener(() => narrationPorts.delete(port));
+  port.onMessage.addListener(async message => {
+    const parsed = requestSchema.safeParse(message);
+    if (!parsed.success) {
+      return;
+    }
+
+    port.postMessage(await handle(parsed.data));
+  });
+}
+
+function relayStateToPages(state: SpeakingState) {
+  for (const port of narrationPorts) {
+    port.postMessage(state);
+  }
+}
+
 export default defineBackground(() => {
   void installHeaderRule();
+  browser.runtime.onConnect.addListener(acceptNarrationPort);
 
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const isForPlayer = playerTargetSchema.safeParse(message).success;
     if (isForPlayer) {
+      return false;
+    }
+
+    const parsedState = stateEventSchema.safeParse(message);
+    if (parsedState.success) {
+      relayStateToPages(parsedState.data.state);
       return false;
     }
 

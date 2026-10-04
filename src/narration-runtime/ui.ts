@@ -2,7 +2,7 @@ import overlayCss from "./overlay.css?raw";
 import pageCss from "./page.css?raw";
 import panelCss from "./panel.css?raw";
 import themeCss from "./theme.css?raw";
-import { type PlayerState, PlayerStatus } from "@/lib/player-status";
+import { type PlayerState, PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
 export enum PanelAction {
   Tour = "tour",
@@ -17,6 +17,8 @@ const SHADOW_MODE = "open";
 const STATIC_POSITION = "static";
 const RELATIVE_POSITION = "relative";
 const HOST_ATTRIBUTE = "data-narration-host";
+const VOICE_NAME_SEPARATOR = "-";
+const VOICE_NAME_SUFFIX = /(?:Multilingual)?Neural$/;
 
 enum HostKind {
   Overlay = "overlay",
@@ -39,6 +41,7 @@ const PANEL_TEMPLATE = `
     <header>
       <span class="label">Narration</span>
       <output class="title" dir="auto"></output>
+      <output class="voice" title="Voice"></output>
     </header>
     <p class="subtitle" dir="auto"></p>
     <p class="error"></p>
@@ -86,6 +89,11 @@ function queryRequired<TElement extends Element>({ root, selector }: {
   }
 
   return elFound;
+}
+
+// "en-GB-SoniaNeural" -> "Sonia"
+function getVoiceName(voice: string) {
+  return voice.split(VOICE_NAME_SEPARATOR).at(-1)?.replace(VOICE_NAME_SUFFIX, "") ?? voice;
 }
 
 export function createCardOverlay({ elCard, onPlay }: {
@@ -153,6 +161,10 @@ export function createTourPanel({ cardCount, onAction }: {
     root: shadowRoot,
     selector: ".subtitle"
   });
+  const elVoice = queryRequired<HTMLOutputElement>({
+    root: shadowRoot,
+    selector: ".voice"
+  });
   const elError = queryRequired<HTMLElement>({
     root: shadowRoot,
     selector: ".error"
@@ -176,13 +188,14 @@ export function createTourPanel({ cardCount, onAction }: {
 
   return {
     render({ state, title, iCard, locale }: {
-      state: PlayerState | null;
+      state: SpeakingState | null;
       title: string | null;
       iCard: number | null;
       locale: string | null;
     }) {
       elPanel.dataset.status = state?.status ?? PlayerStatus.Idle;
       elTitle.textContent = title === null || iCard === null ? "" : `${iCard + 1}/${cardCount} ${title}`;
+      elVoice.textContent = state?.voice ? getVoiceName(state.voice) : "";
       elError.textContent = state?.error ?? "";
       elSubtitle.lang = locale ?? "";
 

@@ -36,6 +36,11 @@ otherwise the nearest `lang` attribute does (`lang="fr"` gets a French voice), a
 `--voice`. A switched voice matches `--voice`'s gender where it can, and `data-narrate-voice="en-GB-RyanNeural"`
 pins one card's voice outright. Subtitles take the voice's language and direction, so Hebrew reads right to left.
 
+With the extension installed, narrated pages speak live in the voice picked in its popup instead of the
+recorded one: a small bridge content script (in Claude's artifact frames and on `localhost`) hands each card to
+the extension's player, a card in another language still gets a voice that speaks it, and cues and subtitles
+follow the live words. Without the extension, or if live speech fails, the recorded audio plays.
+
 Cue names are letters, digits, `_` and `-`, scoped to their card. The CLI fails on an empty script and warns
 when a marker has no `data-cue` element or the reverse. Relative paths resolve from where you ran it, so
 `pnpm --dir <repo> narrate page.html` works from anywhere. Keep the authored page as `page.src.html` and

@@ -33,6 +33,13 @@ header {
   white-space: nowrap;
 }
 
+.voice {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--narrator-ink);
+  font: 12px/1.3 var(--narrator-mono);
+}
+
 .subtitle {
   position: relative;
   overflow-y: auto;

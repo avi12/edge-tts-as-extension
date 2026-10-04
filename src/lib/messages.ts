@@ -12,7 +12,9 @@ const speakRequestSchema = z.object({
   text: z.string().default(""),
   voice: z.string().optional(),
   rate: z.number().optional(),
-  isMatchingLanguage: z.boolean().optional()
+  isMatchingLanguage: z.boolean().optional(),
+  // The language the text is known to be in, e.g. a narrated card's - a voice that does not speak it is swapped
+  locale: z.string().optional()
 });
 
 const controlRequestSchema = z.object({

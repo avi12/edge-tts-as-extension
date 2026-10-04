@@ -149,7 +149,8 @@ function startNarration(data: NarrationData) {
           error
         },
         title: null,
-        iCard: null
+        iCard: null,
+        locale: null
       });
       return;
     }
@@ -172,7 +173,8 @@ function startNarration(data: NarrationData) {
     panel.render({
       state,
       title: card.title,
-      iCard: iActive
+      iCard: iActive,
+      locale: card.clip.locale
     });
   }
 

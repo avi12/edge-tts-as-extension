@@ -38,9 +38,9 @@ const PANEL_TEMPLATE = `
   <section class="panel">
     <header>
       <span class="label">Narration</span>
-      <output class="title"></output>
+      <output class="title" dir="auto"></output>
     </header>
-    <p class="subtitle"></p>
+    <p class="subtitle" dir="auto"></p>
     <p class="error"></p>
     <menu class="controls">
       <li><button type="button" data-action="${PanelAction.Tour}">${PLAY_ICON}<span class="tour-label"></span></button></li>
@@ -175,14 +175,16 @@ export function createTourPanel({ cardCount, onAction }: {
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, pageSheet];
 
   return {
-    render({ state, title, iCard }: {
+    render({ state, title, iCard, locale }: {
       state: PlayerState | null;
       title: string | null;
       iCard: number | null;
+      locale: string | null;
     }) {
       elPanel.dataset.status = state?.status ?? PlayerStatus.Idle;
       elTitle.textContent = title === null || iCard === null ? "" : `${iCard + 1}/${cardCount} ${title}`;
       elError.textContent = state?.error ?? "";
+      elSubtitle.lang = locale ?? "";
 
       if (!state || state.status === PlayerStatus.Error) {
         elSubtitle.textContent = "";

@@ -31,6 +31,11 @@ word is spoken it adds the cue to the card's `data-cued` list and sets `data-cue
 `data-cue` element, so the page's own CSS animates in step with the voice - two generic rules cover every
 cue. Both follow seeks and clear when the clip ends. It also fires a bubbling `narration:cue` event.
 
+Each card is voiced in its own language: a non-Latin script decides it (Hebrew text gets a Hebrew voice),
+otherwise the nearest `lang` attribute does (`lang="fr"` gets a French voice), and a card with neither keeps
+`--voice`. A switched voice matches `--voice`'s gender where it can, and `data-narrate-voice="en-GB-RyanNeural"`
+pins one card's voice outright. Subtitles take the voice's language and direction, so Hebrew reads right to left.
+
 Cue names are letters, digits, `_` and `-`, scoped to their card. The CLI fails on an empty script and warns
 when a marker has no `data-cue` element or the reverse. Relative paths resolve from where you ran it, so
 `pnpm --dir <repo> narrate page.html` works from anywhere. Keep the authored page as `page.src.html` and

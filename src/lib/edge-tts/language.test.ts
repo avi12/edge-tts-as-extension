@@ -7,7 +7,9 @@ const VOICES = [
   ["he-IL-AvriNeural", "he-IL", "Male"],
   ["he-IL-HilaNeural", "he-IL", "Female"],
   ["ar-EG-ShakirNeural", "ar-EG", "Male"],
-  ["ar-SA-ZariyahNeural", "ar-SA", "Female"]
+  ["ar-SA-ZariyahNeural", "ar-SA", "Female"],
+  ["fr-BE-CharlineNeural", "fr-BE", "Female"],
+  ["fr-FR-DeniseNeural", "fr-FR", "Female"]
 ].map(([ShortName = "", Locale = "", Gender = ""]) => ({
   ShortName,
   Locale,
@@ -69,6 +71,23 @@ describe("pickVoice", () => {
         preferredVoice: "en-US-AriaNeural"
       })
     ).toBe("ar-EG-ShakirNeural");
+  });
+
+  it("reads a bare language as its main region", () => {
+    expect(
+      pickVoice({
+        voices: VOICES,
+        locale: "fr",
+        preferredVoice: "en-US-AriaNeural"
+      })
+    ).toBe("fr-FR-DeniseNeural");
+    expect(
+      pickVoice({
+        voices: VOICES,
+        locale: "not a locale",
+        preferredVoice: "en-US-AriaNeural"
+      })
+    ).toBe("en-US-AriaNeural");
   });
 
   it("falls back to the preferred voice when no voice speaks the language", () => {

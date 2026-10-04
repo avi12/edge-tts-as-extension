@@ -16,6 +16,7 @@ const SCRIPT_LANGUAGES = [
 ] as const;
 const LATIN_LETTER = /\p{Script=Latin}/gu;
 const LOCALE_SEPARATOR = "-";
+const LANGUAGE_TAG = /^[a-z]{2,3}(?:-[a-z\d]{2,8})*$/i;
 
 function countMatches({ text, pattern }: {
   text: string;
@@ -49,6 +50,16 @@ function getLanguage(locale: string) {
   return locale.split(LOCALE_SEPARATOR)[0]?.toLowerCase() ?? "";
 }
 
+// A bare language means its main region, e.g. fr is fr-FR and he is he-IL
+function getLikelyLocale(locale: string) {
+  if (!LANGUAGE_TAG.test(locale)) {
+    return locale;
+  }
+
+  const { language, region } = new Intl.Locale(locale).maximize();
+  return region ? `${language}${LOCALE_SEPARATOR}${region}` : language;
+}
+
 // Keeps the preferred voice when it already speaks the language, otherwise the closest voice that does:
 // the exact locale asked for first, then the preferred voice's gender
 export function pickVoice({ voices, locale, preferredVoice }: {
@@ -57,6 +68,7 @@ export function pickVoice({ voices, locale, preferredVoice }: {
   preferredVoice: string;
 }) {
   const language = getLanguage(locale);
+  const likelyLocale = getLikelyLocale(locale).toLowerCase();
   const preferred = voices.find(voice => voice.ShortName === preferredVoice);
   const isPreferredFluent = preferred !== undefined && getLanguage(preferred.Locale) === language;
   if (isPreferredFluent) {
@@ -64,7 +76,7 @@ export function pickVoice({ voices, locale, preferredVoice }: {
   }
 
   function isExactLocale(voice: Voice) {
-    return voice.Locale.toLowerCase() === locale.toLowerCase();
+    return voice.Locale.toLowerCase() === likelyLocale;
   }
 
   function isSameGender(voice: Voice) {

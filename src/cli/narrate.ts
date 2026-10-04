@@ -6,12 +6,15 @@
 import {
   DEFAULT_PROSODY,
   DEFAULT_VOICE,
+  detectLanguage,
   fetchVoices,
   MP3_BITS_PER_SECOND,
   MP3_MIME_TYPE,
   MP3_OUTPUT_FORMAT,
+  pickVoice,
   RATE,
   synthesize,
+  type Voice,
   type WordBoundary
 } from "@/lib/edge-tts";
 import { openEdgeSocket } from "@/lib/edge-tts/node-socket";
@@ -64,11 +67,51 @@ function readCards(html: string) {
   const { document } = parseHTML(html);
   return [...document.querySelectorAll(`[${NarrationAttribute.Script}]`)].map(elCard => ({
     script: elCard.getAttribute(NarrationAttribute.Script) ?? "",
+    pinnedVoice: elCard.getAttribute(NarrationAttribute.Voice),
+    inheritedLocale: elCard.closest("[lang]")?.getAttribute("lang") ?? null,
     cueNames: new Set([...elCard.querySelectorAll(`[${NarrationAttribute.Cue}]`)].map(elCue => elCue.getAttribute(NarrationAttribute.Cue) ?? ""))
   }));
 }
 
-function checkCard({ script, cueNames, iCard }: ReturnType<typeof readCards>[number] & { iCard: number }) {
+type Card = ReturnType<typeof readCards>[number];
+
+function findVoice({ voices, voice }: {
+  voices: Voice[];
+  voice: string;
+}) {
+  const found = voices.find(candidate => candidate.ShortName === voice);
+  if (!found) {
+    throw new Error(`Unknown voice "${voice}" - use a ShortName like ${DEFAULT_VOICE}`);
+  }
+
+  return found;
+}
+
+// A pinned voice wins; otherwise a non-Latin script names the language, then the nearest lang attribute does
+function chooseVoice({ card, voices, defaultVoice }: {
+  card: Card;
+  voices: Voice[];
+  defaultVoice: string;
+}) {
+  if (card.pinnedVoice) {
+    return findVoice({
+      voices,
+      voice: card.pinnedVoice
+    });
+  }
+
+  const locale = detectLanguage(parseNarrationScript(card.script).text) ?? card.inheritedLocale;
+  return findVoice({
+    voices,
+    voice: locale ? pickVoice({
+      voices,
+      locale,
+      preferredVoice: defaultVoice
+    }) : defaultVoice
+  });
+}
+
+function checkCard({ script, cueNames, iCard }: Card & { iCard: number }) {
   const { text, cues } = parseNarrationScript(script);
   const label = `Card ${iCard + 1}`;
   if (!text) {
@@ -100,7 +143,7 @@ async function bundleRuntime() {
 
 async function synthesizeClip({ script, voice, rate }: {
   script: string;
-  voice: string;
+  voice: Voice;
   rate: number;
 }) {
   const { text, cues } = parseNarrationScript(script);
@@ -108,7 +151,7 @@ async function synthesizeClip({ script, voice, rate }: {
   const boundaries: WordBoundary[] = [];
   await synthesize({
     text,
-    voice,
+    voice: voice.ShortName,
     prosody: {
       ...DEFAULT_PROSODY,
       rate
@@ -122,6 +165,8 @@ async function synthesizeClip({ script, voice, rate }: {
   const duration = audio.byteLength * BITS_PER_BYTE / MP3_BITS_PER_SECOND;
   const clip: NarrationClip = {
     audio: `data:${MP3_MIME_TYPE};base64,${audio.toString("base64")}`,
+    voice: voice.ShortName,
+    locale: voice.Locale,
     duration,
     text,
     ...timeNarration({
@@ -210,10 +255,10 @@ async function main() {
   }
 
   const voices = await fetchVoices();
-  const isKnownVoice = voices.some(voice => voice.ShortName === values.voice);
-  if (!isKnownVoice) {
-    throw new Error(`Unknown voice "${values.voice}" - use a ShortName like ${DEFAULT_VOICE}`);
-  }
+  findVoice({
+    voices,
+    voice: values.voice
+  });
 
   const input = resolveFromCaller(inputArgument);
 
@@ -231,14 +276,18 @@ async function main() {
   }
 
   const clips: Awaited<ReturnType<typeof synthesizeClip>>[] = [];
-  for (const [iCard, { script }] of cards.entries()) {
+  for (const [iCard, card] of cards.entries()) {
     const synthesized = await synthesizeClip({
-      script,
-      voice: values.voice,
+      script: card.script,
+      voice: chooseVoice({
+        card,
+        voices,
+        defaultVoice: values.voice
+      }),
       rate: parsedRate.data
     });
     clips.push(synthesized);
-    console.log(`${iCard + 1}/${cards.length}  ${synthesized.clip.duration.toFixed(1)}s  cues: ${synthesized.clip.cues.map(([name, time]) => `${name}@${time}`).join(" ") || "-"}`);
+    console.log(`${iCard + 1}/${cards.length}  ${synthesized.clip.duration.toFixed(1)}s  ${synthesized.clip.voice}  cues: ${synthesized.clip.cues.map(([name, time]) => `${name}@${time}`).join(" ") || "-"}`);
   }
 
   if (values.export) {
@@ -253,7 +302,6 @@ async function main() {
     output, embedNarration({
       html,
       data: {
-        voice: values.voice,
         clips: clips.map(({ clip }) => clip)
       },
       runtime: await bundleRuntime()

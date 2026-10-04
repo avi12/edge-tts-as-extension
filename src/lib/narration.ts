@@ -8,6 +8,7 @@ import { createWordLocator } from "@/lib/edge-tts/words";
 export enum NarrationAttribute {
   Script = "data-narrate",
   Title = "data-narrate-title",
+  Voice = "data-narrate-voice",
   Narrating = "data-narrating",
   Cued = "data-cued",
   Cue = "data-cue",
@@ -32,6 +33,9 @@ export type CueTiming = [string, number];
 
 export interface NarrationClip {
   audio: string;
+  voice: string;
+  // The voice's locale, so subtitles render in the right language and direction
+  locale: string;
   duration: number;
   text: string;
   words: WordTiming[];
@@ -39,7 +43,6 @@ export interface NarrationClip {
 }
 
 export interface NarrationData {
-  voice: string;
   clips: NarrationClip[];
 }
 

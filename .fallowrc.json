@@ -6,7 +6,8 @@
     "src/cli/narrate.ts"
   ],
   "ignorePatterns": [
-    "research/edge-microsoft-voices/**"
+    "research/edge-microsoft-voices/**",
+    ".claude/**"
   ],
   "ignoreDependencies": [
     "@typescript/native"

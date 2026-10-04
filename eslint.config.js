@@ -250,6 +250,7 @@ export default [
     "node_modules/",
     ".output/",
     ".wxt/",
+    ".claude/",
     "research/edge-microsoft-voices/"
   ]),
   {

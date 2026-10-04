@@ -1,0 +1,75 @@
+# Stack
+- pnpm
+- WXT extension framework (Chrome MV3)
+- Vanilla TypeScript, no UI framework (100% type safety, let TypeScript infer return types - never write them explicitly)
+- zod for validating loose data
+- vitest for tests (`LIVE=1 pnpm test` also hits the real Read Aloud service)
+- Layout: `lib/edge-tts/*` is the Read Aloud protocol client, `lib/messages.ts` the message contract, `lib/settings.ts` the stored settings, `entrypoints/*` the background, offscreen player and popup. `research/*.mjs` are Node scripts from the reverse engineering. `research/edge-microsoft-voices/*.js` is vendored Microsoft source - never lint, refactor or edit it
+
+The user's global rules (SSOT/DRY, pure CSS over JavaScript, digestible commits on `main`) apply here too.
+
+# Code style
+- Use the `browser` namespace
+- Use early returns for readability and maintainability
+- Use functional programming
+- Use async/await whenever possible
+- Use DRY with separation of concerns, prioritizing readability
+- Minimize indentations
+- Use `for-of` instead of `.forEach`, and a plain `for` loop instead of `.reduce()`
+- Use modern browser and CSS features
+- Prefer semantic HTML elements (`button`, `nav`, `ul`/`li`, `section`, `header`, `footer`, `dialog`, `menu`, `output`, etc.) over `div`/`span` with a `role`; only add ARIA (`role`, `aria-*`) when no native element carries the semantics or state, and never add ARIA that merely restates what the element already means
+- Avoid `window.` prefixes unless it increases readability
+- Avoid `setTimeout` unless absolutely necessary
+- Avoid comments unless absolutely necessary - prefer descriptive names; default to zero comments and rename variables/functions until they read like the comment would. Facts recovered by reverse engineering (where a value came from, why the server needs it) are the exception - keep those, short
+- Don't use em dashes - use regular hyphens
+- If a callback arrow function has a typed param, don't annotate the type explicitly
+- Functions with 2+ params take a single destructured object param (`f({ a, b }: {...})`) so every argument is self-documenting at the call site. Reuse an existing/built-in type when one fits the object shape; only inline the object type when nothing fits - never invent a named type just to convert. EXEMPT (stay positional): key/value-style accessors where the first arg is a key/identifier and the second its value/operation/options, and runtime-positional signatures the caller controls (HOF callbacks `.map`/`.filter`/`.sort`/`.forEach`/`addEventListener`, Promise executors, event handlers with first param `e`, `browser.*` listener callbacks, external-library-dictated signatures)
+- Avoid nested try/catch - flatten with early returns or extracted functions
+- Validate loose data with zod, not hand-rolled checks: any multi-clause shape/range/format validation (typeof chains, `"x" in obj` guards, `Number.isFinite` + bounds combos, ad-hoc regex format tests on external/storage/message payloads) becomes a module-level zod schema + `safeParse`. Bounds come from the existing `SCREAMING_SNAKE_CASE` constants via `.min()`/`.max()`; reuse an existing schema before authoring one; a schema consumed only for its inferred type stays un-exported. Import `z` from `@/lib/zod` (jitless wrapper - MV3's extension CSP blocks the `new Function` probe zod runs otherwise). NOT zod material: single trivial checks, TS union narrowing of already-typed values, hot-loop arithmetic guards
+- `safeParse` results take exactly two forms, chosen by what is consumed. Validity only: collapse immediately - `schema.safeParse(x).success` inline in the condition or into an `is`-prefixed boolean; never store the result object just to read `.success`. `.data`/`.error` consumed: store the result as `parsed` (`parsed<Subject>` when one scope holds several parses) and guard with `parsed.success`
+- Inline one-off variables (assigned once, used once) when it stays readable - but NOT when the variable names a magic number/string or documents an otherwise opaque expression
+- Extract an `if`/ternary/guard condition into a descriptive `is`-prefixed boolean variable rather than inlining the raw expression into the condition - the named boolean reads as the documentation
+- Apply parallel modifications whenever possible
+- Always prefer the `@/` path alias over parent-relative (`../`) imports. Same-directory `./foo` stays relative
+
+# Naming conventions
+- Variables and functions: `camelCase`, full words (no abbreviations)
+- Module-level constants: `SCREAMING_SNAKE_CASE`
+- Exception: event handler first parameter is always `e`
+
+## Variable prefixes
+- Element: `el` prefix (e.g. `elButton`)
+- Index: `i` prefix (e.g. `iItem`), or bare `i` when iterating in a for loop/higher-order function
+- Boolean: `is` prefix (e.g. `isLoading`), phrased positively (e.g. `isEnabled`, not `isDisabled` or `isNotEnabled`)
+
+# Hardcoded values
+- Strings: use enums; if no enum fits, use a descriptive `SCREAMING_SNAKE_CASE` constant
+- Numbers: use a descriptive `SCREAMING_SNAKE_CASE` constant
+
+# CSS
+- Use native CSS nesting - nest child and state selectors under their parent (`&:hover`, a nested `.child`) instead of repeating the parent in flat sibling rules
+- Always respect `prefers-reduced-motion` - never ship an ungated transition/animation; add a `@media (prefers-reduced-motion: reduce)` override that removes the motion (smooth scrolling included)
+- Never the `transform` shorthand - use the individual `translate`/`rotate`/`scale` properties
+- Never hand-write vendor prefixes (`-webkit-` etc.)
+
+# Storage
+- Don't automatically persist to storage - rely on fallback values; only store what the user explicitly set (or a cache that saves a network round trip)
+- Use WXT's storage API (`storage.defineItem` / `storage.getItem("local:KEY")`), not `browser.storage.local.*`
+- Only use the `local:` or `sync:` storage areas - never `session:`
+
+# UI copy
+- No full stops at end of messages
+- Informal tone
+
+# Linting
+After each modification, run the checks (`pnpm check` runs all of them in order):
+- `pnpm compile` - `tsc --noEmit`
+- `pnpm lint` runs `oxlint --type-aware --fix && eslint --fix` (then a final plain oxlint as the gate) - oxlint owns the logic and type-aware rules (`.oxlintrc.json`, with `oxlint-tsgolint`), ESLint owns the stylistic ones (`eslint.config.js` + local rules in `eslint-rules/`); always run with `--fix`
+- `pnpm stylelint` runs `stylelint "**/*.css" --fix`
+- `pnpm test`
+- After every bug fix, feature, or refactor - anything that removes or rewires code - run a fallow dead-code audit and clean up what it flags as newly unused (imports, helpers, exports, whole files) so changes never leave orphans behind. Never run `fallow fix` automatically - act on the audit by hand
+  - ONE root config at `/.fallowrc.json`. It carries NO ignore lists - only `health` thresholds, the `research/*.mjs` entries, and `unused-enum-members: warn` (enums double as zod value vocabularies via `z.enum(SomeEnum)`, so not every member is referenced by name). `pnpm fallow` (= `fallow audit --base HEAD`) is the incremental gate; `pnpm exec fallow dead-code --root .` is the full sweep
+  - fallow is PINNED to 2.103.0 (devDep). Never invoke it via `pnpx`/`pnpm dlx` (that fetches latest and ignores the pin) - always the local bin (`pnpm fallow` / `pnpm exec fallow`)
+  - An export used only WITHIN its own file is an over-export: drop the `export` keyword rather than adding an ignore
+- Lint coverage: `lib/**`, `entrypoints/**` (any new entrypoint, e.g. a content script, is covered automatically), `research/*.mjs` (Node globals), `eslint-rules/`, configs. Excluded: `research/edge-microsoft-voices/`, `.output/`, `.wxt/`
+- Never blanket-disable a rule; a narrowly justified disable comment is acceptable only when a rule truly cannot be satisfied

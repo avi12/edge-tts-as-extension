@@ -6,9 +6,11 @@ export default defineConfig({
     description:
       "Read any text aloud with Microsoft Edge's online neural voices.",
     permissions: [
+      'activeTab',
       'contextMenus',
       'declarativeNetRequestWithHostAccess',
       'offscreen',
+      'scripting',
       'storage',
     ],
     host_permissions: [

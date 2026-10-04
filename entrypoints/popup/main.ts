@@ -36,6 +36,7 @@ const STATUS_LABEL: Record<PlayerStatus, string> = {
   [PlayerStatus.Loading]: "Loading…",
   [PlayerStatus.Playing]: "Reading",
   [PlayerStatus.Paused]: "Paused",
+  [PlayerStatus.Finished]: "Done",
   [PlayerStatus.Error]: "Error"
 };
 

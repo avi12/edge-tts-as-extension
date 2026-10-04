@@ -14,6 +14,7 @@ export enum PlayerStatus {
   Loading = "loading",
   Playing = "playing",
   Paused = "paused",
+  Finished = "finished",
   Error = "error"
 }
 

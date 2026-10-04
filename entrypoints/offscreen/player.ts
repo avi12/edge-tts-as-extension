@@ -131,6 +131,7 @@ export function createPlayer(onChange: (state: PlayerState) => void) {
     stop();
     setState({
       ...IDLE_STATE,
+      status: PlayerStatus.Finished,
       text
     });
   }

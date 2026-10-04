@@ -1,32 +1,61 @@
-/**
- * Long text is split into requests the service handles comfortably.
- * Splits prefer sentence ends, then any whitespace, then a hard cut.
- */
-export const MAX_CHUNK_CHARS = 3000;
+const MAX_CHUNK_LENGTH = 3000;
+const SENTENCE_ENDS = [". ", "! ", "? ", "\n"];
+const MIN_SENTENCE_CUT_RATIO = 0.5;
 
 export interface TextChunk {
   text: string;
-  /** Index of this chunk's first character in the original text. */
   start: number;
 }
 
-export function chunkText(text: string, max = MAX_CHUNK_CHARS): TextChunk[] {
-  const chunks: TextChunk[] = [];
-  let start = 0;
-  while (start < text.length) {
-    let end = Math.min(start + max, text.length);
-    if (end < text.length) {
-      const window = text.slice(start, end);
-      const sentence = Math.max(
-        ...['. ', '! ', '? ', '\n'].map((s) => window.lastIndexOf(s)),
-      );
-      const space = window.lastIndexOf(' ');
-      const cut = sentence > max / 2 ? sentence + 1 : space > 0 ? space : -1;
-      if (cut > 0) end = start + cut;
-    }
-    const piece = text.slice(start, end);
-    if (piece.trim()) chunks.push({ text: piece, start });
-    start = end;
+function findChunkEnd({ text, iStart, maxLength }: {
+  text: string;
+  iStart: number;
+  maxLength: number;
+}) {
+  const iLimit = Math.min(iStart + maxLength, text.length);
+  const isLastChunk = iLimit === text.length;
+  if (isLastChunk) {
+    return iLimit;
   }
+
+  const candidate = text.slice(iStart, iLimit);
+  const iSentenceEnd = Math.max(...SENTENCE_ENDS.map(sentenceEnd => candidate.lastIndexOf(sentenceEnd)));
+  const isSentenceEndLateEnough = iSentenceEnd > maxLength * MIN_SENTENCE_CUT_RATIO;
+  if (isSentenceEndLateEnough) {
+    return iStart + iSentenceEnd + 1;
+  }
+
+  const iSpace = candidate.lastIndexOf(" ");
+  if (iSpace > 0) {
+    return iStart + iSpace;
+  }
+
+  return iLimit;
+}
+
+export function chunkText({ text, maxLength = MAX_CHUNK_LENGTH }: {
+  text: string;
+  maxLength?: number;
+}) {
+  const chunks: TextChunk[] = [];
+  let iStart = 0;
+  while (iStart < text.length) {
+    const iEnd = findChunkEnd({
+      text,
+      iStart,
+      maxLength
+    });
+    const chunk = text.slice(iStart, iEnd);
+    const isBlank = chunk.trim() === "";
+    if (!isBlank) {
+      chunks.push({
+        text: chunk,
+        start: iStart
+      });
+    }
+
+    iStart = iEnd;
+  }
+
   return chunks;
 }

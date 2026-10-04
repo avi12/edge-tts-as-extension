@@ -1,104 +1,154 @@
-import {
-  SEC_MS_GEC_VERSION,
-  SYNTHESIZE_URL,
-  TRUSTED_CLIENT_TOKEN,
-  VOICES_URL,
-} from './constants';
-import { secMsGec } from './gec';
+import { SEC_MS_GEC_VERSION, SYNTHESIZE_URL, TRUSTED_CLIENT_TOKEN, VOICES_URL } from "./constants";
+import { secMsGec } from "./gec";
 import {
   configMessage,
-  newId,
+  createId,
+  FramePath,
   parseBinaryFrame,
   parseTextFrame,
   parseWordBoundaries,
   ssmlMessage,
-  type WordBoundary,
-} from './protocol';
-import { buildSsml, type Prosody } from './ssml';
+  type WordBoundary
+} from "./protocol";
+import { buildSsml, type Prosody } from "./ssml";
+import { z } from "@/lib/zod";
 
-export async function synthesizeUrl(): Promise<string> {
-  const params = new URLSearchParams({
-    TrustedClientToken: TRUSTED_CLIENT_TOKEN,
-    'Sec-MS-GEC': await secMsGec(),
-    'Sec-MS-GEC-Version': SEC_MS_GEC_VERSION,
-    ConnectionId: newId(),
-  });
-  return `${SYNTHESIZE_URL}?${params}`;
+enum QueryParameter {
+  TrustedClientToken = "TrustedClientToken",
+  SecMsGec = "Sec-MS-GEC",
+  SecMsGecVersion = "Sec-MS-GEC-Version",
+  ConnectionId = "ConnectionId",
+  VoicesTrustedClientToken = "trustedclienttoken"
 }
 
-export interface SynthesizeHandlers {
+const SOCKET_BINARY_TYPE = "arraybuffer";
+const NORMAL_CLOSURE_CODE = 1000;
+const ABORT_EVENT = "abort";
+
+const voiceSchema = z.object({
+  ShortName: z.string(),
+  FriendlyName: z.string(),
+  Locale: z.string(),
+  LocaleName: z.string(),
+  Gender: z.string()
+});
+
+const voicesSchema = z.array(voiceSchema);
+
+export type Voice = z.infer<typeof voiceSchema>;
+
+interface SynthesizeOptions {
+  text: string;
+  voice: string;
+  prosody: Prosody;
   onAudio: (chunk: Uint8Array<ArrayBuffer>) => void;
   onWordBoundary?: (boundary: WordBoundary) => void;
   signal?: AbortSignal;
 }
 
-/**
- * Streams one request: opens a socket, sends config + SSML, forwards audio
- * and word boundaries as they arrive, and resolves on turn.end.
- *
- * The browser sets Origin and User-Agent itself; in the extension they are
- * rewritten by declarativeNetRequest so the server accepts the handshake.
- */
-export async function synthesize(
-  text: string,
-  voice: string,
-  prosody: Prosody,
-  { onAudio, onWordBoundary, signal }: SynthesizeHandlers,
-): Promise<void> {
+async function createSynthesizeUrl() {
+  const parameters = new URLSearchParams({
+    [QueryParameter.TrustedClientToken]: TRUSTED_CLIENT_TOKEN,
+    [QueryParameter.SecMsGec]: await secMsGec(),
+    [QueryParameter.SecMsGecVersion]: SEC_MS_GEC_VERSION,
+    [QueryParameter.ConnectionId]: createId()
+  });
+  return `${SYNTHESIZE_URL}?${parameters}`;
+}
+
+// Streams one request and resolves on turn.end. The browser sets Origin and User-Agent itself -
+// the extension rewrites them with declarativeNetRequest so the server accepts the handshake
+export async function synthesize({ text, voice, prosody, onAudio, onWordBoundary, signal }: SynthesizeOptions) {
   signal?.throwIfAborted();
-  const ws = new WebSocket(await synthesizeUrl());
-  ws.binaryType = 'arraybuffer';
+  const socket = new WebSocket(await createSynthesizeUrl());
+  socket.binaryType = SOCKET_BINARY_TYPE;
 
   return new Promise<void>((resolve, reject) => {
-    let done = false;
-    const finish = (error?: unknown) => {
-      if (done) return;
-      done = true;
-      signal?.removeEventListener('abort', onAbort);
-      if (ws.readyState <= WebSocket.OPEN) ws.close(1000);
-      error === undefined ? resolve() : reject(error);
-    };
-    const onAbort = () => finish(signal!.reason);
-    signal?.addEventListener('abort', onAbort);
+    let isFinished = false;
 
-    ws.onopen = () => {
-      ws.send(configMessage());
-      ws.send(ssmlMessage(newId(), buildSsml(text, voice, prosody)));
-    };
-    ws.onmessage = ({ data }) => {
-      if (typeof data === 'string') {
-        const frame = parseTextFrame(data);
-        if (frame.path === 'audio.metadata' && onWordBoundary) {
-          parseWordBoundaries(frame.body).forEach(onWordBoundary);
-        } else if (frame.path === 'turn.end') {
-          finish();
-        }
+    function finish(error?: unknown) {
+      if (isFinished) {
         return;
       }
-      const frame = parseBinaryFrame(data as ArrayBuffer);
-      if (frame.path === 'audio' && frame.audio.byteLength > 0) {
+
+      isFinished = true;
+      signal?.removeEventListener(ABORT_EVENT, onAbort);
+      const isOpenOrConnecting = socket.readyState <= WebSocket.OPEN;
+      if (isOpenOrConnecting) {
+        socket.close(NORMAL_CLOSURE_CODE);
+      }
+
+      if (error === undefined) {
+        resolve();
+        return;
+      }
+
+      reject(error);
+    }
+
+    function onAbort() {
+      finish(signal?.reason);
+    }
+
+    function handleTextFrame(data: string) {
+      const frame = parseTextFrame(data);
+      if (frame.path === FramePath.TurnEnd) {
+        finish();
+        return;
+      }
+
+      const isWordMetadata = frame.path === FramePath.AudioMetadata && onWordBoundary !== undefined;
+      if (!isWordMetadata) {
+        return;
+      }
+
+      for (const boundary of parseWordBoundaries(frame.body)) {
+        onWordBoundary(boundary);
+      }
+    }
+
+    function handleBinaryFrame(data: ArrayBuffer) {
+      const frame = parseBinaryFrame(data);
+      const hasAudio = frame.path === FramePath.Audio && frame.audio.byteLength > 0;
+      if (hasAudio) {
         onAudio(frame.audio);
       }
+    }
+
+    signal?.addEventListener(ABORT_EVENT, onAbort);
+
+    socket.onopen = () => {
+      socket.send(configMessage());
+      socket.send(
+        ssmlMessage({
+          requestId: createId(),
+          ssml: buildSsml({
+            text,
+            voice,
+            prosody
+          })
+        })
+      );
     };
-    ws.onerror = () =>
-      finish(new Error('Read Aloud service refused the connection'));
-    ws.onclose = (e) =>
-      finish(new Error(`Connection closed before the audio finished (${e.code})`));
+    socket.onmessage = e => {
+      if (typeof e.data === "string") {
+        handleTextFrame(e.data);
+        return;
+      }
+
+      handleBinaryFrame(e.data);
+    };
+    socket.onerror = () => finish(new Error("The Read Aloud service refused the connection"));
+    socket.onclose = e => finish(new Error(`Connection dropped before the audio finished (${e.code})`));
   });
 }
 
-export interface Voice {
-  ShortName: string;
-  FriendlyName: string;
-  Locale: string;
-  LocaleName: string;
-  Gender: string;
-}
+export async function fetchVoices() {
+  const parameters = new URLSearchParams({ [QueryParameter.VoicesTrustedClientToken]: TRUSTED_CLIENT_TOKEN });
+  const response = await fetch(`${VOICES_URL}?${parameters}`);
+  if (!response.ok) {
+    throw new Error(`Couldn't get the voice list (${response.status})`);
+  }
 
-export async function fetchVoices(): Promise<Voice[]> {
-  const res = await fetch(
-    `${VOICES_URL}?trustedclienttoken=${TRUSTED_CLIENT_TOKEN}`,
-  );
-  if (!res.ok) throw new Error(`Voice list request failed (${res.status})`);
-  return res.json();
+  return voicesSchema.parse(await response.json());
 }

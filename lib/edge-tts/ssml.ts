@@ -1,68 +1,92 @@
-// Mirrors Edge's ssml.js: strip control characters, straighten typographic
-// quotes, escape XML, wrap in <speak><voice><prosody>.
+// Mirrors Edge's ssml.js: strip control characters, straighten typographic quotes, escape XML,
+// wrap in <speak><voice><prosody>
 
 const XML_ESCAPES: Record<string, string> = {
-  '<': '&lt;',
-  '>': '&gt;',
-  '&': '&amp;',
-  '"': '&quot;',
-  "'": '&apos;',
+  "<": "&lt;",
+  ">": "&gt;",
+  "&": "&amp;",
+  "\"": "&quot;",
+  "'": "&apos;"
 };
 
 const STRAIGHT_QUOTES: Record<string, string> = {
-  '‘': "'",
-  '’': "'",
-  '‛': "'",
-  '‚': "'",
-  '′': "'",
-  '“': '"',
-  '”': '"',
-  '„': '"',
-  '‟': '"',
-  '″': '"',
+  "‘": "'",
+  "’": "'",
+  "‛": "'",
+  "‚": "'",
+  "′": "'",
+  "“": "\"",
+  "”": "\"",
+  "„": "\"",
+  "‟": "\"",
+  "″": "\""
 };
 
-// Control characters other than tab/newline/carriage return break the service.
-// eslint-disable-next-line no-control-regex
+// Control characters other than tab/newline/carriage return break the service
 const NON_WHITESPACE_CONTROL = /[\u0000-\u0008\u000E-\u001F]/g;
+const XML_SPECIAL_CHARACTERS = new RegExp(`[${Object.keys(XML_ESCAPES).join("")}]`, "g");
+const TYPOGRAPHIC_QUOTES = new RegExp(`[${Object.keys(STRAIGHT_QUOTES).join("")}]`, "g");
 
-export function sanitizeText(text: string): string {
-  return text
-    .replace(NON_WHITESPACE_CONTROL, ' ')
-    .replace(/[‘’‛‚′“”„‟″]/g, (c) => STRAIGHT_QUOTES[c] ?? c);
-}
-
-export function escapeXml(text: string): string {
-  return text.replace(/[<>&"']/g, (c) => XML_ESCAPES[c] ?? c);
-}
+const SSML_NAMESPACE = "http://www.w3.org/2001/10/synthesis";
+const VOICE_LOCALE_PARTS = 2;
+const PERCENT = 100;
 
 export interface Prosody {
-  /** 1 = normal speed. */
   rate: number;
-  /** 1 = normal volume. */
   volume: number;
-  /** Offset in Hz; 0 = normal pitch. */
   pitchHz: number;
 }
 
-export const DEFAULT_PROSODY: Prosody = { rate: 1, volume: 1, pitchHz: 0 };
+export const DEFAULT_PROSODY: Prosody = {
+  rate: 1,
+  volume: 1,
+  pitchHz: 0
+};
 
-const signed = (n: number, unit: string) =>
-  `${n < 0 ? '' : '+'}${Math.round(n)}${unit}`;
+export function sanitizeText(text: string) {
+  return text
+    .replace(NON_WHITESPACE_CONTROL, " ")
+    .replace(TYPOGRAPHIC_QUOTES, quote => STRAIGHT_QUOTES[quote] ?? quote);
+}
 
-/** The voice's short name is also its locale prefix, e.g. "en-US-AriaNeural". */
-const localeOf = (voice: string) => voice.split('-').slice(0, 2).join('-');
+function escapeXml(text: string) {
+  return text.replace(XML_SPECIAL_CHARACTERS, character => XML_ESCAPES[character] ?? character);
+}
 
-export function buildSsml(
-  text: string,
-  voice: string,
-  prosody: Prosody = DEFAULT_PROSODY,
-): string {
-  return (
-    `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${localeOf(voice)}'>` +
-    `<voice name='${voice}'>` +
-    `<prosody pitch='${signed(prosody.pitchHz, 'Hz')}' rate='${signed((prosody.rate - 1) * 100, '%')}' volume='${signed((prosody.volume - 1) * 100, '%')}'>` +
-    escapeXml(sanitizeText(text)) +
-    `</prosody></voice></speak>`
-  );
+function formatSigned({ value, unit }: {
+  value: number;
+  unit: string;
+}) {
+  const sign = value < 0 ? "" : "+";
+  return `${sign}${Math.round(value)}${unit}`;
+}
+
+function formatRelativePercent(multiplier: number) {
+  return formatSigned({
+    value: (multiplier - 1) * PERCENT,
+    unit: "%"
+  });
+}
+
+// A voice's short name starts with its locale, e.g. "en-US-AriaNeural"
+function getVoiceLocale(voice: string) {
+  return voice.split("-").slice(0, VOICE_LOCALE_PARTS).join("-");
+}
+
+export function buildSsml({ text, voice, prosody = DEFAULT_PROSODY }: {
+  text: string;
+  voice: string;
+  prosody?: Prosody;
+}) {
+  const pitch = formatSigned({
+    value: prosody.pitchHz,
+    unit: "Hz"
+  });
+  const rate = formatRelativePercent(prosody.rate);
+  const volume = formatRelativePercent(prosody.volume);
+  return `<speak version='1.0' xmlns='${SSML_NAMESPACE}' xml:lang='${getVoiceLocale(voice)}'>`
+    + `<voice name='${voice}'>`
+    + `<prosody pitch='${pitch}' rate='${rate}' volume='${volume}'>`
+    + escapeXml(sanitizeText(text))
+    + `</prosody></voice></speak>`;
 }

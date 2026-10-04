@@ -1,125 +1,228 @@
-import { fetchVoices, type Voice } from '@/lib/edge-tts';
+import { fetchVoices, type Voice } from "@/lib/edge-tts";
+import { getErrorMessage } from "@/lib/errors";
 import {
   Command,
-  PlayerStatus,
-  STATE_EVENT,
+  type ControlRequest,
   type PlayerState,
+  PlayerStatus,
   type Request,
-  type StateEvent,
-} from '@/lib/messages';
-import { draft, RATE, settings, VOICE_CACHE_MS, voiceCache } from '@/lib/settings';
+  stateEventSchema
+} from "@/lib/messages";
+import {
+  draft,
+  RATE,
+  type Settings,
+  settings,
+  VOICE_CACHE_MS,
+  voiceCache
+} from "@/lib/settings";
 
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const textInput = $<HTMLTextAreaElement>('text');
-const reading = $<HTMLDivElement>('reading');
-const statusLabel = $<HTMLSpanElement>('status');
-const errorLine = $<HTMLParagraphElement>('error');
-const voiceSelect = $<HTMLSelectElement>('voice');
-const rateInput = $<HTMLInputElement>('rate');
-const rateValue = $<HTMLOutputElement>('rate-value');
+enum ElementId {
+  Text = "text",
+  Reading = "reading",
+  Status = "status",
+  Error = "error",
+  Voice = "voice",
+  Rate = "rate",
+  RateValue = "rate-value",
+  Speak = "speak",
+  Pause = "pause",
+  Resume = "resume",
+  Stop = "stop"
+}
 
-const STATUS_LABEL: Record<PlayerState['status'], string> = {
-  [PlayerStatus.Idle]: 'Ready',
-  [PlayerStatus.Loading]: 'Loading…',
-  [PlayerStatus.Playing]: 'Reading',
-  [PlayerStatus.Paused]: 'Paused',
-  [PlayerStatus.Error]: 'Error',
+const STATUS_LABEL: Record<PlayerStatus, string> = {
+  [PlayerStatus.Idle]: "Ready",
+  [PlayerStatus.Loading]: "Loading…",
+  [PlayerStatus.Playing]: "Reading",
+  [PlayerStatus.Paused]: "Paused",
+  [PlayerStatus.Error]: "Error"
 };
 
-const formatRate = (rate: number) => `${rate.toFixed(1)}×`;
+const RATE_FRACTION_DIGITS = 1;
+// "Microsoft Aria Online (Natural) - English (United States)" -> "Aria"
+const VOICE_NAME_PREFIX = /^Microsoft /;
+const VOICE_NAME_SUFFIX = / Online.*$/;
 
-const send = (request: Request): Promise<PlayerState> =>
-  browser.runtime.sendMessage(request);
+function getElement<TElement extends HTMLElement>({ id, type }: {
+  id: ElementId;
+  type: new () => TElement;
+}) {
+  const elFound = document.getElementById(id);
+  if (elFound instanceof type) {
+    return elFound;
+  }
+
+  throw new Error(`Missing #${id}`);
+}
+
+const elText = getElement({
+  id: ElementId.Text,
+  type: HTMLTextAreaElement
+});
+const elReading = getElement({
+  id: ElementId.Reading,
+  type: HTMLDivElement
+});
+const elStatus = getElement({
+  id: ElementId.Status,
+  type: HTMLSpanElement
+});
+const elError = getElement({
+  id: ElementId.Error,
+  type: HTMLParagraphElement
+});
+const elVoice = getElement({
+  id: ElementId.Voice,
+  type: HTMLSelectElement
+});
+const elRate = getElement({
+  id: ElementId.Rate,
+  type: HTMLInputElement
+});
+const elRateValue = getElement({
+  id: ElementId.RateValue,
+  type: HTMLOutputElement
+});
+
+function formatRate(rate: number) {
+  return `${rate.toFixed(RATE_FRACTION_DIGITS)}×`;
+}
+
+async function send(request: Request) {
+  const state: PlayerState = await browser.runtime.sendMessage(request);
+  return state;
+}
 
 function render(state: PlayerState) {
   document.body.dataset.status = state.status;
-  statusLabel.textContent = STATUS_LABEL[state.status];
-  errorLine.textContent = state.error ?? '';
+  elStatus.textContent = STATUS_LABEL[state.status];
+  elError.textContent = state.error ?? "";
 
   const { text, word } = state;
   if (!word) {
-    reading.textContent = text;
+    elReading.textContent = text;
     return;
   }
-  const mark = document.createElement('mark');
-  mark.textContent = text.slice(word.start, word.start + word.length);
-  reading.replaceChildren(
-    text.slice(0, word.start),
-    mark,
-    text.slice(word.start + word.length),
-  );
-  mark.scrollIntoView({ block: 'nearest' });
+
+  const iWordEnd = word.start + word.length;
+  const elMark = document.createElement("mark");
+  elMark.textContent = text.slice(word.start, iWordEnd);
+  elReading.replaceChildren(text.slice(0, word.start), elMark, text.slice(iWordEnd));
+  elMark.scrollIntoView({ block: "nearest" });
 }
 
-async function loadVoices(): Promise<Voice[]> {
+async function loadVoices() {
   const cached = await voiceCache.getValue();
-  if (cached && Date.now() - cached.fetchedAt < VOICE_CACHE_MS) return cached.voices;
+  const isCacheFresh = cached !== null && Date.now() - cached.fetchedAt < VOICE_CACHE_MS;
+  if (isCacheFresh) {
+    return cached.voices;
+  }
+
   const voices = await fetchVoices();
-  await voiceCache.setValue({ voices, fetchedAt: Date.now() });
+  await voiceCache.setValue({
+    voices,
+    fetchedAt: Date.now()
+  });
   return voices;
 }
 
-function fillVoices(voices: Voice[], selected: string) {
-  const byLanguage = Map.groupBy(
-    [...voices].sort((a, b) => a.LocaleName.localeCompare(b.LocaleName)),
-    (v) => v.LocaleName,
-  );
-  voiceSelect.replaceChildren(
-    ...[...byLanguage].map(([language, list]) => {
-      const group = document.createElement('optgroup');
-      group.label = language;
-      group.append(
-        ...list.map((v) => {
-          // "Microsoft Aria Online (Natural) - English (United States)" → "Aria"
-          const name = v.FriendlyName.replace(/^Microsoft /, '').replace(/ Online.*$/, '');
-          return new Option(`${name} · ${v.Gender}`, v.ShortName);
-        }),
-      );
-      return group;
-    }),
-  );
-  voiceSelect.value = selected;
+function createVoiceOption(voice: Voice) {
+  const name = voice.FriendlyName.replace(VOICE_NAME_PREFIX, "").replace(VOICE_NAME_SUFFIX, "");
+  return new Option(`${name} · ${voice.Gender}`, voice.ShortName);
+}
+
+function fillVoices({ voices, selectedVoice }: {
+  voices: Voice[];
+  selectedVoice: string;
+}) {
+  const sortedVoices = voices.toSorted((left, right) => left.LocaleName.localeCompare(right.LocaleName));
+  const elGroups: HTMLOptGroupElement[] = [];
+  for (const [language, languageVoices] of Map.groupBy(sortedVoices, voice => voice.LocaleName)) {
+    const elGroup = document.createElement("optgroup");
+    elGroup.label = language;
+    elGroup.append(...languageVoices.map(createVoiceOption));
+    elGroups.push(elGroup);
+  }
+
+  elVoice.replaceChildren(...elGroups);
+  elVoice.value = selectedVoice;
+}
+
+async function updateSettings(patch: Partial<Settings>) {
+  await settings.setValue({
+    ...await settings.getValue(),
+    ...patch
+  });
+}
+
+function bindControlButton({ id, type }: { id: ElementId } & ControlRequest) {
+  getElement({
+    id,
+    type: HTMLButtonElement
+  }).addEventListener("click", async () => render(await send({ type })));
 }
 
 async function init() {
-  const saved = await settings.getValue();
-  Object.assign(rateInput, {
+  const savedSettings = await settings.getValue();
+  Object.assign(elRate, {
     min: RATE.min,
     max: RATE.max,
     step: RATE.step,
-    value: saved.rate,
+    value: savedSettings.rate
   });
-  rateValue.textContent = formatRate(saved.rate);
-  textInput.value = await draft.getValue();
+  elRateValue.textContent = formatRate(savedSettings.rate);
+  elText.value = await draft.getValue();
 
   render(await send({ type: Command.GetState }));
 
-  loadVoices()
-    .then((voices) => fillVoices(voices, saved.voice))
-    .catch((e) => (errorLine.textContent = `Could not load voices: ${e.message}`));
+  try {
+    fillVoices({
+      voices: await loadVoices(),
+      selectedVoice: savedSettings.voice
+    });
+  } catch (error) {
+    elError.textContent = `Couldn't load voices: ${getErrorMessage(error)}`;
+  }
 }
 
-browser.runtime.onMessage.addListener((message: StateEvent) => {
-  if (message?.type === STATE_EVENT) render(message.state);
+browser.runtime.onMessage.addListener(message => {
+  const parsed = stateEventSchema.safeParse(message);
+  if (!parsed.success) {
+    return;
+  }
+
+  render(parsed.data.state);
 });
 
-textInput.addEventListener('input', () => draft.setValue(textInput.value));
-
-voiceSelect.addEventListener('change', async () => {
-  settings.setValue({ ...(await settings.getValue()), voice: voiceSelect.value });
+elText.addEventListener("input", () => draft.setValue(elText.value));
+elVoice.addEventListener("change", () => updateSettings({ voice: elVoice.value }));
+elRate.addEventListener("input", async () => {
+  const rate = Number(elRate.value);
+  elRateValue.textContent = formatRate(rate);
+  await updateSettings({ rate });
 });
 
-rateInput.addEventListener('input', async () => {
-  const rate = Number(rateInput.value);
-  rateValue.textContent = formatRate(rate);
-  settings.setValue({ ...(await settings.getValue()), rate });
+getElement({
+  id: ElementId.Speak,
+  type: HTMLButtonElement
+}).addEventListener("click", async () => render(
+  await send({
+    type: Command.Speak,
+    text: elText.value
+  })
+));
+bindControlButton({
+  id: ElementId.Pause,
+  type: Command.Pause
+});
+bindControlButton({
+  id: ElementId.Resume,
+  type: Command.Resume
+});
+bindControlButton({
+  id: ElementId.Stop,
+  type: Command.Stop
 });
 
-$('speak').addEventListener('click', async () =>
-  render(await send({ type: Command.Speak, text: textInput.value })),
-);
-$('pause').addEventListener('click', async () => render(await send({ type: Command.Pause })));
-$('resume').addEventListener('click', async () => render(await send({ type: Command.Resume })));
-$('stop').addEventListener('click', async () => render(await send({ type: Command.Stop })));
-
-init();
+void init();

@@ -1,179 +1,347 @@
 import {
-  AUDIO_MIME,
+  AUDIO_MIME_TYPE,
   chunkText,
+  type Prosody,
   sanitizeText,
   synthesize,
-  type Prosody,
-} from '@/lib/edge-tts';
-import { IDLE_STATE, PlayerStatus, type PlayerState } from '@/lib/messages';
+  type TextChunk,
+  type WordBoundary
+} from "@/lib/edge-tts";
+import { getErrorMessage } from "@/lib/errors";
+import { IDLE_STATE, type PlayerState, PlayerStatus } from "@/lib/messages";
 
-/** How often the spoken word is re-checked against the audio clock. */
 const WORD_TICK_MS = 50;
-/** Played audio kept in the buffer when it fills up on very long text. */
-const KEEP_BEHIND_S = 10;
+const KEEP_BEHIND_SECONDS = 10;
+const QUOTA_RETRY_DELAY_MS = 1000;
+const QUOTA_EXCEEDED_ERROR = "QuotaExceededError";
+const SOURCE_BUFFER_MODE = "sequence";
+const SOURCE_OPEN_EVENT = "sourceopen";
+const UPDATE_END_EVENT = "updateend";
 
 interface TimedWord {
-  /** Seconds on the audio element's timeline. */
   time: number;
   start: number;
   length: number;
 }
 
-/**
- * Plays text the way Edge does: streams WebM/Opus from the service straight
- * into a MediaSource, so speech starts before the whole text is synthesized.
- * Long text is split into several requests; the SourceBuffer runs in
- * "sequence" mode so each request's audio lands right after the previous one.
- */
-export class Player {
-  private audio = new Audio();
-  private state: PlayerState = IDLE_STATE;
-  private session: AbortController | null = null;
-  private words: TimedWord[] = [];
-  private ticker = 0;
+interface SpeakOptions {
+  text: string;
+  voice: string;
+  prosody: Prosody;
+}
 
-  constructor(private onChange: (state: PlayerState) => void) {
-    this.audio.onplaying = () => this.set({ status: PlayerStatus.Playing });
-    this.audio.onended = () => this.finish();
+function ignoreError() {}
+
+function waitForUpdateEnd(sourceBuffer: SourceBuffer) {
+  return new Promise(resolve => sourceBuffer.addEventListener(UPDATE_END_EVENT, resolve, { once: true }));
+}
+
+function getBufferedEnd(sourceBuffer: SourceBuffer) {
+  const { buffered } = sourceBuffer;
+  return buffered.length > 0 ? buffered.end(buffered.length - 1) : 0;
+}
+
+function tryAppendBuffer({ sourceBuffer, bytes }: {
+  sourceBuffer: SourceBuffer;
+  bytes: Uint8Array<ArrayBuffer>;
+}) {
+  try {
+    sourceBuffer.appendBuffer(bytes);
+    return true;
+  } catch (error) {
+    const isQuotaExceeded = error instanceof DOMException && error.name === QUOTA_EXCEEDED_ERROR;
+    if (isQuotaExceeded) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+// Plays text the way Edge does: streams WebM/Opus from the service straight into a MediaSource, so
+// speech starts before the whole text is synthesized. Long text is split into several requests, and
+// the SourceBuffer runs in "sequence" mode so each request's audio lands right after the previous one
+export function createPlayer(onChange: (state: PlayerState) => void) {
+  const elAudio = new Audio();
+  let state = IDLE_STATE;
+  let session: AbortController | null = null;
+  let words: TimedWord[] = [];
+  let tickerId: ReturnType<typeof setInterval> | undefined;
+
+  function setState(patch: Partial<PlayerState>) {
+    state = {
+      ...state,
+      ...patch
+    };
+    onChange(state);
   }
 
-  getState() {
-    return this.state;
-  }
-
-  async speak(text: string, voice: string, prosody: Prosody) {
-    this.stop();
-    const session = new AbortController();
-    this.session = session;
-    this.set({ ...IDLE_STATE, status: PlayerStatus.Loading, text });
-
-    try {
-      const source = new MediaSource();
-      this.audio.src = URL.createObjectURL(source);
-      await new Promise((r) => source.addEventListener('sourceopen', r, { once: true }));
-      const buffer = source.addSourceBuffer(AUDIO_MIME);
-      buffer.mode = 'sequence';
-      const append = this.appender(buffer, session.signal);
-
-      const spoken = sanitizeText(text);
-      for (const chunk of chunkText(text)) {
-        let chunkStart: number | null = null;
-        let cursor = chunk.start;
-        const pending: { time: number; text: string }[] = [];
-        const place = (w: { time: number; text: string }) => {
-          const at = spoken.indexOf(w.text, cursor);
-          if (at < 0) return;
-          cursor = at + w.text.length;
-          this.words.push({ time: chunkStart! + w.time, start: at, length: w.text.length });
-        };
-
-        await synthesize(chunk.text, voice, prosody, {
-          signal: session.signal,
-          onAudio: (bytes) =>
-            append(bytes).then((startedAt) => {
-              if (chunkStart !== null) return;
-              chunkStart = startedAt;
-              pending.splice(0).forEach(place);
-              if (this.audio.paused && this.state.status === PlayerStatus.Loading) {
-                this.audio.play().catch(() => {});
-              }
-            }, () => {}), // A failed append surfaces through drained() below.
-          // Boundaries can arrive before this chunk's audio has a place on the timeline.
-          onWordBoundary: (w) => (chunkStart === null ? pending.push(w) : place(w)),
-        });
+  function reportCurrentWord() {
+    const now = elAudio.currentTime;
+    let currentWord: TimedWord | undefined;
+    for (const word of words) {
+      if (word.time > now) {
+        break;
       }
-      await append.drained();
-      if (!session.signal.aborted) source.endOfStream();
-      this.startTicker();
-    } catch (error) {
-      if (session.signal.aborted) return;
-      this.stop();
-      this.set({ ...IDLE_STATE, status: PlayerStatus.Error, text, error: String((error as Error)?.message ?? error) });
+
+      currentWord = word;
+    }
+
+    const word = currentWord
+      ? {
+        start: currentWord.start,
+        length: currentWord.length
+      }
+      : null;
+    const isNewWord = word?.start !== state.word?.start;
+    if (isNewWord) {
+      setState({ word });
     }
   }
 
-  pause() {
-    if (this.state.status !== PlayerStatus.Playing) return;
-    this.audio.pause();
-    this.set({ status: PlayerStatus.Paused });
+  function startTicker() {
+    if (tickerId !== undefined) {
+      return;
+    }
+
+    tickerId = setInterval(reportCurrentWord, WORD_TICK_MS);
   }
 
-  resume() {
-    if (this.state.status !== PlayerStatus.Paused) return;
-    this.audio.play();
+  function stop() {
+    session?.abort();
+    session = null;
+    elAudio.pause();
+
+    if (elAudio.src) {
+      URL.revokeObjectURL(elAudio.src);
+    }
+
+    elAudio.removeAttribute("src");
+    words = [];
+    clearInterval(tickerId);
+    tickerId = undefined;
+
+    if (state.status !== PlayerStatus.Idle) {
+      setState(IDLE_STATE);
+    }
   }
 
-  stop() {
-    this.session?.abort();
-    this.session = null;
-    this.audio.pause();
-    if (this.audio.src) URL.revokeObjectURL(this.audio.src);
-    this.audio.removeAttribute('src');
-    this.words = [];
-    clearInterval(this.ticker);
-    this.ticker = 0;
-    if (this.state.status !== PlayerStatus.Idle) this.set(IDLE_STATE);
+  function finish() {
+    const { text } = state;
+    stop();
+    setState({
+      ...IDLE_STATE,
+      text
+    });
   }
 
-  private finish() {
-    const { text } = this.state;
-    this.stop();
-    this.set({ ...IDLE_STATE, text });
+  // Very long text fills the buffer - drop audio that has already been played, or wait for some to play
+  async function freePlayedAudio(sourceBuffer: SourceBuffer) {
+    const playedEnd = elAudio.currentTime - KEEP_BEHIND_SECONDS;
+    if (playedEnd <= 0) {
+      await new Promise(resolve => setTimeout(resolve, QUOTA_RETRY_DELAY_MS));
+      return;
+    }
+
+    sourceBuffer.remove(0, playedEnd);
+    await waitForUpdateEnd(sourceBuffer);
   }
 
-  /**
-   * Serializes appendBuffer calls (a SourceBuffer takes one at a time).
-   * Each call resolves with the timeline position where its bytes began.
-   */
-  private appender(buffer: SourceBuffer, signal: AbortSignal) {
+  // A SourceBuffer takes one append at a time, so appends are queued. Each resolves with the
+  // timeline position where its bytes began
+  function createAppender({ sourceBuffer, signal }: {
+    sourceBuffer: SourceBuffer;
+    signal: AbortSignal;
+  }) {
     let queue = Promise.resolve(0);
-    const updated = () =>
-      new Promise((r) => buffer.addEventListener('updateend', r, { once: true }));
-    const end = () => (buffer.buffered.length ? buffer.buffered.end(buffer.buffered.length - 1) : 0);
 
-    const appendOnce = async (bytes: Uint8Array<ArrayBuffer>): Promise<number> => {
-      if (signal.aborted) return end();
-      const startedAt = end();
-      try {
-        buffer.appendBuffer(bytes);
-      } catch (error) {
-        if ((error as DOMException).name !== 'QuotaExceededError') throw error;
-        // Very long text: drop audio that has already been played, then retry.
-        const played = this.audio.currentTime - KEEP_BEHIND_S;
-        if (played <= 0) await new Promise((r) => setTimeout(r, 1000));
-        else {
-          buffer.remove(0, played);
-          await updated();
+    async function appendBytes(bytes: Uint8Array<ArrayBuffer>) {
+      while (!signal.aborted) {
+        const startedAt = getBufferedEnd(sourceBuffer);
+        const isAppended = tryAppendBuffer({
+          sourceBuffer,
+          bytes
+        });
+        if (isAppended) {
+          await waitForUpdateEnd(sourceBuffer);
+          startTicker();
+          return startedAt;
         }
-        return appendOnce(bytes);
+
+        await freePlayedAudio(sourceBuffer);
       }
-      await updated();
-      this.startTicker();
-      return startedAt;
+
+      return getBufferedEnd(sourceBuffer);
+    }
+
+    return {
+      append(bytes: Uint8Array<ArrayBuffer>) {
+        queue = queue.then(() => appendBytes(bytes));
+        return queue;
+      },
+      drained: () => queue
     };
-
-    const append = (bytes: Uint8Array<ArrayBuffer>) => (queue = queue.then(() => appendOnce(bytes)));
-    append.drained = () => queue;
-    return append;
   }
 
-  /** Follows the audio clock and reports the word being spoken. */
-  private startTicker() {
-    if (this.ticker) return;
-    this.ticker = window.setInterval(() => {
-      const now = this.audio.currentTime;
-      let current: TimedWord | undefined;
-      for (const w of this.words) {
-        if (w.time > now) break;
-        current = w;
+  async function synthesizeChunk({ chunk, spokenText, voice, prosody, signal, appender }: {
+    chunk: TextChunk;
+    spokenText: string;
+    voice: string;
+    prosody: Prosody;
+    signal: AbortSignal;
+    appender: ReturnType<typeof createAppender>;
+  }) {
+    let chunkStartTime: number | null = null;
+    let iCursor = chunk.start;
+    const pendingBoundaries: WordBoundary[] = [];
+
+    function placeWord({ boundary, startTime }: {
+      boundary: WordBoundary;
+      startTime: number;
+    }) {
+      const iWord = spokenText.indexOf(boundary.text, iCursor);
+      if (iWord < 0) {
+        return;
       }
-      const word = current ? { start: current.start, length: current.length } : null;
-      if (word?.start !== this.state.word?.start) this.set({ word });
-    }, WORD_TICK_MS);
+
+      iCursor = iWord + boundary.text.length;
+      words.push({
+        time: startTime + boundary.time,
+        start: iWord,
+        length: boundary.text.length
+      });
+    }
+
+    function onAppended(startedAt: number) {
+      if (chunkStartTime !== null) {
+        return;
+      }
+
+      chunkStartTime = startedAt;
+      for (const boundary of pendingBoundaries.splice(0)) {
+        placeWord({
+          boundary,
+          startTime: startedAt
+        });
+      }
+
+      const isWaitingToStart = elAudio.paused && state.status === PlayerStatus.Loading;
+      if (isWaitingToStart) {
+        elAudio.play().catch(ignoreError);
+      }
+    }
+
+    await synthesize({
+      text: chunk.text,
+      voice,
+      prosody,
+      signal,
+      // A failed append surfaces through drained()
+      onAudio: bytes => appender.append(bytes).then(onAppended, ignoreError),
+      // Boundaries can arrive before this chunk's audio has a place on the timeline
+      onWordBoundary(boundary) {
+        if (chunkStartTime === null) {
+          pendingBoundaries.push(boundary);
+          return;
+        }
+
+        placeWord({
+          boundary,
+          startTime: chunkStartTime
+        });
+      }
+    });
   }
 
-  private set(patch: Partial<PlayerState>) {
-    this.state = { ...this.state, ...patch };
-    this.onChange(this.state);
+  async function streamText({ text, voice, prosody, signal }: SpeakOptions & { signal: AbortSignal }) {
+    const mediaSource = new MediaSource();
+    elAudio.src = URL.createObjectURL(mediaSource);
+    await new Promise(resolve => mediaSource.addEventListener(SOURCE_OPEN_EVENT, resolve, { once: true }));
+    const sourceBuffer = mediaSource.addSourceBuffer(AUDIO_MIME_TYPE);
+    sourceBuffer.mode = SOURCE_BUFFER_MODE;
+    const appender = createAppender({
+      sourceBuffer,
+      signal
+    });
+
+    const spokenText = sanitizeText(text);
+    for (const chunk of chunkText({ text })) {
+      await synthesizeChunk({
+        chunk,
+        spokenText,
+        voice,
+        prosody,
+        signal,
+        appender
+      });
+    }
+
+    await appender.drained();
+
+    if (!signal.aborted) {
+      mediaSource.endOfStream();
+    }
+
+    startTicker();
   }
+
+  async function speak({ text, voice, prosody }: SpeakOptions) {
+    stop();
+    const controller = new AbortController();
+    session = controller;
+    setState({
+      ...IDLE_STATE,
+      status: PlayerStatus.Loading,
+      text
+    });
+
+    try {
+      await streamText({
+        text,
+        voice,
+        prosody,
+        signal: controller.signal
+      });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      stop();
+      setState({
+        ...IDLE_STATE,
+        status: PlayerStatus.Error,
+        text,
+        error: getErrorMessage(error)
+      });
+    }
+  }
+
+  function pause() {
+    if (state.status !== PlayerStatus.Playing) {
+      return;
+    }
+
+    elAudio.pause();
+    setState({ status: PlayerStatus.Paused });
+  }
+
+  function resume() {
+    if (state.status !== PlayerStatus.Paused) {
+      return;
+    }
+
+    void elAudio.play();
+  }
+
+  elAudio.onplaying = () => setState({ status: PlayerStatus.Playing });
+  elAudio.onended = finish;
+
+  return {
+    speak,
+    pause,
+    resume,
+    stop,
+    getState: () => state
+  };
 }

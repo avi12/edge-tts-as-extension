@@ -2,6 +2,7 @@
 - pnpm
 - WXT extension framework (Chrome MV3)
 - TypeScript everywhere (100% type safety, let TypeScript infer return types - never write them explicitly). The popup is Svelte 5 with runes (`@wxt-dev/module-svelte`): presentational components in `src/entrypoints/popup/components/`, popup state and actions in `popup-state.svelte.ts`, message plumbing in `src/lib`. Everything else is framework-free - the narration runtime above all, it ships inside every artifact
+- The popup wears the cyberpunk skin: `src/styles/cyberpunk.css` is a vendored copy of `~/.claude/artifact-cyberpunk.css` (the source of truth - re-copy, never edit tokens here), fonts come bundled from `@fontsource` (`src/styles/fonts.css`), and `popup/style.css` `@import`s both so the cascade order lives in CSS. Build on its tokens and classes; never hardcode a color that has a token
 - TypeScript 7 (`@typescript/native` alias, gives `tsc`) side by side with TypeScript 6 (`typescript` alias of `@typescript/typescript6`, gives `tsc6`) - typescript-eslint still needs the TS 6 API; never collapse them back into one
 - zod for validating loose data
 - vitest for tests (`LIVE=1 pnpm test` also hits the real Read Aloud service)

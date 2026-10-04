@@ -3,13 +3,15 @@
 </script>
 
 {#if message}
-  <p class="error" role="alert">{message}</p>
+  <p class="callout" data-kind="danger" role="alert">{message}</p>
 {/if}
 
 <style>
-  .error {
+  .callout {
     margin: 0;
-    color: var(--error);
-    font-size: 13px;
+    padding: var(--s-2) var(--s-3);
+    color: var(--fg);
+    font: var(--t-body-s);
+    font-family: var(--font-mono);
   }
 </style>

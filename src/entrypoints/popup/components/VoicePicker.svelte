@@ -14,55 +14,64 @@
   const voiceGroups = $derived(groupVoicesByLocale(voices));
 </script>
 
-<fieldset class="field">
-  <label>
-    <span>Voice</span>
-    <select onchange={e => onchange({ voice: e.currentTarget.value })} value={voice}>
-      {#each voiceGroups as group (group.locale)}
-        <optgroup label={group.label}>
-          {#each group.voices as option (option.ShortName)}
-            <option value={option.ShortName}>{getVoiceName(option)} · {option.Gender}</option>
-          {/each}
-        </optgroup>
-      {:else}
-        <option value={voice}>Loading voices…</option>
-      {/each}
-    </select>
-  </label>
-  <label class="toggle">
-    <input
-      checked={isMatchingLanguage}
-      onchange={e => onchange({ isMatchingLanguage: e.currentTarget.checked })}
-      type="checkbox"
-    />
-    <span>Match the text's language</span>
-  </label>
-  {#if readingVoice}
-    <p class="reading-voice">
-      Reading with <strong data-speaking-voice>{getVoiceName(readingVoice)} · {readingVoice.LocaleName}</strong>
-    </p>
-  {/if}
-</fieldset>
+<label class="field">
+  <span class="label">Voice</span>
+  <select class="control chamfer-s" onchange={e => onchange({ voice: e.currentTarget.value })} value={voice}>
+    {#each voiceGroups as group (group.locale)}
+      <optgroup label={group.label}>
+        {#each group.voices as option (option.ShortName)}
+          <option value={option.ShortName}>{getVoiceName(option)} · {option.Gender}</option>
+        {/each}
+      </optgroup>
+    {:else}
+      <option value={voice}>Loading voices…</option>
+    {/each}
+  </select>
+</label>
+
+<label class="toggle">
+  <input
+    checked={isMatchingLanguage}
+    onchange={e => onchange({ isMatchingLanguage: e.currentTarget.checked })}
+    type="checkbox"
+  />
+  <span>Match the text's language</span>
+</label>
+
+{#if readingVoice}
+  <p class="meta reading-voice">
+    Reading with <strong data-speaking-voice>{getVoiceName(readingVoice)} · {readingVoice.LocaleName}</strong>
+  </p>
+{/if}
 
 <style>
-  fieldset {
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  label {
-    display: grid;
-    gap: 4px;
+  select {
+    min-height: 36px;
+    padding: 0 var(--s-3);
   }
 
   .toggle {
     display: flex;
+    gap: var(--s-2);
     align-items: center;
+    font: var(--t-body-m);
+    cursor: pointer;
+
+    input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--primary);
+    }
   }
 
   .reading-voice {
     margin: 0;
+    font-size: 12px;
+
+    strong {
+      color: var(--fg);
+      font-weight: 400;
+    }
   }
 </style>

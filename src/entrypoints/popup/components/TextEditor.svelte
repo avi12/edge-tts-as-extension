@@ -6,7 +6,9 @@
 </script>
 
 <textarea
+  class="control chamfer-s text-pane"
   aria-label="Text to read"
+  dir="auto"
   oninput={e => oninput(e.currentTarget.value)}
   placeholder="Paste or type text to read…"
   spellcheck="false"
@@ -15,6 +17,11 @@
 
 <style>
   textarea {
-    resize: vertical;
+    resize: none;
+
+    &::placeholder {
+      color: var(--fg-subtle);
+      font-family: var(--font-mono);
+    }
   }
 </style>

@@ -16,7 +16,7 @@
   }
 </script>
 
-<div class="reading" aria-live="off">
+<div class="control chamfer-s text-pane" aria-live="off" dir="auto">
   {before}{#if word}
     {#key word.start}<mark {@attach followWord}>{spoken}</mark>{/key}
   {/if}{after}
@@ -24,9 +24,23 @@
 
 <style>
   mark {
-    padding: 0 1px;
-    border-radius: 3px;
-    background: var(--mark);
-    color: inherit;
+    padding: 0 2px;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    box-shadow: var(--cyber-glow-mark);
+    animation: mark-in var(--dur-medium) var(--ease-emph);
+  }
+
+  @keyframes mark-in {
+    from {
+      background: transparent;
+      box-shadow: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    mark {
+      animation: none;
+    }
   }
 </style>

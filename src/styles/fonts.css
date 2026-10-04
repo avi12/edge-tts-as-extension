@@ -1,0 +1,4 @@
+/* The skin's fonts, bundled with the extension - only the latin faces of the weights the popup uses */
+@import url("@fontsource/chakra-petch/latin-400.css");
+@import url("@fontsource/chakra-petch/latin-600.css");
+@import url("@fontsource/share-tech-mono/latin-400.css");

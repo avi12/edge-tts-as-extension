@@ -1,108 +1,44 @@
-:root {
-  --bg: #ffffff;
-  --fg: #1b1f24;
-  --muted: #5d6670;
-  --border: #d5dae0;
-  --surface: #f4f6f8;
-  --accent: #0f6cbd;
-  --accent-fg: #ffffff;
-  --mark: #ffe08a;
-  --error: #c42b1c;
-
-  color-scheme: light dark;
-
-  @media (prefers-color-scheme: dark) {
-    --bg: #1c1f23;
-    --fg: #e8eaed;
-    --muted: #a0a7b0;
-    --border: #3a4048;
-    --surface: #262a30;
-    --accent: #4da3ff;
-    --accent-fg: #0b1622;
-    --mark: #7a5c00;
-  }
-}
-
-* {
-  box-sizing: border-box;
-}
+@import url("@/styles/fonts.css");
+@import url("@/styles/cyberpunk.css");
 
 body {
   display: grid;
-  gap: 12px;
+  gap: var(--s-3);
   width: 380px;
-  margin: 0;
-  padding: 14px;
-  background: var(--bg);
+  min-height: 0;
+  padding: var(--s-3);
+}
+
+/* Form controls share the HUD chassis: 2px outline on a sunken surface, chamfered by .chamfer-s */
+.control {
+  width: 100%;
+  border: 2px solid var(--border);
+  background: var(--surface-2);
   color: var(--fg);
-  font: 14px/1.45 system-ui, "Segoe UI", sans-serif;
+  font: var(--t-body-m);
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--cyber-active-ring), inset 0 0 0 2px var(--primary);
+  }
 }
 
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-h1 {
-  margin: 0;
-  font-size: 16px;
-}
-
-textarea,
-.reading {
+.text-pane {
   overflow-y: auto;
   height: 160px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: inherit;
-  font: inherit;
+  padding: var(--s-3);
   white-space: pre-wrap;
+}
+
+.label {
+  color: var(--fg-muted);
+  font: var(--t-label-m);
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .field {
   display: grid;
-  gap: 4px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-select {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--fg);
-  font: 14px system-ui, "Segoe UI", sans-serif;
-}
-
-[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-button {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 50%;
-    cursor: default;
-  }
-}
-
-.primary {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-fg);
+  gap: var(--s-1);
 }

@@ -1,0 +1,576 @@
+/* ============================================================================
+   CYBERPUNK SKIN - vendored from ~/.claude/artifact-cyberpunk.css, the single
+   source of truth for the skin. Re-copy it from there instead of editing tokens
+   here; only the lint formatting differs (and the hand-written vendor prefix is
+   dropped). Adapted from youtube-time-manager/admin.
+
+   Light is the base; the two dark blocks re-point ONLY what changes.
+   Glow/atmosphere differences ride on --cyber-* tokens so component rules are
+   written exactly once.
+
+   Fonts are bundled with the extension (@fontsource, imported by the page) - an
+   extension page should not depend on Google Fonts at runtime.
+   ========================================================================= */
+
+:root {
+  --font-sans: "Chakra Petch", "Roboto Flex", system-ui, -apple-system, sans-serif;
+  --font-mono: "Share Tech Mono", "Roboto Mono", ui-monospace, "SF Mono", monospace;
+
+  /* Type scale - terminal-tight, heavy weights */
+  --t-display-s: 700 36px/43px var(--font-sans);
+  --t-headline-m: 700 24px/32px var(--font-sans);
+  --t-headline-s: 700 21px/29px var(--font-sans);
+  --t-title-l: 600 19px/26px var(--font-sans);
+  --t-title-m: 600 16px/22px var(--font-sans);
+  --t-title-s: 600 13px/18px var(--font-sans);
+  --t-body-l: 400 15px/22px var(--font-sans);
+  --t-body-m: 400 13px/19px var(--font-sans);
+  --t-body-s: 400 11px/16px var(--font-sans);
+  --t-label-l: 600 13px/18px var(--font-sans);
+  --t-label-m: 600 11px/16px var(--font-sans);
+  --t-label-s: 600 10px/14px var(--font-sans);
+
+  /* Hard-edged chassis - corners come from chamfers, not radii */
+  --shape-xs: 0;
+  --shape-s: 0;
+  --shape-m: 0;
+  --shape-l: 0;
+  --shape-xl: 0;
+  --shape-xxl: 0;
+  --shape-full: 0;
+  --chamfer: 12px;
+  --chamfer-s: 7px;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+
+  /* Motion - snap, not bounce */
+  --ease-emph: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-short: 80ms;
+  --dur-medium: 140ms;
+  --dur-long: 200ms;
+  --dur-theme: 260ms;   /* the one slow move - light <-> dark cross-fade */
+
+  /* LIGHT: the same HUD language inverted. Cool concrete ground, ink-navy
+     outlines doing the structural work, electric cyan reserved for what the
+     dark skin lights up. Cyan never carries small text - it fills, ink writes. */
+  --bg: #d5e4f0;
+  --bg-elev: #c9dcec;
+  --surface: #edf5fc;
+  --surface-2: #dce9f6;
+  --surface-3: #c3d8ea;
+  --fg: #06182b;
+  --fg-muted: #2a4a66;
+  --fg-subtle: #547a99;
+  --border: #06182b;
+  --border-strong: #06182b;
+  --hover: rgb(6 24 43 / 8%);
+  --primary: #06182b;
+  --on-primary: #4fe9ff;
+  --primary-container: #8ee6ff;
+  --on-primary-container: #06182b;
+  --secondary: #00527a;
+  --secondary-container: #8ee6ff;
+  --on-secondary-container: #06182b;
+  --tertiary: #00668f;
+  --tertiary-container: #bfebff;
+  --on-tertiary-container: #002336;
+  --accent-2: #c4004e;
+  --accent-tint: rgb(0 179 230 / 32%);
+  --warn: #6e5200;
+  --warn-container: #fcee0a;
+  --danger: #c4004e;
+  --danger-container: #ffd9e5;
+  --on-danger: #ffffff;
+  --ok: #00668f;
+  --ok-container: #bfebff;
+  --table-zebra: rgb(6 24 43 / 3%);
+  --scrim: rgb(6 24 43 / 42%);
+  --tooltip-bg: #06182b;
+  --tooltip-fg: #4fe9ff;
+
+  /* Categorical / chart series - distinct in both schemes */
+  --cat-1: #0079a8;
+  --cat-2: #c4004e;
+  --cat-3: #5b3fd6;
+  --cat-4: #00736b;
+  --cat-5: #9a4a12;
+  --cat-6: #6e5200;
+  --cat-7: #547a99;
+
+  /* Hard offset shadows - printed-plate depth, no glow */
+  --shadow-sm: 2px 2px 0 rgb(6 24 43 / 16%);
+  --shadow-md: 3px 3px 0 rgb(6 24 43 / 18%);
+  --shadow-lg: 6px 6px 0 rgb(6 24 43 / 22%);
+
+  /* Light: outlines carry the structure, so every glow is switched off */
+  --cyber-stripe: #00b3e6;
+  --cyber-glow-topbar: 0 3px 0 rgb(6 24 43 / 10%);
+  --cyber-glow-mark: none;
+  --cyber-glow-text: none;
+  --cyber-glow-primary: none;
+  --cyber-glow-danger: none;
+  --cyber-active-ring: inset 0 0 0 2px var(--border);
+  --cyber-sheen: none;
+  --cyber-body:
+    radial-gradient(900px 520px at 12% 0%, rgb(0 179 230 / 16%), transparent 62%),
+    linear-gradient(rgb(6 24 43 / 4%) 1px, transparent 1px) 0 0 / 100% 4px,
+    linear-gradient(90deg, rgb(0 121 168 / 10%) 1px, transparent 1px) 0 0 / 72px 72px,
+    linear-gradient(180deg, #00b3e6 0 3px, transparent 3px);
+
+  color-scheme: light dark;
+}
+
+/* --- DARK: explicit choice wins in both directions --------------------- */
+:root[data-theme="dark"] {
+  --bg: #060d14;
+  --bg-elev: #0a121b;
+  --surface: #0c1620;
+  --surface-2: #121e2a;
+  --surface-3: #1b2a3a;
+  --fg: #e2f4fa;
+  --fg-muted: #93b2c2;
+  --fg-subtle: #698a9c;
+  --border: #22394c;
+  --border-strong: #00e5ff;
+  --hover: rgb(0 229 255 / 12%);
+  --primary: #00e5ff;
+  --on-primary: #001820;
+  --primary-container: #04323e;
+  --on-primary-container: #9bf1ff;
+  --secondary: #4d9fff;
+  --secondary-container: #0a2742;
+  --on-secondary-container: #bbdcff;
+  --tertiary: #00e5ff;
+  --tertiary-container: #04323e;
+  --on-tertiary-container: #9bf1ff;
+  --accent-2: #4d9fff;
+  --accent-tint: rgb(0 229 255 / 18%);
+  --warn: #ffc24d;
+  --warn-container: #33270a;
+  --danger: #ff2a4d;
+  --danger-container: #3d0410;
+  --on-danger: #14000a;
+  --ok: #23e07a;
+  --ok-container: #06301c;
+  --table-zebra: rgb(0 229 255 / 3.5%);
+  --scrim: rgb(3 8 14 / 76%);
+  --tooltip-bg: #00e5ff;
+  --tooltip-fg: #001820;
+  --cat-1: #00e5ff;
+  --cat-2: #ff2a4d;
+  --cat-3: #c77dff;
+  --cat-4: #6ee7b7;
+  --cat-5: #ff9e3d;
+  --cat-6: #ffc24d;
+  --cat-7: #698a9c;
+  --shadow-sm: 0 0 0 1px rgb(0 229 255 / 10%);
+  --shadow-md: 0 0 0 1px rgb(0 229 255 / 14%), 0 6px 20px rgb(0 0 0 / 60%);
+  --shadow-lg: 0 0 0 1px rgb(0 229 255 / 24%), 0 0 44px rgb(0 229 255 / 8%), 0 18px 50px rgb(0 0 0 / 75%);
+  --cyber-stripe: #00e5ff;
+  --cyber-glow-topbar: 0 1px 0 rgb(0 229 255 / 16%), 0 10px 30px rgb(0 0 0 / 50%);
+  --cyber-glow-mark: 0 0 14px rgb(0 229 255 / 45%);
+  --cyber-glow-text: 0 0 22px rgb(0 229 255 / 28%);
+  --cyber-glow-primary: 0 0 14px rgb(0 229 255 / 35%);
+  --cyber-glow-danger: 0 0 14px rgb(255 42 77 / 32%);
+  --cyber-active-ring: inset 0 0 0 1px rgb(0 229 255 / 50%);
+  --cyber-sheen: linear-gradient(180deg, rgb(0 229 255 / 6%), transparent 120px);
+  --cyber-body:
+    radial-gradient(1100px 600px at 78% -10%, rgb(77 159 255 / 12%), transparent 65%),
+    radial-gradient(900px 520px at 12% 0%, rgb(0 229 255 / 12%), transparent 60%),
+    linear-gradient(rgb(0 229 255 / 3.5%) 1px, transparent 1px) 0 0 / 100% 3px,
+    linear-gradient(90deg, rgb(0 229 255 / 2.5%) 1px, transparent 1px) 0 0 / 64px 64px;
+}
+
+/* --- DARK: OS default (no explicit choice stamped) --------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #060d14;
+    --bg-elev: #0a121b;
+    --surface: #0c1620;
+    --surface-2: #121e2a;
+    --surface-3: #1b2a3a;
+    --fg: #e2f4fa;
+    --fg-muted: #93b2c2;
+    --fg-subtle: #698a9c;
+    --border: #22394c;
+    --border-strong: #00e5ff;
+    --hover: rgb(0 229 255 / 12%);
+    --primary: #00e5ff;
+    --on-primary: #001820;
+    --primary-container: #04323e;
+    --on-primary-container: #9bf1ff;
+    --secondary: #4d9fff;
+    --secondary-container: #0a2742;
+    --on-secondary-container: #bbdcff;
+    --tertiary: #00e5ff;
+    --tertiary-container: #04323e;
+    --on-tertiary-container: #9bf1ff;
+    --accent-2: #4d9fff;
+    --accent-tint: rgb(0 229 255 / 18%);
+    --warn: #ffc24d;
+    --warn-container: #33270a;
+    --danger: #ff2a4d;
+    --danger-container: #3d0410;
+    --on-danger: #14000a;
+    --ok: #23e07a;
+    --ok-container: #06301c;
+    --table-zebra: rgb(0 229 255 / 3.5%);
+    --scrim: rgb(3 8 14 / 76%);
+    --tooltip-bg: #00e5ff;
+    --tooltip-fg: #001820;
+    --cat-1: #00e5ff;
+    --cat-2: #ff2a4d;
+    --cat-3: #c77dff;
+    --cat-4: #6ee7b7;
+    --cat-5: #ff9e3d;
+    --cat-6: #ffc24d;
+    --cat-7: #698a9c;
+    --shadow-sm: 0 0 0 1px rgb(0 229 255 / 10%);
+    --shadow-md: 0 0 0 1px rgb(0 229 255 / 14%), 0 6px 20px rgb(0 0 0 / 60%);
+    --shadow-lg: 0 0 0 1px rgb(0 229 255 / 24%), 0 0 44px rgb(0 229 255 / 8%), 0 18px 50px rgb(0 0 0 / 75%);
+    --cyber-stripe: #00e5ff;
+    --cyber-glow-topbar: 0 1px 0 rgb(0 229 255 / 16%), 0 10px 30px rgb(0 0 0 / 50%);
+    --cyber-glow-mark: 0 0 14px rgb(0 229 255 / 45%);
+    --cyber-glow-text: 0 0 22px rgb(0 229 255 / 28%);
+    --cyber-glow-primary: 0 0 14px rgb(0 229 255 / 35%);
+    --cyber-glow-danger: 0 0 14px rgb(255 42 77 / 32%);
+    --cyber-active-ring: inset 0 0 0 1px rgb(0 229 255 / 50%);
+    --cyber-sheen: linear-gradient(180deg, rgb(0 229 255 / 6%), transparent 120px);
+    --cyber-body:
+      radial-gradient(1100px 600px at 78% -10%, rgb(77 159 255 / 12%), transparent 65%),
+      radial-gradient(900px 520px at 12% 0%, rgb(0 229 255 / 12%), transparent 60%),
+      linear-gradient(rgb(0 229 255 / 3.5%) 1px, transparent 1px) 0 0 / 100% 3px,
+      linear-gradient(90deg, rgb(0 229 255 / 2.5%) 1px, transparent 1px) 0 0 / 64px 64px;
+  }
+}
+
+/* ============================== BASE ==================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+/* A theme change cross-fades instead of snapping. Custom properties cannot be
+   transitioned, so the tween lives on the properties that READ them: every
+   element eases the colours it paints with, and a component below that declares
+   its own transition overrides this for its own moves. The one thing that still
+   cuts over is the gradient atmosphere on body - background-image is not
+   interpolable, and the two schemes do not even have the same layers - but it
+   rides at 3-4% alpha over the ground colour, which does fade. */
+*,
+*::before,
+*::after {
+  transition:
+    background-color var(--dur-theme) var(--ease-emph),
+    border-color var(--dur-theme) var(--ease-emph),
+    color var(--dur-theme) var(--ease-emph),
+    fill var(--dur-theme) var(--ease-emph),
+    stroke var(--dur-theme) var(--ease-emph),
+    outline-color var(--dur-theme) var(--ease-emph),
+    box-shadow var(--dur-theme) var(--ease-emph),
+    text-shadow var(--dur-theme) var(--ease-emph);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+
+  /* Atmosphere - scanlines over a faint grid, lit from the top corners */
+  background: var(--cyber-body), var(--bg);
+  color: var(--fg);
+  font: var(--t-body-m);
+  font-family: var(--font-sans);
+
+  /* Tabular figures everywhere, declared once. NOTE: this only asks the font for
+     a `tnum` feature and Chakra Petch ships none - so a number that must not
+     jitter (a stat tile, a live counter, a column of figures) has to be set in
+     --font-mono, which is fixed-width by construction. That is also why the skin
+     puts every numeric and meta run in Share Tech Mono. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chamfer utilities - the corner cut IS the design language */
+.chamfer {
+  clip-path:
+    polygon(
+      var(--chamfer) 0,
+      100% 0,
+      100% calc(100% - var(--chamfer)),
+      calc(100% - var(--chamfer)) 100%,
+      0 100%,
+      0 var(--chamfer)
+    );
+}
+
+.chamfer-s {
+  clip-path:
+    polygon(
+      var(--chamfer-s) 0,
+      100% 0,
+      100% calc(100% - var(--chamfer-s)),
+      calc(100% - var(--chamfer-s)) 100%,
+      0 100%,
+      0 var(--chamfer-s)
+    );
+}
+
+/* Cards: 2px outline + chamfer + top sheen (dark only) */
+.card {
+  padding: var(--s-5);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  background-image: var(--cyber-sheen);
+  clip-path:
+    polygon(
+      var(--chamfer) 0,
+      100% 0,
+      100% calc(100% - var(--chamfer)),
+      calc(100% - var(--chamfer)) 100%,
+      0 100%,
+      0 var(--chamfer)
+    );
+  box-shadow: var(--shadow-md);
+}
+
+/* Card header with the signature 44px accent stub under it */
+.card-head {
+  margin: 0;
+  margin-bottom: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 2px solid var(--border);
+  background:
+    linear-gradient(90deg, var(--cyber-stripe) 0 44px, transparent 44px)
+    bottom left / 100% 4px no-repeat;
+  font: var(--t-title-l);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* Headings: uppercase, tracked out, glow only in dark */
+h1,
+h2,
+h3 {
+  font-family: var(--font-sans);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-shadow: var(--cyber-glow-text);
+}
+
+h1 {
+  font: var(--t-display-s);
+  letter-spacing: 0.09em;
+}
+
+h2 {
+  font: var(--t-headline-m);
+}
+
+h3 {
+  font: var(--t-headline-s);
+}
+
+/* Secondary / metadata text runs mono - the terminal register */
+.sub,
+.meta,
+.caption,
+figcaption,
+small,
+code,
+pre,
+kbd,
+.num {
+  font-family: var(--font-mono);
+}
+
+.sub,
+.meta,
+.caption,
+figcaption {
+  color: var(--fg-muted);
+}
+
+/* Big numbers are mono + lit */
+.big {
+  color: var(--fg);
+  font: var(--t-display-s);
+  font-family: var(--font-mono);
+  text-shadow: var(--cyber-glow-primary);
+}
+
+.btn {
+  display: inline-flex;
+  gap: var(--s-2);
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--s-5);
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+  color: var(--fg);
+  clip-path:
+    polygon(
+      var(--chamfer-s) 0,
+      100% 0,
+      100% calc(100% - var(--chamfer-s)),
+      calc(100% - var(--chamfer-s)) 100%,
+      0 100%,
+      0 var(--chamfer-s)
+    );
+  font: var(--t-label-l);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-short) var(--ease-emph),
+    border-color var(--dur-theme) var(--ease-emph),
+    color var(--dur-theme) var(--ease-emph),
+    box-shadow var(--dur-theme) var(--ease-emph);
+}
+
+.btn:hover {
+  background: var(--hover);
+}
+
+.btn[data-variant="primary"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: var(--cyber-glow-primary);
+}
+
+.btn[data-variant="danger"] {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--on-danger);
+  box-shadow: var(--cyber-glow-danger);
+}
+
+.chip,
+.badge {
+  display: inline-flex;
+  gap: var(--s-1);
+  align-items: center;
+  padding: 3px var(--s-3);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  clip-path:
+    polygon(
+      var(--chamfer-s) 0,
+      100% 0,
+      100% calc(100% - var(--chamfer-s)),
+      calc(100% - var(--chamfer-s)) 100%,
+      0 100%,
+      0 var(--chamfer-s)
+    );
+  font: var(--t-label-m);
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chip[data-active="true"] {
+  box-shadow: var(--cyber-active-ring);
+}
+
+/* Callouts: colour-coded left rail, no rounded corners */
+.callout {
+  padding: var(--s-4) var(--s-5);
+  border: 2px solid var(--border);
+  border-left: 6px solid var(--accent, var(--primary));
+  background: var(--surface-2);
+}
+
+.callout[data-kind="ok"] {
+  --accent: var(--ok);
+
+  background: var(--ok-container);
+}
+
+.callout[data-kind="warn"] {
+  --accent: var(--warn);
+
+  background: var(--warn-container);
+}
+
+.callout[data-kind="danger"] {
+  --accent: var(--danger);
+
+  background: var(--danger-container);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+}
+
+th {
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 2px solid var(--border);
+  color: var(--fg-muted);
+  font: var(--t-label-m);
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+td {
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:nth-child(even) {
+  background: var(--table-zebra);
+}
+
+pre,
+code {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+pre {
+  overflow-x: auto;
+  padding: var(--s-4);
+}
+
+code {
+  padding: 1px 5px;
+}
+
+pre code {
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+/* Images / thumbnails read as surveillance feed */
+.thumb {
+  border-radius: 0;
+  filter: grayscale(1) contrast(1.08);
+}
+
+/* Wide content scrolls in its own box; the page body never does */
+.scroll-x {
+  overflow-x: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

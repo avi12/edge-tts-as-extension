@@ -14,7 +14,7 @@
 </script>
 
 <label class="field">
-  <span>Speed <output>{liveRate.toFixed(RATE_FRACTION_DIGITS)}×</output></span>
+  <span class="label speed">Speed <output class="num">{liveRate.toFixed(RATE_FRACTION_DIGITS)}×</output></span>
   <input
     max={RATE.max}
     min={RATE.min}
@@ -27,3 +27,21 @@
     value={liveRate}
   />
 </label>
+
+<style>
+  .speed {
+    display: flex;
+    justify-content: space-between;
+
+    output {
+      color: var(--fg);
+      font-size: 13px;
+    }
+  }
+
+  input {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--primary);
+  }
+</style>

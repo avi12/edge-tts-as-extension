@@ -2,6 +2,7 @@
 // documented for page authors in the global CLAUDE.md ("Narrate the artifact")
 
 import type { WordBoundary } from "@/lib/edge-tts/protocol";
+import { sanitizeText } from "@/lib/edge-tts/ssml";
 import { createWordLocator } from "@/lib/edge-tts/words";
 
 export enum NarrationAttribute {
@@ -88,7 +89,8 @@ export function timeNarration({ text, cues, boundaries, duration }: {
   boundaries: WordBoundary[];
   duration: number;
 }) {
-  const locateWord = createWordLocator({ text });
+  // Boundaries spell words as they were sent, with straightened quotes - same length, so indexes carry over
+  const locateWord = createWordLocator({ text: sanitizeText(text) });
   const words: WordTiming[] = [];
   for (const boundary of boundaries) {
     const iWord = locateWord(boundary.text);

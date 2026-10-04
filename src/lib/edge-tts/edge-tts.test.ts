@@ -8,6 +8,7 @@ import {
   secMsGec,
   synthesize,
   TRUSTED_CLIENT_TOKEN,
+  unescapeXml,
   type WordBoundary
 } from ".";
 import { openEdgeSocket } from "./node-socket";
@@ -111,6 +112,10 @@ describe("frames", () => {
         text: "Hi"
       }
     ]);
+  });
+
+  it("unescapes words the SSML escaped", () => {
+    expect(unescapeXml("&lt;b&gt; &amp; &quot;it&apos;s&quot;")).toBe("<b> & \"it's\"");
   });
 });
 

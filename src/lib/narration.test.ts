@@ -65,4 +65,24 @@ describe("timeNarration", () => {
       }).cues
     ).toEqual([["end", 0.8]]);
   });
+
+  it("finds words whose typographic quotes the service straightened", () => {
+    const { text, cues } = parseNarrationScript("It’s [[quote]]the “fast” path");
+    const boundaries = ["It's", "the", "fast", "path"].map((word, i) => ({
+      time: i * 0.5,
+      duration: 0.4,
+      text: word
+    }));
+    expect(
+      timeNarration({
+        text,
+        cues,
+        boundaries,
+        duration: 2
+      })
+    ).toEqual({
+      words: [[0, 0, 4], [0.5, 5, 3], [1, 10, 4], [1.5, 16, 4]],
+      cues: [["quote", 0.5]]
+    });
+  });
 });

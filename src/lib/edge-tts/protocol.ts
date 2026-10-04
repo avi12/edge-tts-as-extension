@@ -3,6 +3,7 @@
 // Binary frames: u16 big-endian header length, header text, audio bytes
 
 import { OUTPUT_FORMAT, TICKS_PER_SECOND } from "./constants";
+import { unescapeXml } from "./ssml";
 import { z } from "@/lib/zod";
 
 export enum FramePath {
@@ -154,7 +155,7 @@ export function parseWordBoundaries(body: string) {
     boundaries.push({
       time: offset / TICKS_PER_SECOND,
       duration: duration / TICKS_PER_SECOND,
-      text: text.Text
+      text: unescapeXml(text.Text)
     });
   }
 

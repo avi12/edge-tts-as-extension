@@ -25,6 +25,8 @@ const STRAIGHT_QUOTES: Record<string, string> = {
 // Control characters other than tab/newline/carriage return break the service
 const NON_WHITESPACE_CONTROL = /[\u0000-\u0008\u000E-\u001F]/g;
 const XML_SPECIAL_CHARACTERS = new RegExp(`[${Object.keys(XML_ESCAPES).join("")}]`, "g");
+const XML_UNESCAPES = Object.fromEntries(Object.entries(XML_ESCAPES).map(([character, entity]) => [entity, character]));
+const XML_ENTITIES = new RegExp(Object.keys(XML_UNESCAPES).join("|"), "g");
 const TYPOGRAPHIC_QUOTES = new RegExp(`[${Object.keys(STRAIGHT_QUOTES).join("")}]`, "g");
 
 const SSML_NAMESPACE = "http://www.w3.org/2001/10/synthesis";
@@ -51,6 +53,11 @@ export function sanitizeText(text: string) {
 
 function escapeXml(text: string) {
   return text.replace(XML_SPECIAL_CHARACTERS, character => XML_ESCAPES[character] ?? character);
+}
+
+// Word boundaries echo the spoken text as it was escaped in the SSML
+export function unescapeXml(text: string) {
+  return text.replace(XML_ENTITIES, entity => XML_UNESCAPES[entity] ?? entity);
 }
 
 function formatSigned({ value, unit }: {

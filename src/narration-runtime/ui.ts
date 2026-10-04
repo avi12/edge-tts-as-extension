@@ -1,4 +1,5 @@
 import overlayCss from "./overlay.css?raw";
+import pageCss from "./page.css?raw";
 import panelCss from "./panel.css?raw";
 import themeCss from "./theme.css?raw";
 import { type PlayerState, PlayerStatus } from "@/lib/player-status";
@@ -167,6 +168,9 @@ export function createTourPanel({ cardCount, onAction }: {
     }
   });
   document.body.append(elHost);
+  const pageSheet = new CSSStyleSheet();
+  pageSheet.replaceSync(pageCss);
+  document.adoptedStyleSheets = [...document.adoptedStyleSheets, pageSheet];
 
   return {
     render({ state, title, iCard }: {

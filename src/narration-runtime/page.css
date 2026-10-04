@@ -1,0 +1,4 @@
+/* Scrolling a card into view keeps it clear of the fixed tour panel */
+:root:has([data-narrating]) {
+  scroll-padding-block: 16px 210px;
+}

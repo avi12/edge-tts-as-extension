@@ -9,7 +9,8 @@ import {
 import { type PlayerState, PlayerStatus, type SpokenWord } from "@/lib/player-status";
 
 const HEADING_SELECTOR = "h1, h2, h3, h4, .card-head";
-const SCROLL_BLOCK = "center";
+// Narration walks a card from the top, and tall cards on phones cannot fit beside the panel anyway
+const SCROLL_BLOCK = "start";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const CUE_SEPARATOR = " ";
 const ABORT_ERROR = "AbortError";

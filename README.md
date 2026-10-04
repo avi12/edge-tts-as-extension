@@ -43,13 +43,13 @@ to the page. Without the extension the page is unchanged.
 
 | Path | Role |
 | --- | --- |
-| `lib/edge-tts/` | The reimplemented protocol: token, `Sec-MS-GEC`, SSML, frames, streaming client, voices, chunking |
-| `lib/messages.ts` | Message contract shared by every part of the extension |
-| `entrypoints/background.ts` | Header-rewrite rule, context menu, shortcut, message routing |
-| `entrypoints/offscreen/` | Player: streams audio into a `MediaSource`, tracks the spoken word |
-| `entrypoints/popup/` | UI with read-along highlighting |
-| `entrypoints/artifact-narrator.content/` | Narration buttons, tour panel and cue sync inside Claude artifact frames |
-| `lib/narration.ts` | Narration contract and the `[[cue]]` script parser |
+| `src/lib/edge-tts/` | The reimplemented protocol: token, `Sec-MS-GEC`, SSML, frames, streaming client, voices, chunking |
+| `src/lib/messages.ts` | Message contract shared by every part of the extension |
+| `src/entrypoints/background.ts` | Header-rewrite rule, context menu, shortcut, message routing |
+| `src/entrypoints/offscreen/` | Player: streams audio into a `MediaSource`, tracks the spoken word |
+| `src/entrypoints/popup/` | UI with read-along highlighting |
+| `src/entrypoints/artifact-narrator.content/` | Narration buttons, tour panel and cue sync inside Claude artifact frames |
+| `src/lib/narration.ts` | Narration contract and the `[[cue]]` script parser |
 
 ## Tests
 

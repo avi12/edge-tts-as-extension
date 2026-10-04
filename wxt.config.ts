@@ -1,7 +1,9 @@
-import { KeyboardCommand } from "./lib/shortcuts";
+import { KeyboardCommand } from "./src/lib/shortcuts";
 import { defineConfig } from "wxt";
 
 export default defineConfig({
+  srcDir: "src",
+  publicDir: "src/public",
   manifest: {
     name: "Edge Read Aloud",
     description: "Read any text aloud with Microsoft Edge's online neural voices",

@@ -1,0 +1,117 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5d6670;
+  --border: #d5dae0;
+  --surface: #f4f6f8;
+  --accent: #0f6cbd;
+  --accent-fg: #ffffff;
+  --mark: #ffe08a;
+  --error: #c42b1c;
+  font: 14px/1.45 system-ui, 'Segoe UI', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1f23;
+    --fg: #e8eaed;
+    --muted: #a0a7b0;
+    --border: #3a4048;
+    --surface: #262a30;
+    --accent: #4da3ff;
+    --accent-fg: #0b1622;
+    --mark: #7a5c00;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 380px;
+  margin: 0;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+header { display: flex; align-items: center; justify-content: space-between; }
+h1 { margin: 0; font-size: 16px; }
+
+.status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+}
+[data-status='playing'] .status { color: var(--accent); }
+[data-status='error'] .status { color: var(--error); }
+
+textarea, .reading {
+  height: 160px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+textarea { resize: vertical; }
+textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+/* While speaking, the editor swaps for the read-along view. */
+.reading { display: none; }
+:is([data-status='loading'], [data-status='playing'], [data-status='paused']) textarea { display: none; }
+:is([data-status='loading'], [data-status='playing'], [data-status='paused']) .reading { display: block; }
+
+mark {
+  background: var(--mark);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.error { margin: 0; color: var(--error); font-size: 13px; }
+.error:empty { display: none; }
+
+.field { display: grid; gap: 4px; }
+label { font-size: 12px; color: var(--muted); }
+select, input[type='range'] { width: 100%; font: inherit; }
+select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: inherit;
+}
+input[type='range'] { accent-color: var(--accent); }
+
+.actions { display: flex; gap: 8px; }
+button {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+button:disabled { opacity: 0.5; cursor: default; }
+
+/* Which controls exist depends only on the player status. */
+#pause, #resume, #stop { display: none; }
+[data-status='loading'] #speak,
+[data-status='playing'] #speak,
+[data-status='paused'] #speak { display: none; }
+:is([data-status='loading'], [data-status='playing']) #pause { display: block; }
+[data-status='loading'] #pause { opacity: 0.5; pointer-events: none; }
+[data-status='paused'] #resume { display: block; }
+:is([data-status='loading'], [data-status='playing'], [data-status='paused']) #stop { display: block; }

@@ -1,8 +1,19 @@
-{
-  "extends": ["stylelint-config-ccb"],
-  "customSyntax": "postcss-html",
-  "ignoreFiles": ["node_modules/**", ".output/**", ".wxt/**", ".claude/**", "research/**", "**/*.svg"],
-  "rules": {
+import postcssHtml from "postcss-html";
+
+export default {
+  customSyntax: postcssHtml,
+  extends: [
+    "stylelint-config-ccb"
+  ],
+  ignoreFiles: [
+    "node_modules/**",
+    ".output/**",
+    ".wxt/**",
+    ".claude/**",
+    "research/**",
+    "**/*.svg"
+  ],
+  rules: {
     "plugin/stylelint-no-indistinguishable-colors": null,
     "color-format/format": null,
     "prettier/prettier": null,
@@ -12,7 +23,14 @@
     "no-unknown-custom-properties": null,
     "csstools/value-no-unknown-custom-properties": null,
     "color-no-hex": null,
-    "selector-pseudo-class-no-unknown": [true, { "ignorePseudoClasses": ["global"] }],
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        ignorePseudoClasses: [
+          "global"
+        ]
+      }
+    ],
     "property-disallowed-list": null,
     "function-disallowed-list": null,
     "declaration-property-value-allowed-list": null,
@@ -21,16 +39,23 @@
     "declaration-no-important": null,
     "time-min-milliseconds": null,
     "selector-max-type": null,
-    "selector-nested-pattern": [null],
+    "selector-nested-pattern": [
+      null
+    ],
     "selector-pseudo-element-allowed-list": null,
     "selector-pseudo-class-disallowed-list": null,
     "selector-max-pseudo-class": null,
     "selector-max-id": null,
-    "selector-class-pattern": [null],
+    "selector-class-pattern": [
+      null
+    ],
     "selector-max-universal": null,
     "selector-max-attribute": null,
     "at-rule-allowed-list": null,
-    "max-nesting-depth": [99, {}],
+    "max-nesting-depth": [
+      99,
+      {}
+    ],
     "custom-property-empty-line-before": "never",
     "plugin/no-unsupported-browser-features": null,
     "@stylistic/linebreaks": null,
@@ -39,10 +64,12 @@
     "font-family-no-missing-generic-family-keyword": null,
     "a11y/font-size-is-readable": null
   },
-  "overrides": [
+  overrides: [
     {
-      "files": ["**/*.css"],
-      "customSyntax": "postcss"
+      files: [
+        "**/*.css"
+      ],
+      customSyntax: "postcss"
     }
   ]
-}
+};

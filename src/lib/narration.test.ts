@@ -1,4 +1,4 @@
-import { getReachedCueNames, parseNarrationScript } from "@/lib/narration";
+import { parseNarrationScript, timeNarration } from "@/lib/narration";
 import { describe, expect, it } from "vitest";
 
 describe("parseNarrationScript", () => {
@@ -29,33 +29,40 @@ describe("parseNarrationScript", () => {
   });
 });
 
-describe("getReachedCueNames", () => {
-  it("returns every cue at or before the spoken word, once", () => {
-    const cues = [
-      {
-        name: "a",
-        start: 0
-      },
-      {
-        name: "b",
-        start: 10
-      },
-      {
-        name: "a",
-        start: 20
-      }
-    ];
+describe("timeNarration", () => {
+  it("places words in the text and times each cue at its first word", () => {
+    const { text, cues } = parseNarrationScript("Look left. [[box]] The box, then [[wire]] the wire");
+    const boundaries = ["Look", "left", "The", "box", "then", "the", "wire"].map((word, i) => ({
+      time: i * 0.5,
+      duration: 0.4,
+      text: word
+    }));
     expect(
-      getReachedCueNames({
+      timeNarration({
+        text,
         cues,
-        iSpokenWord: 9
+        boundaries,
+        duration: 4
       })
-    ).toEqual(["a"]);
+    ).toEqual({
+      words: [[0, 0, 4], [0.5, 5, 4], [1, 11, 3], [1.5, 15, 3], [2, 20, 4], [2.5, 25, 3], [3, 29, 4]],
+      cues: [["box", 1], ["wire", 2.5]]
+    });
+  });
+
+  it("times a trailing cue at the end of the audio", () => {
+    const { text, cues } = parseNarrationScript("Done [[end]]");
     expect(
-      getReachedCueNames({
+      timeNarration({
+        text,
         cues,
-        iSpokenWord: 25
-      })
-    ).toEqual(["a", "b"]);
+        boundaries: [{
+          time: 0,
+          duration: 0.3,
+          text: "Done"
+        }],
+        duration: 0.8
+      }).cues
+    ).toEqual([["end", 0.8]]);
   });
 });

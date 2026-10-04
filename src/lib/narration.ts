@@ -1,5 +1,8 @@
-// The contract between artifact pages and the narrator - documented for page authors in the
-// global CLAUDE.md ("Narrate artifacts for the Edge Read Aloud extension")
+// The contract between narrated artifact pages, the narrate CLI and the embedded runtime -
+// documented for page authors in the global CLAUDE.md ("Narrate the artifact")
+
+import type { WordBoundary } from "@/lib/edge-tts/protocol";
+import { createWordLocator } from "@/lib/edge-tts/words";
 
 export enum NarrationAttribute {
   Script = "data-narrate",
@@ -8,8 +11,8 @@ export enum NarrationAttribute {
   Cued = "data-cued"
 }
 
-export const NARRATION_MESSAGE_SOURCE = "edge-read-aloud";
-export const NARRATION_MESSAGE_TYPE = "narration";
+export const NARRATION_DATA_ID = "narration-data";
+export const NARRATION_CUE_EVENT = "narration:cue";
 
 const CUE_MARKER = /\[\[([\w-]+)\]\]/g;
 const WHITESPACE_RUN = /\s+/g;
@@ -18,6 +21,23 @@ const SPACE = " ";
 export interface Cue {
   name: string;
   start: number;
+}
+
+// Compact tuples keep the embedded JSON small: [seconds, start, length] and [name, seconds]
+export type WordTiming = [number, number, number];
+export type CueTiming = [string, number];
+
+export interface NarrationClip {
+  audio: string;
+  duration: number;
+  text: string;
+  words: WordTiming[];
+  cues: CueTiming[];
+}
+
+export interface NarrationData {
+  voice: string;
+  clips: NarrationClip[];
 }
 
 function appendSpokenPart({ spoken, part }: {
@@ -56,16 +76,35 @@ export function parseNarrationScript(script: string) {
   };
 }
 
-export function getReachedCueNames({ cues, iSpokenWord }: {
+const TIMING_PRECISION = 1000;
+
+function roundTime(seconds: number) {
+  return Math.round(seconds * TIMING_PRECISION) / TIMING_PRECISION;
+}
+
+export function timeNarration({ text, cues, boundaries, duration }: {
+  text: string;
   cues: Cue[];
-  iSpokenWord: number;
+  boundaries: WordBoundary[];
+  duration: number;
 }) {
-  const names = new Set<string>();
-  for (const cue of cues) {
-    if (cue.start <= iSpokenWord) {
-      names.add(cue.name);
+  const locateWord = createWordLocator({ text });
+  const words: WordTiming[] = [];
+  for (const boundary of boundaries) {
+    const iWord = locateWord(boundary.text);
+    if (iWord !== null) {
+      words.push([roundTime(boundary.time), iWord, boundary.text.length]);
     }
   }
 
-  return [...names];
+  const cueTimes: CueTiming[] = [];
+  for (const cue of cues) {
+    const firstWordAfterCue = words.find(([, iWord]) => iWord >= cue.start);
+    cueTimes.push([cue.name, firstWordAfterCue?.[0] ?? roundTime(duration)]);
+  }
+
+  return {
+    words,
+    cues: cueTimes
+  };
 }

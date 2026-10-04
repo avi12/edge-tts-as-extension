@@ -46,7 +46,7 @@ describe("timeNarration", () => {
       })
     ).toEqual({
       words: [[0, 0, 4], [0.5, 5, 4], [1, 11, 3], [1.5, 15, 3], [2, 20, 4], [2.5, 25, 3], [3, 29, 4]],
-      cues: [["box", 1], ["wire", 2.5]]
+      cues: [["box", 1, 11], ["wire", 2.5, 25]]
     });
   });
 
@@ -63,7 +63,7 @@ describe("timeNarration", () => {
         }],
         duration: 0.8
       }).cues
-    ).toEqual([["end", 0.8]]);
+    ).toEqual([["end", 0.8, 5]]);
   });
 
   it("finds words whose typographic quotes the service straightened", () => {
@@ -82,7 +82,7 @@ describe("timeNarration", () => {
       })
     ).toEqual({
       words: [[0, 0, 4], [0.5, 5, 3], [1, 10, 4], [1.5, 16, 4]],
-      cues: [["quote", 0.5]]
+      cues: [["quote", 0.5, 5]]
     });
   });
 });

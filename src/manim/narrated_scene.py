@@ -1,7 +1,7 @@
 """Time a Manim scene to a narration clip exported by `pnpm narrate --export <dir>`.
 
 The export writes `NN-slug.mp3` beside `NN-slug.json`:
-    { "duration": s, "text": ..., "words": [[s, charStart, charLength], ...], "cues": [[name, s], ...] }
+    { "duration": s, "text": ..., "words": [[s, charStart, charLength], ...], "cues": [[name, s, charStart], ...] }
 
 Write the narration first (cues as `[[name]]` markers), export it, then let the cues drive the scene:
 
@@ -47,7 +47,7 @@ class NarratedScene(Scene):
         self.narration_duration: float = timings["duration"]
         self.narration_text: str = timings["text"]
         self.narration_words: list[list] = timings["words"]
-        self.cues: dict[str, float] = dict(timings["cues"])
+        self.cues: dict[str, float] = {name: seconds for name, seconds, *_ in timings["cues"]}
         self.add_sound(str(json_path.with_suffix(".mp3")), time_offset=0)
 
     @property

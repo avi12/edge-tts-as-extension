@@ -27,9 +27,10 @@ export interface Cue {
   start: number;
 }
 
-// Compact tuples keep the embedded JSON small: [seconds, start, length] and [name, seconds]
+// Compact tuples keep the embedded JSON small: [seconds, start, length] and [name, seconds, start] -
+// a cue's text position lets a live voice, which reports words rather than time, drive it too
 export type WordTiming = [number, number, number];
-export type CueTiming = [string, number];
+export type CueTiming = [string, number, number];
 
 export interface NarrationClip {
   audio: string;
@@ -107,7 +108,7 @@ export function timeNarration({ text, cues, boundaries, duration }: {
   const cueTimes: CueTiming[] = [];
   for (const cue of cues) {
     const firstWordAfterCue = words.find(([, iWord]) => iWord >= cue.start);
-    cueTimes.push([cue.name, firstWordAfterCue?.[0] ?? roundTime(duration)]);
+    cueTimes.push([cue.name, firstWordAfterCue?.[0] ?? roundTime(duration), cue.start]);
   }
 
   return {

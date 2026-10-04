@@ -1,6 +1,7 @@
 import type { Prosody } from "@/lib/edge-tts";
 import { type PlayerState, PlayerStatus } from "@/lib/player-status";
 import { z } from "@/lib/zod";
+import { browser } from "wxt/browser";
 
 export enum Command {
   Speak = "speak",
@@ -71,3 +72,10 @@ export type SpeakRequest = z.infer<typeof speakRequestSchema>;
 export type ControlRequest = z.infer<typeof controlRequestSchema>;
 export type PlayerRequest = z.infer<typeof playerRequestSchema>;
 export type StateEvent = z.infer<typeof stateEventSchema>;
+type PlayerMessage = z.infer<typeof playerMessageSchema>;
+
+// Every request, to the background or the player, is answered with the player's state
+export async function sendRequest(request: Request | PlayerMessage) {
+  const state: PlayerState = await browser.runtime.sendMessage(request);
+  return state;
+}

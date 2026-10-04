@@ -1,4 +1,5 @@
-import { DEFAULT_PROSODY, EDGE_EXTENSION_ORIGIN, EDGE_USER_AGENT, SERVICE_HOST } from "@/lib/edge-tts";
+import { EDGE_EXTENSION_ORIGIN, EDGE_USER_AGENT, SERVICE_HOST } from "@/lib/edge-tts/constants";
+import { DEFAULT_PROSODY } from "@/lib/edge-tts/ssml";
 import {
   Command,
   OFFSCREEN_TARGET,
@@ -6,10 +7,11 @@ import {
   playerTargetSchema,
   type Request,
   requestSchema,
+  sendRequest,
   type SpeakRequest
 } from "@/lib/messages";
 import { IDLE_STATE, type PlayerState } from "@/lib/player-status";
-import { settings } from "@/lib/settings";
+import { readSettings } from "@/lib/settings";
 
 enum HeaderName {
   Origin = "Origin",
@@ -57,12 +59,11 @@ async function installHeaderRule() {
   });
 }
 
-async function sendToPlayer(request: PlayerRequest) {
-  const state: PlayerState = await browser.runtime.sendMessage({
+function sendToPlayer(request: PlayerRequest) {
+  return sendRequest({
     ...request,
     target: OFFSCREEN_TARGET
   });
-  return state;
 }
 
 async function hasOffscreen() {
@@ -98,7 +99,7 @@ async function speak(request: SpeakRequest) {
     return IDLE_STATE;
   }
 
-  const savedSettings = await settings.getValue();
+  const savedSettings = await readSettings();
   await ensureOffscreen();
   return sendToPlayer({
     type: Command.Speak,

@@ -1,7 +1,7 @@
 # Stack
 - pnpm
 - WXT extension framework (Chrome MV3)
-- Vanilla TypeScript, no UI framework (100% type safety, let TypeScript infer return types - never write them explicitly)
+- TypeScript everywhere (100% type safety, let TypeScript infer return types - never write them explicitly). The popup is Svelte 5 with runes (`@wxt-dev/module-svelte`): presentational components in `src/entrypoints/popup/components/`, popup state and actions in `popup-state.svelte.ts`, message plumbing in `src/lib`. Everything else is framework-free - the narration runtime above all, it ships inside every artifact
 - TypeScript 7 (`@typescript/native` alias, gives `tsc`) side by side with TypeScript 6 (`typescript` alias of `@typescript/typescript6`, gives `tsc6`) - typescript-eslint still needs the TS 6 API; never collapse them back into one
 - zod for validating loose data
 - vitest for tests (`LIVE=1 pnpm test` also hits the real Read Aloud service)
@@ -65,8 +65,9 @@ The user's global rules (SSOT/DRY, pure CSS over JavaScript, digestible commits 
 # Linting
 After each modification, run the checks (`pnpm check` runs all of them in order):
 - `pnpm compile` - `tsc --noEmit`
+- `pnpm svelte:check` - `svelte-check`, type-checks `.svelte` files (tsc does not see them)
 - `pnpm lint` runs `oxlint --type-aware --fix && eslint --fix` (then a final plain oxlint as the gate) - oxlint owns the logic and type-aware rules (`.oxlintrc.json`, with `oxlint-tsgolint`), ESLint owns the stylistic ones (`eslint.config.js` + local rules in `eslint-rules/`); always run with `--fix`. oxlint does not inherit `ignorePatterns` through `extends`, so `.oxlintrc.fix.json` repeats the list - keep the two in sync
-- `pnpm stylelint` runs `stylelint "**/*.css" --fix`
+- `pnpm stylelint` runs `stylelint "**/*.{css,svelte}" --fix` (`stylelint.config.mjs`, the youtube-time-manager config: postcss-html lints `<style>` in `.svelte`)
 - `pnpm test`
 - After every bug fix, feature, or refactor - anything that removes or rewires code - run a fallow dead-code audit and clean up what it flags as newly unused (imports, helpers, exports, whole files) so changes never leave orphans behind. Never run `fallow fix` automatically - act on the audit by hand
   - ONE root config at `/.fallowrc.json`. It carries only `health` thresholds, the `research/*.mjs` entries, two fixed ignores (the vendored `research/edge-microsoft-voices/**`, and `@typescript/native`, whose `tsc` bin fallow attributes to `typescript`) and `unused-enum-members: warn` (enums double as zod value vocabularies via `z.enum(SomeEnum)`, so not every member is referenced by name). `pnpm fallow` (= `fallow audit --base HEAD`) is the incremental gate; `pnpm exec fallow dead-code --root .` is the full sweep

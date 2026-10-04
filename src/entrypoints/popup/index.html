@@ -3,33 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <title>Read Aloud</title>
-    <link rel="stylesheet" href="./style.css" />
   </head>
-  <body data-status="idle">
-    <header>
-      <h1>Read Aloud</h1>
-      <span class="status" id="status">Ready</span>
-    </header>
-
-    <textarea id="text" placeholder="Paste or type text to read…" spellcheck="false"></textarea>
-    <div id="reading" class="reading" aria-live="off"></div>
-    <p id="error" class="error" role="alert"></p>
-
-    <div class="field">
-      <label for="voice">Voice</label>
-      <select id="voice"><option value="">Loading voices…</option></select>
-    </div>
-    <div class="field">
-      <label for="rate">Speed <output id="rate-value" for="rate"></output></label>
-      <input id="rate" type="range" />
-    </div>
-
-    <div class="actions">
-      <button id="speak" class="primary">Read aloud</button>
-      <button id="pause">Pause</button>
-      <button id="resume" class="primary">Resume</button>
-      <button id="stop">Stop</button>
-    </div>
+  <body>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

@@ -49,22 +49,6 @@ h1 {
   font-size: 16px;
 }
 
-.status {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 12px;
-
-  [data-status="playing"] & {
-    color: var(--accent);
-  }
-
-  [data-status="error"] & {
-    color: var(--error);
-  }
-}
-
 textarea,
 .reading {
   overflow-y: auto;
@@ -78,53 +62,9 @@ textarea,
   white-space: pre-wrap;
 }
 
-textarea {
-  resize: vertical;
-
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -1px;
-  }
-}
-
-/* While speaking, the editor swaps for the read-along view */
-.reading {
-  display: none;
-}
-
-:is([data-status="loading"], [data-status="playing"], [data-status="paused"]) {
-  textarea {
-    display: none;
-  }
-
-  .reading {
-    display: block;
-  }
-}
-
-mark {
-  padding: 0 1px;
-  border-radius: 3px;
-  background: var(--mark);
-  color: inherit;
-}
-
-.error {
-  margin: 0;
-  color: var(--error);
-  font-size: 13px;
-
-  &:empty {
-    display: none;
-  }
-}
-
 .field {
   display: grid;
   gap: 4px;
-}
-
-label {
   color: var(--muted);
   font-size: 12px;
 }
@@ -135,19 +75,13 @@ select {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);
-  color: inherit;
-  font: inherit;
+  color: var(--fg);
+  font: 14px system-ui, "Segoe UI", sans-serif;
 }
 
 [type="range"] {
   width: 100%;
   accent-color: var(--accent);
-  font: inherit;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
 }
 
 button {
@@ -171,49 +105,4 @@ button {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-fg);
-}
-
-/* Which controls exist depends only on the player status */
-#pause,
-#resume,
-#stop {
-  display: none;
-}
-
-[data-status="loading"] {
-  #speak {
-    display: none;
-  }
-
-  #pause {
-    display: block;
-    opacity: 50%;
-    pointer-events: none;
-  }
-
-  #stop {
-    display: block;
-  }
-}
-
-[data-status="playing"] {
-  #speak {
-    display: none;
-  }
-
-  #pause,
-  #stop {
-    display: block;
-  }
-}
-
-[data-status="paused"] {
-  #speak {
-    display: none;
-  }
-
-  #resume,
-  #stop {
-    display: block;
-  }
 }

@@ -64,14 +64,14 @@ pnpm dev            # opens a Chrome with the extension and hot reload
 | `src/lib/messages.ts` | Message contract shared by every part of the extension |
 | `src/entrypoints/background.ts` | Header-rewrite rule, message routing |
 | `src/entrypoints/offscreen/` | Player: streams audio into a `MediaSource`, tracks the spoken word |
-| `src/entrypoints/popup/` | UI with read-along highlighting |
+| `src/entrypoints/popup/` | Svelte 5 UI with read-along highlighting |
 
 ## Tests
 
 ```sh
 pnpm test           # unit tests
 LIVE=1 pnpm test    # also hits the real service
-pnpm check          # compile, lint, stylelint, fallow dead-code, tests
+pnpm check          # compile, svelte-check, lint, stylelint, fallow dead-code, tests
 ```
 
 ## Caveat

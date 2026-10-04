@@ -25,3 +25,13 @@ export const IDLE_STATE: PlayerState = {
   word: null,
   error: null
 };
+
+const READING_STATUSES: ReadonlySet<PlayerStatus> = new Set([
+  PlayerStatus.Loading,
+  PlayerStatus.Playing,
+  PlayerStatus.Paused
+]);
+
+export function isReadingStatus(status: PlayerStatus) {
+  return READING_STATUSES.has(status);
+}

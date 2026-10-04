@@ -1,25 +1,29 @@
-import { DEFAULT_PROSODY, DEFAULT_VOICE, type Voice } from "@/lib/edge-tts";
+import { DEFAULT_VOICE } from "@/lib/edge-tts/constants";
+import { DEFAULT_PROSODY, RATE } from "@/lib/edge-tts/ssml";
+import { z } from "@/lib/zod";
 import { storage } from "wxt/utils/storage";
 
-export const VOICE_CACHE_MS = 24 * 60 * 60 * 1000;
+// Each field falls back on its own, so settings stored before a field existed still load
+const settingsSchema = z.object({
+  voice: z.string().catch(DEFAULT_VOICE),
+  rate: z.number().min(RATE.min).max(RATE.max).catch(DEFAULT_PROSODY.rate)
+});
 
-export interface Settings {
-  voice: string;
-  rate: number;
-}
+export type Settings = z.infer<typeof settingsSchema>;
 
-interface VoiceCache {
-  voices: Voice[];
-  fetchedAt: number;
-}
+export const DEFAULT_SETTINGS = settingsSchema.parse({});
 
-export const settings = storage.defineItem<Settings>("sync:settings", {
-  fallback: {
-    voice: DEFAULT_VOICE,
-    rate: DEFAULT_PROSODY.rate
-  }
+const settingsItem = storage.defineItem<Partial<Settings>>("sync:settings", {
+  fallback: {}
 });
 
 export const draft = storage.defineItem<string>("local:draft", { fallback: "" });
 
-export const voiceCache = storage.defineItem<VoiceCache | null>("local:voices", { fallback: null });
+export async function readSettings() {
+  const parsed = settingsSchema.safeParse(await settingsItem.getValue());
+  return parsed.success ? parsed.data : DEFAULT_SETTINGS;
+}
+
+export async function saveSettings(value: Settings) {
+  await settingsItem.setValue(value);
+}

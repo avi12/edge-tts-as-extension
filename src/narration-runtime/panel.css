@@ -1,7 +1,4 @@
 .panel {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
   display: grid;
   gap: 8px;
   width: min(360px, calc(100vw - 32px));

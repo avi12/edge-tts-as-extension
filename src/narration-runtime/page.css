@@ -1,4 +1,53 @@
-/* Scrolling a card into view keeps it clear of the fixed tour panel */
+/* Styles the narrator's shadow hosts from the page, so the panel can anchor to the narrated card */
+[data-narration-host] {
+  all: initial;
+  color-scheme: light dark;
+}
+
+:root[data-theme="light"] [data-narration-host] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] [data-narration-host] {
+  color-scheme: dark;
+}
+
+[data-narration-host="overlay"] {
+  position: absolute;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+}
+
+[data-narration-host="panel"] {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483001;
+}
+
+/* The column holding the narrated card - for a card in a row of cards that is the row, so the panel never covers a sibling */
+:has(> [data-narrating]) {
+  anchor-name: --narration-column;
+}
+
+/* Pinned to the top of the screen, in the page margin beside the column when there is room, otherwise in the corner */
 :root:has([data-narrating]) {
   scroll-padding-block: 16px 210px;
+
+  [data-narration-host="panel"] {
+    top: 16px;
+    right: auto;
+    bottom: auto;
+    left: calc(anchor(right) + 24px);
+    position-anchor: --narration-column;
+    position-try-fallbacks: flip-inline, --narration-corner;
+  }
+}
+
+@position-try --narration-corner {
+  top: auto;
+  right: 16px;
+  bottom: 16px;
+  left: auto;
 }

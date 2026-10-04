@@ -16,8 +16,12 @@ export enum PanelAction {
 const SHADOW_MODE = "open";
 const STATIC_POSITION = "static";
 const RELATIVE_POSITION = "relative";
-const HOST_RESET = "all: initial;";
-const FOLLOW_SYSTEM_SCHEME = "light dark";
+const HOST_ATTRIBUTE = "data-narration-host";
+
+enum HostKind {
+  Overlay = "overlay",
+  Panel = "panel"
+}
 
 const PLAY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
 const PAUSE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>`;
@@ -54,15 +58,13 @@ function isPanelAction(value: string | undefined): value is PanelAction {
   return value !== undefined && panelActionValues.has(value);
 }
 
-function createShadowHost({ css, template, hostStyle }: {
+function createShadowHost({ css, template, kind }: {
   css: string;
   template: string;
-  hostStyle: string;
+  kind: HostKind;
 }) {
   const elHost = document.createElement("span");
-  // A page that pins data-theme="light" or "dark" pins the narrator too, otherwise both follow the system
-  const colorScheme = document.documentElement.dataset.theme ?? FOLLOW_SYSTEM_SCHEME;
-  elHost.style.cssText = `${HOST_RESET} color-scheme: ${colorScheme}; ${hostStyle}`;
+  elHost.setAttribute(HOST_ATTRIBUTE, kind);
   const shadowRoot = elHost.attachShadow({ mode: SHADOW_MODE });
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(themeCss + css);
@@ -93,7 +95,7 @@ export function createCardOverlay({ elCard, onPlay }: {
   const { elHost, shadowRoot } = createShadowHost({
     css: overlayCss,
     template: OVERLAY_TEMPLATE,
-    hostStyle: "position: absolute; inset: 0; pointer-events: none; z-index: 2147483000;"
+    kind: HostKind.Overlay
   });
   const isStaticallyPositioned = getComputedStyle(elCard).position === STATIC_POSITION;
   if (isStaticallyPositioned) {
@@ -137,7 +139,7 @@ export function createTourPanel({ cardCount, onAction }: {
   const { elHost, shadowRoot } = createShadowHost({
     css: panelCss,
     template: PANEL_TEMPLATE,
-    hostStyle: "position: fixed; z-index: 2147483001;"
+    kind: HostKind.Panel
   });
   const elPanel = queryRequired<HTMLElement>({
     root: shadowRoot,

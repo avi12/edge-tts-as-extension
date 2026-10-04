@@ -16,6 +16,7 @@ const SHADOW_MODE = "open";
 const STATIC_POSITION = "static";
 const RELATIVE_POSITION = "relative";
 const HOST_RESET = "all: initial;";
+const FOLLOW_SYSTEM_SCHEME = "light dark";
 
 const PLAY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
 const PAUSE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>`;
@@ -58,7 +59,9 @@ function createShadowHost({ css, template, hostStyle }: {
   hostStyle: string;
 }) {
   const elHost = document.createElement("span");
-  elHost.style.cssText = HOST_RESET + hostStyle;
+  // A page that pins data-theme="light" or "dark" pins the narrator too, otherwise both follow the system
+  const colorScheme = document.documentElement.dataset.theme ?? FOLLOW_SYSTEM_SCHEME;
+  elHost.style.cssText = `${HOST_RESET} color-scheme: ${colorScheme}; ${hostStyle}`;
   const shadowRoot = elHost.attachShadow({ mode: SHADOW_MODE });
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(themeCss + css);

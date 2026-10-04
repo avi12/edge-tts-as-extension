@@ -6,31 +6,23 @@
 }
 
 :host {
-  --narrator-ground: #edf5fc;
-  --narrator-ink: #06182b;
-  --narrator-muted: #2a4a66;
-  --narrator-fill: #8ee6ff;
-  --narrator-on-fill: #06182b;
-  --narrator-mark: #00b3e6;
-  --narrator-glow: none;
-  --narrator-shadow: 3px 3px 0 rgb(6 24 43 / 22%);
-  --narrator-danger: #c4004e;
+  --narrator-ground: light-dark(#edf5fc, #0c1620);
+  --narrator-ink: light-dark(#06182b, #00e5ff);
+  --narrator-muted: light-dark(#2a4a66, #93b2c2);
+  --narrator-fill: light-dark(#8ee6ff, #00e5ff);
+  --narrator-on-fill: light-dark(#06182b, #001820);
+  --narrator-frame: light-dark(#0079a8, #00e5ff);
+  --narrator-mark: light-dark(#00b3e6, #04323e);
+  --narrator-glow: 0 0 14px light-dark(transparent, rgb(0 229 255 / 45%));
+  --narrator-shadow:
+    3px 3px 0 light-dark(rgb(6 24 43 / 22%), transparent),
+    0 0 0 1px light-dark(transparent, rgb(0 229 255 / 24%)),
+    0 12px 32px light-dark(transparent, rgb(0 0 0 / 70%));
+  --narrator-danger: light-dark(#c4004e, #ff2a4d);
   --narrator-sans: "Chakra Petch", system-ui, sans-serif;
   --narrator-mono: "Share Tech Mono", ui-monospace, monospace;
   --narrator-chamfer: 7px;
   --narrator-ease: cubic-bezier(0.16, 1, 0.3, 1);
-
-  @media (prefers-color-scheme: dark) {
-    --narrator-ground: #0c1620;
-    --narrator-ink: #00e5ff;
-    --narrator-muted: #93b2c2;
-    --narrator-fill: #00e5ff;
-    --narrator-on-fill: #001820;
-    --narrator-mark: #04323e;
-    --narrator-glow: 0 0 14px rgb(0 229 255 / 45%);
-    --narrator-shadow: 0 0 0 1px rgb(0 229 255 / 24%), 0 12px 32px rgb(0 0 0 / 70%);
-    --narrator-danger: #ff2a4d;
-  }
 }
 
 button {

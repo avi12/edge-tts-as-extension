@@ -24,7 +24,7 @@
 :host([data-status="playing"]),
 :host([data-status="paused"]) {
   .frame {
-    border-color: var(--narrator-fill);
+    border-color: var(--narrator-frame);
     box-shadow: inset 0 0 18px rgb(0 229 255 / 18%);
   }
 

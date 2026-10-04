@@ -2,6 +2,7 @@ export * from "./chunk";
 export * from "./client";
 export * from "./constants";
 export * from "./gec";
+export * from "./language";
 export * from "./protocol";
 export * from "./ssml";
 export * from "./words";

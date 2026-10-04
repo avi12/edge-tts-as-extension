@@ -1,6 +1,7 @@
 {
   "extends": ["stylelint-config-ccb"],
-  "ignoreFiles": ["node_modules/**", ".output/**", ".wxt/**", "research/**"],
+  "customSyntax": "postcss-html",
+  "ignoreFiles": ["node_modules/**", ".output/**", ".wxt/**", ".claude/**", "research/**", "**/*.svg"],
   "rules": {
     "plugin/stylelint-no-indistinguishable-colors": null,
     "color-format/format": null,
@@ -11,6 +12,7 @@
     "no-unknown-custom-properties": null,
     "csstools/value-no-unknown-custom-properties": null,
     "color-no-hex": null,
+    "selector-pseudo-class-no-unknown": [true, { "ignorePseudoClasses": ["global"] }],
     "property-disallowed-list": null,
     "function-disallowed-list": null,
     "declaration-property-value-allowed-list": null,
@@ -36,5 +38,11 @@
     "plugin/no-low-performance-animation-properties": null,
     "font-family-no-missing-generic-family-keyword": null,
     "a11y/font-size-is-readable": null
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.css"],
+      "customSyntax": "postcss"
+    }
+  ]
 }

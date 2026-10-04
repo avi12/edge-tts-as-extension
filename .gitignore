@@ -3,3 +3,8 @@ node_modules/
 .wxt/
 *.webm
 *.log
+
+# Manim (narrated videos)
+.venv/
+media/
+__pycache__/

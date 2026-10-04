@@ -2,6 +2,7 @@
 - pnpm
 - WXT extension framework (Chrome MV3)
 - Vanilla TypeScript, no UI framework (100% type safety, let TypeScript infer return types - never write them explicitly)
+- TypeScript 7 (`@typescript/native` alias, gives `tsc`) side by side with TypeScript 6 (`typescript` alias of `@typescript/typescript6`, gives `tsc6`) - typescript-eslint still needs the TS 6 API; never collapse them back into one
 - zod for validating loose data
 - vitest for tests (`LIVE=1 pnpm test` also hits the real Read Aloud service)
 - Layout: `lib/edge-tts/*` is the Read Aloud protocol client, `lib/messages.ts` the message contract, `lib/settings.ts` the stored settings, `entrypoints/*` the background, offscreen player and popup. `research/*.mjs` are Node scripts from the reverse engineering. `research/edge-microsoft-voices/*.js` is vendored Microsoft source - never lint, refactor or edit it
@@ -68,8 +69,8 @@ After each modification, run the checks (`pnpm check` runs all of them in order)
 - `pnpm stylelint` runs `stylelint "**/*.css" --fix`
 - `pnpm test`
 - After every bug fix, feature, or refactor - anything that removes or rewires code - run a fallow dead-code audit and clean up what it flags as newly unused (imports, helpers, exports, whole files) so changes never leave orphans behind. Never run `fallow fix` automatically - act on the audit by hand
-  - ONE root config at `/.fallowrc.json`. It carries NO ignore lists - only `health` thresholds, the `research/*.mjs` entries, and `unused-enum-members: warn` (enums double as zod value vocabularies via `z.enum(SomeEnum)`, so not every member is referenced by name). `pnpm fallow` (= `fallow audit --base HEAD`) is the incremental gate; `pnpm exec fallow dead-code --root .` is the full sweep
+  - ONE root config at `/.fallowrc.json`. It carries only `health` thresholds, the `research/*.mjs` entries, two fixed ignores (the vendored `research/edge-microsoft-voices/**`, and `@typescript/native`, whose `tsc` bin fallow attributes to `typescript`) and `unused-enum-members: warn` (enums double as zod value vocabularies via `z.enum(SomeEnum)`, so not every member is referenced by name). `pnpm fallow` (= `fallow audit --base HEAD`) is the incremental gate; `pnpm exec fallow dead-code --root .` is the full sweep
   - fallow is PINNED to 2.103.0 (devDep). Never invoke it via `pnpx`/`pnpm dlx` (that fetches latest and ignores the pin) - always the local bin (`pnpm fallow` / `pnpm exec fallow`)
-  - An export used only WITHIN its own file is an over-export: drop the `export` keyword rather than adding an ignore
+  - An export used only WITHIN its own file is an over-export: drop the `export` keyword rather than adding an ignore - never grow the ignore lists
 - Lint coverage: `lib/**`, `entrypoints/**` (any new entrypoint, e.g. a content script, is covered automatically), `research/*.mjs` (Node globals), `eslint-rules/`, configs. Excluded: `research/edge-microsoft-voices/`, `.output/`, `.wxt/`
 - Never blanket-disable a rule; a narrowly justified disable comment is acceptable only when a rule truly cannot be satisfied

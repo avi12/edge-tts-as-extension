@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/getfallow/fallow/main/schema/fallowrc.json",
+  "entry": ["research/*.mjs"],
+  "ignorePatterns": ["research/edge-microsoft-voices/**"],
+  "ignoreDependencies": ["@typescript/native"],
+  "health": {
+    "maxCognitive": 30,
+    "maxCrap": 10000
+  },
+  "rules": {
+    "unused-enum-members": "warn"
+  }
+}

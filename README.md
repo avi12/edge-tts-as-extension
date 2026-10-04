@@ -1,30 +1,13 @@
-# Edge Read Aloud for Chrome
+# Edge Read Aloud, reverse engineered
 
-A Chrome extension (built with [WXT](https://wxt.dev)) that reads text aloud
-with the same online neural voices as Microsoft Edge's Read Aloud. How the
-Edge feature works, and how it was recovered, is in [research/README.md](research/README.md).
+Microsoft Edge's Read Aloud voices, usable outside Edge: a `narrate` CLI that bakes voice narration into
+Claude artifact pages, and a Chrome extension (built with [WXT](https://wxt.dev)) that reads text aloud.
+How the Edge feature works, and how it was recovered, is in [research/README.md](research/README.md).
 
-## Use it
+## Narrated artifacts
 
-```sh
-pnpm install
-pnpm build          # → .output/chrome-mv3, load it via chrome://extensions → Load unpacked
-pnpm dev            # opens a Chrome with the extension and hot reload
-```
-
-Ways to send it text:
-
-- **Popup** - paste text, pick a voice and speed, press *Read aloud*
-- **Right-click** selected text → *Read aloud*
-- **Alt+Shift+R** reads the current selection
-- **Other extensions** - `chrome.runtime.sendMessage(EXTENSION_ID, { type: 'speak', text, voice?, rate? })`;
-  also `pause`, `resume`, `stop`, `get-state`
-
-## Claude artifacts
-
-Inside Claude artifact pages (published `claude.ai/artifact/...` pages and artifacts in a chat) every card
-with a `data-narrate` script gets a play button, and a panel offers a tour of all cards with live subtitles.
-Pages without scripts fall back to reading each captioned card. Page authors can sync animation to the voice:
+Narration is designed into a page at authoring time and pre-rendered, so it plays in any browser with no
+extension. Give each card a spoken script, with `[[cue]]` markers right before the words that introduce a part:
 
 ```html
 <section data-narrate="The popup sends a request [[wire]] across the wire to the speech service">
@@ -32,24 +15,45 @@ Pages without scripts fall back to reading each captioned card. Page authors can
 </section>
 <style>
   [data-narrating]:not([data-cued~="wire"]) [data-cue="wire"] { opacity: 0.2 }
+  [data-cued~="wire"] [data-cue="wire"] { animation: draw 0.6s both }
 </style>
 ```
 
-The narrator sets `data-narrating` on the card while it speaks and adds each cue to `data-cued` the
-moment its word is spoken. It also posts `{ source: "edge-read-aloud", type: "narration", card, cue, status }`
-to the page. Without the extension the page is unchanged.
+```sh
+pnpm narrate page.html                   # embeds mp3 audio, word and cue timings and the runtime, in place
+pnpm narrate page.html --out narrated.html --voice en-GB-SoniaNeural --rate 1.1
+pnpm narrate page.html --export clips    # also writes NN-slug.mp3 + timings JSON per card, for Manim
+```
+
+The embedded runtime (`src/narration-runtime/`, about 11 KB) adds a play button to each narrated card and a
+tour panel with live subtitles. While a card plays it sets `data-narrating` on it and adds each cue to
+`data-cued` the moment its word is spoken, so the page's own CSS animates in step with the voice. It also
+fires a bubbling `narration:cue` event. Re-running the CLI replaces its own block.
+
+## The extension
+
+```sh
+pnpm install
+pnpm build          # → .output/chrome-mv3, load it via chrome://extensions → Load unpacked
+pnpm dev            # opens a Chrome with the extension and hot reload
+```
+
+- **Popup** - paste text, pick a voice and speed, press *Read aloud*
+- **Other extensions** - `chrome.runtime.sendMessage(EXTENSION_ID, { type: 'speak', text, voice?, rate? })`;
+  also `pause`, `resume`, `stop`, `get-state`
 
 ## Layout
 
 | Path | Role |
 | --- | --- |
 | `src/lib/edge-tts/` | The reimplemented protocol: token, `Sec-MS-GEC`, SSML, frames, streaming client, voices, chunking |
+| `src/lib/narration.ts` | Narration contract, `[[cue]]` parser and timing |
+| `src/cli/narrate.ts` | The `narrate` CLI: pre-renders and embeds page narration |
+| `src/narration-runtime/` | The runtime embedded in narrated pages: buttons, tour panel, cue sync |
 | `src/lib/messages.ts` | Message contract shared by every part of the extension |
-| `src/entrypoints/background.ts` | Header-rewrite rule, context menu, shortcut, message routing |
+| `src/entrypoints/background.ts` | Header-rewrite rule, message routing |
 | `src/entrypoints/offscreen/` | Player: streams audio into a `MediaSource`, tracks the spoken word |
 | `src/entrypoints/popup/` | UI with read-along highlighting |
-| `src/entrypoints/artifact-narrator.content/` | Narration buttons, tour panel and cue sync inside Claude artifact frames |
-| `src/lib/narration.ts` | Narration contract and the `[[cue]]` script parser |
 
 ## Tests
 

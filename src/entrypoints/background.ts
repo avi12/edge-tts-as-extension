@@ -1,24 +1,15 @@
 import { DEFAULT_PROSODY, EDGE_EXTENSION_ORIGIN, EDGE_USER_AGENT, SERVICE_HOST } from "@/lib/edge-tts";
 import {
   Command,
-  IDLE_STATE,
   OFFSCREEN_TARGET,
   type PlayerRequest,
-  type PlayerState,
   playerTargetSchema,
   type Request,
   requestSchema,
-  type SpeakRequest,
-  type StateEvent,
-  stateEventSchema
+  type SpeakRequest
 } from "@/lib/messages";
+import { IDLE_STATE, type PlayerState } from "@/lib/player-status";
 import { settings } from "@/lib/settings";
-import { KeyboardCommand } from "@/lib/shortcuts";
-
-enum MenuItemId {
-  ReadAloud = "read-aloud",
-  StopReading = "stop-reading"
-}
 
 enum HeaderName {
   Origin = "Origin",
@@ -29,13 +20,7 @@ const OFFSCREEN_PATH = "/offscreen.html";
 const HEADER_RULE_ID = 1;
 const HEADER_RULE_PRIORITY = 1;
 
-interface RequesterFrame {
-  tabId: number;
-  frameId: number;
-}
-
 let offscreenCreation: Promise<void> | null = null;
-let speakerFrame: RequesterFrame | null = null;
 
 // The service only accepts handshakes that carry Edge's extension Origin and an Edge User-Agent -
 // rewrite both, but only for this extension's requests
@@ -107,11 +92,7 @@ async function ensureOffscreen() {
   await offscreenCreation;
 }
 
-async function speak({ request, frame }: {
-  request: SpeakRequest;
-  frame?: RequesterFrame;
-}) {
-  speakerFrame = frame ?? null;
+async function speak(request: SpeakRequest) {
   const text = request.text.trim();
   if (!text) {
     return IDLE_STATE;
@@ -130,15 +111,9 @@ async function speak({ request, frame }: {
   });
 }
 
-async function handle({ request, frame }: {
-  request: Request;
-  frame?: RequesterFrame;
-}) {
+async function handle(request: Request) {
   if (request.type === Command.Speak) {
-    return speak({
-      request,
-      frame
-    });
+    return speak(request);
   }
 
   const isPlayerOpen = await hasOffscreen();
@@ -149,31 +124,8 @@ async function handle({ request, frame }: {
   return sendToPlayer(request);
 }
 
-function getRequesterFrame(sender: Browser.runtime.MessageSender) {
-  const tabId = sender.tab?.id;
-  const { frameId } = sender;
-  const isFromTab = tabId !== undefined && frameId !== undefined;
-  return isFromTab
-    ? {
-      tabId,
-      frameId
-    }
-    : undefined;
-}
-
-function ignoreClosedFrame() {}
-
-function forwardToSpeakerFrame(event: StateEvent) {
-  if (!speakerFrame) {
-    return;
-  }
-
-  browser.tabs.sendMessage(speakerFrame.tabId, event, { frameId: speakerFrame.frameId }).catch(ignoreClosedFrame);
-}
-
-function respondToRequest({ message, frame, sendResponse }: {
+function respondToRequest({ message, sendResponse }: {
   message: unknown;
-  frame?: RequesterFrame;
   sendResponse: (state: PlayerState) => void;
 }) {
   const parsed = requestSchema.safeParse(message);
@@ -181,93 +133,21 @@ function respondToRequest({ message, frame, sendResponse }: {
     return false;
   }
 
-  void handle({
-    request: parsed.data,
-    frame
-  }).then(sendResponse);
+  void handle(parsed.data).then(sendResponse);
   return true;
 }
 
 export default defineBackground(() => {
   void installHeaderRule();
 
-  browser.runtime.onInstalled.addListener(() => {
-    browser.contextMenus.create({
-      id: MenuItemId.ReadAloud,
-      title: "Read aloud",
-      contexts: [browser.contextMenus.ContextType.SELECTION]
-    });
-    browser.contextMenus.create({
-      id: MenuItemId.StopReading,
-      title: "Stop reading",
-      contexts: [browser.contextMenus.ContextType.ALL]
-    });
-  });
-
-  browser.contextMenus.onClicked.addListener(({ menuItemId, selectionText }) => {
-    if (menuItemId === MenuItemId.StopReading) {
-      void handle({
-        request: {
-          type: Command.Stop
-        }
-      });
-      return;
-    }
-
-    const isReadAloud = menuItemId === MenuItemId.ReadAloud;
-    if (!isReadAloud || !selectionText) {
-      return;
-    }
-
-    void handle({
-      request: {
-        type: Command.Speak,
-        text: selectionText
-      }
-    });
-  });
-
-  browser.commands.onCommand.addListener(async (command, tab) => {
-    const tabId = tab?.id;
-    const isReadSelection = command === KeyboardCommand.ReadSelection;
-    if (!isReadSelection || tabId === undefined) {
-      return;
-    }
-
-    const [injection] = await browser.scripting.executeScript({
-      target: {
-        tabId
-      },
-      func: () => getSelection()?.toString() ?? ""
-    });
-    const text = injection?.result;
-    if (!text) {
-      return;
-    }
-
-    await handle({
-      request: {
-        type: Command.Speak,
-        text
-      }
-    });
-  });
-
-  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const isForPlayer = playerTargetSchema.safeParse(message).success;
     if (isForPlayer) {
       return false;
     }
 
-    const parsedStateEvent = stateEventSchema.safeParse(message);
-    if (parsedStateEvent.success) {
-      forwardToSpeakerFrame(parsedStateEvent.data);
-      return false;
-    }
-
     return respondToRequest({
       message,
-      frame: getRequesterFrame(sender),
       sendResponse
     });
   });

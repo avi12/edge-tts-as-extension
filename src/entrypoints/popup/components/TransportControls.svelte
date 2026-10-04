@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Command, type ControlRequest } from "@/lib/messages";
+  import { Command } from "@/lib/command";
+  import type { ControlRequest } from "@/lib/messages";
   import { isReadingStatus, PlayerStatus } from "@/lib/player-status";
 
   const { status, onspeak, oncontrol }: {

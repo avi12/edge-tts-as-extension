@@ -1,5 +1,6 @@
 import { createPlayer } from "./player";
-import { Command, playerMessageSchema, STATE_EVENT, type StateEvent } from "@/lib/messages";
+import { Command } from "@/lib/command";
+import { playerMessageSchema, STATE_EVENT, type StateEvent } from "@/lib/messages";
 
 function ignoreClosedPopup() {}
 

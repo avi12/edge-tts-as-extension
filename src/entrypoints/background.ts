@@ -1,8 +1,8 @@
 import { EDGE_EXTENSION_ORIGIN, EDGE_USER_AGENT, SERVICE_HOST } from "@/lib/edge-tts/constants";
 import { detectLanguage, pickVoice } from "@/lib/edge-tts/language";
 import { DEFAULT_PROSODY } from "@/lib/edge-tts/ssml";
+import { Command } from "@/lib/command";
 import {
-  Command,
   OFFSCREEN_TARGET,
   type PlayerRequest,
   playerTargetSchema,

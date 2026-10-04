@@ -1,15 +1,8 @@
+import { Command } from "@/lib/command";
 import type { Prosody } from "@/lib/edge-tts/ssml";
 import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 import { z } from "@/lib/zod";
 import { browser } from "wxt/browser";
-
-export enum Command {
-  Speak = "speak",
-  Stop = "stop",
-  Pause = "pause",
-  Resume = "resume",
-  GetState = "get-state"
-}
 
 export const STATE_EVENT = "state";
 export const OFFSCREEN_TARGET = "offscreen";

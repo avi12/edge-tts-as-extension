@@ -1,12 +1,7 @@
+import { Command } from "@/lib/command";
 import type { Voice } from "@/lib/edge-tts/voice-list";
 import { getErrorMessage } from "@/lib/errors";
-import {
-  Command,
-  type ControlRequest,
-  type Request,
-  sendRequest,
-  stateEventSchema
-} from "@/lib/messages";
+import { type ControlRequest, type Request, sendRequest, stateEventSchema } from "@/lib/messages";
 import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
 import {
   DEFAULT_SETTINGS,

@@ -52,7 +52,7 @@
   },
   "overrides": [
     {
-      "files": ["research/*.mjs", "eslint-rules/*.js", "**/*.config.ts", "**/*.config.js", "**/*.config.mjs", "**/*.test.ts"],
+      "files": ["research/*.mjs", "src/cli/**", "eslint-rules/*.js", "**/*.config.ts", "**/*.config.js", "**/*.config.mjs", "**/*.test.ts"],
       "env": {
         "node": true
       },

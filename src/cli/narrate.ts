@@ -6,13 +6,16 @@
 import {
   DEFAULT_PROSODY,
   DEFAULT_VOICE,
+  fetchVoices,
   MP3_BITS_PER_SECOND,
   MP3_MIME_TYPE,
   MP3_OUTPUT_FORMAT,
+  RATE,
   synthesize,
   type WordBoundary
 } from "@/lib/edge-tts";
 import { openEdgeSocket } from "@/lib/edge-tts/node-socket";
+import { getErrorMessage } from "@/lib/errors";
 import {
   NARRATION_DATA_ID,
   NarrationAttribute,
@@ -21,6 +24,7 @@ import {
   parseNarrationScript,
   timeNarration
 } from "@/lib/narration";
+import { z } from "@/lib/zod";
 import { build, type Plugin } from "esbuild";
 import { parseHTML } from "linkedom";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -30,6 +34,8 @@ import { parseArgs } from "node:util";
 const RUNTIME_ENTRY = path.join(import.meta.dirname, "..", "narration-runtime", "runtime.ts");
 const RAW_SUFFIX = /\?raw$/;
 const RAW_NAMESPACE = "raw";
+const USAGE = "Usage: pnpm narrate <page.html> [--out <file>] [--voice <name>] [--rate <n>] [--export <dir>]";
+const rateSchema = z.coerce.number().min(RATE.min).max(RATE.max);
 const BLOCK_START = "<!-- narration:start -->";
 const BLOCK_END = "<!-- narration:end -->";
 const EXISTING_BLOCK = new RegExp(`\\n?${BLOCK_START}[\\s\\S]*?${BLOCK_END}`);
@@ -168,6 +174,11 @@ function embedNarration({ html, data, runtime }: {
   return `${html.replace(EXISTING_BLOCK, "").trimEnd()}\n${block}\n`;
 }
 
+// pnpm --dir runs scripts in the repo, INIT_CWD is where the caller ran it
+function resolveFromCaller(file: string) {
+  return path.resolve(process.env.INIT_CWD ?? process.cwd(), file);
+}
+
 async function main() {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -188,10 +199,23 @@ async function main() {
       }
     }
   });
-  const [input] = positionals;
-  if (!input) {
-    throw new Error("Usage: pnpm narrate <page.html> [--out <file>] [--voice <name>] [--rate <n>] [--export <dir>]");
+  const [inputArgument] = positionals;
+  if (!inputArgument) {
+    throw new Error(USAGE);
   }
+
+  const parsedRate = rateSchema.safeParse(values.rate);
+  if (!parsedRate.success) {
+    throw new Error(`--rate takes a speed multiplier from ${RATE.min} to ${RATE.max}, got "${values.rate}"`);
+  }
+
+  const voices = await fetchVoices();
+  const isKnownVoice = voices.some(voice => voice.ShortName === values.voice);
+  if (!isKnownVoice) {
+    throw new Error(`Unknown voice "${values.voice}" - use a ShortName like ${DEFAULT_VOICE}`);
+  }
+
+  const input = resolveFromCaller(inputArgument);
 
   const html = await readFile(input, "utf8");
   const cards = readCards(html);
@@ -211,7 +235,7 @@ async function main() {
     const synthesized = await synthesizeClip({
       script,
       voice: values.voice,
-      rate: Number(values.rate)
+      rate: parsedRate.data
     });
     clips.push(synthesized);
     console.log(`${iCard + 1}/${cards.length}  ${synthesized.clip.duration.toFixed(1)}s  cues: ${synthesized.clip.cues.map(([name, time]) => `${name}@${time}`).join(" ") || "-"}`);
@@ -219,12 +243,12 @@ async function main() {
 
   if (values.export) {
     await exportClips({
-      directory: values.export,
+      directory: resolveFromCaller(values.export),
       clips
     });
   }
 
-  const output = values.out ?? input;
+  const output = values.out ? resolveFromCaller(values.out) : input;
   await writeFile(
     output, embedNarration({
       html,
@@ -243,4 +267,7 @@ async function main() {
   console.log(`Narrated ${clips.length} parts (${totalSeconds.toFixed(0)}s of audio) into ${output}`);
 }
 
-await main();
+await main().catch((error: unknown) => {
+  console.error(getErrorMessage(error));
+  process.exitCode = 1;
+});

@@ -1,12 +1,5 @@
-import { DEFAULT_VOICE, type Voice } from "@/lib/edge-tts";
+import { DEFAULT_PROSODY, DEFAULT_VOICE, type Voice } from "@/lib/edge-tts";
 import { storage } from "wxt/utils/storage";
-
-export const RATE = {
-  min: 0.5,
-  max: 2,
-  step: 0.1,
-  default: 1
-};
 
 export const VOICE_CACHE_MS = 24 * 60 * 60 * 1000;
 
@@ -23,7 +16,7 @@ interface VoiceCache {
 export const settings = storage.defineItem<Settings>("sync:settings", {
   fallback: {
     voice: DEFAULT_VOICE,
-    rate: RATE.default
+    rate: DEFAULT_PROSODY.rate
   }
 });
 

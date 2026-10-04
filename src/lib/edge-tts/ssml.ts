@@ -45,6 +45,12 @@ export const DEFAULT_PROSODY: Prosody = {
   pitchHz: 0
 };
 
+export const RATE = {
+  min: 0.5,
+  max: 2,
+  step: 0.1
+};
+
 export function sanitizeText(text: string) {
   return text
     .replace(NON_WHITESPACE_CONTROL, " ")

@@ -29,11 +29,11 @@ const NON_WHITESPACE_CONTROL = /[\u0000-\u0008\u000E-\u001F]/g;
 export function sanitizeText(text: string): string {
   return text
     .replace(NON_WHITESPACE_CONTROL, ' ')
-    .replace(/[‘’‛‚′“”„‟″]/g, (c) => STRAIGHT_QUOTES[c]);
+    .replace(/[‘’‛‚′“”„‟″]/g, (c) => STRAIGHT_QUOTES[c] ?? c);
 }
 
 export function escapeXml(text: string): string {
-  return text.replace(/[<>&"']/g, (c) => XML_ESCAPES[c]);
+  return text.replace(/[<>&"']/g, (c) => XML_ESCAPES[c] ?? c);
 }
 
 export interface Prosody {

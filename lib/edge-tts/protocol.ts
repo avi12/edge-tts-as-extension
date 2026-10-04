@@ -69,7 +69,7 @@ export function parseTextFrame(data: string): TextFrame {
 
 export interface BinaryFrame {
   path: string;
-  audio: Uint8Array;
+  audio: Uint8Array<ArrayBuffer>;
 }
 
 export function parseBinaryFrame(buffer: ArrayBuffer): BinaryFrame {

@@ -27,7 +27,7 @@ export async function synthesizeUrl(): Promise<string> {
 }
 
 export interface SynthesizeHandlers {
-  onAudio: (chunk: Uint8Array) => void;
+  onAudio: (chunk: Uint8Array<ArrayBuffer>) => void;
   onWordBoundary?: (boundary: WordBoundary) => void;
   signal?: AbortSignal;
 }

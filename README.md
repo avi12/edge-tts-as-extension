@@ -14,10 +14,10 @@ pnpm dev            # opens a Chrome with the extension and hot reload
 
 Ways to send it text:
 
-- **Popup** — paste text, pick a voice and speed, press *Read aloud*
+- **Popup** - paste text, pick a voice and speed, press *Read aloud*
 - **Right-click** selected text → *Read aloud*
 - **Alt+Shift+R** reads the current selection
-- **Other extensions** — `chrome.runtime.sendMessage(EXTENSION_ID, { type: 'speak', text, voice?, rate? })`;
+- **Other extensions** - `chrome.runtime.sendMessage(EXTENSION_ID, { type: 'speak', text, voice?, rate? })`;
   also `pause`, `resume`, `stop`, `get-state`
 
 ## Layout
@@ -35,6 +35,7 @@ Ways to send it text:
 ```sh
 pnpm test           # unit tests
 LIVE=1 pnpm test    # also hits the real service
+pnpm check          # compile, lint, stylelint, fallow dead-code, tests
 ```
 
 ## Caveat

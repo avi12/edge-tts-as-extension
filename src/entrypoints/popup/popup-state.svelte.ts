@@ -1,4 +1,4 @@
-import type { Voice } from "@/lib/edge-tts/client";
+import type { Voice } from "@/lib/edge-tts/voice-list";
 import { getErrorMessage } from "@/lib/errors";
 import {
   Command,

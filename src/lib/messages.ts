@@ -1,4 +1,4 @@
-import type { Prosody } from "@/lib/edge-tts";
+import type { Prosody } from "@/lib/edge-tts/ssml";
 import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 import { z } from "@/lib/zod";
 import { browser } from "wxt/browser";

@@ -1,4 +1,4 @@
-import type { Voice } from "./client";
+import type { Voice } from "./voice-list";
 
 // Scripts that name their language outright - Latin is shared by too many languages to guess from
 const SCRIPT_LANGUAGES = [

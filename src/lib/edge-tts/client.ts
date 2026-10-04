@@ -1,4 +1,4 @@
-import { SEC_MS_GEC_VERSION, SYNTHESIZE_URL, TRUSTED_CLIENT_TOKEN, VOICES_URL } from "./constants";
+import { SEC_MS_GEC_VERSION, SYNTHESIZE_URL, TRUSTED_CLIENT_TOKEN } from "./constants";
 import { secMsGec } from "./gec";
 import {
   configMessage,
@@ -11,31 +11,17 @@ import {
   type WordBoundary
 } from "./protocol";
 import { buildSsml, type Prosody } from "./ssml";
-import { z } from "@/lib/zod";
 
 enum QueryParameter {
   TrustedClientToken = "TrustedClientToken",
   SecMsGec = "Sec-MS-GEC",
   SecMsGecVersion = "Sec-MS-GEC-Version",
-  ConnectionId = "ConnectionId",
-  VoicesTrustedClientToken = "trustedclienttoken"
+  ConnectionId = "ConnectionId"
 }
 
 const SOCKET_BINARY_TYPE = "arraybuffer";
 const NORMAL_CLOSURE_CODE = 1000;
 const ABORT_EVENT = "abort";
-
-const voiceSchema = z.object({
-  ShortName: z.string(),
-  FriendlyName: z.string(),
-  Locale: z.string(),
-  LocaleName: z.string(),
-  Gender: z.string()
-});
-
-const voicesSchema = z.array(voiceSchema);
-
-export type Voice = z.infer<typeof voiceSchema>;
 
 interface SynthesizeOptions {
   text: string;
@@ -152,14 +138,4 @@ export async function synthesize({
     socket.onerror = () => finish(new Error("The Read Aloud service refused the connection"));
     socket.onclose = e => finish(new Error(`Connection dropped before the audio finished (${e.code})`));
   });
-}
-
-export async function fetchVoices() {
-  const parameters = new URLSearchParams({ [QueryParameter.VoicesTrustedClientToken]: TRUSTED_CLIENT_TOKEN });
-  const response = await fetch(`${VOICES_URL}?${parameters}`);
-  if (!response.ok) {
-    throw new Error(`Couldn't get the voice list (${response.status})`);
-  }
-
-  return voicesSchema.parse(await response.json());
 }

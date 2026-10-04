@@ -1,13 +1,9 @@
-import {
-  AUDIO_MIME_TYPE,
-  chunkText,
-  createWordLocator,
-  type Prosody,
-  sanitizeText,
-  synthesize,
-  type TextChunk,
-  type WordBoundary
-} from "@/lib/edge-tts";
+import { chunkText, type TextChunk } from "@/lib/edge-tts/chunk";
+import { synthesize } from "@/lib/edge-tts/client";
+import { AUDIO_MIME_TYPE } from "@/lib/edge-tts/constants";
+import type { WordBoundary } from "@/lib/edge-tts/protocol";
+import { type Prosody, sanitizeText } from "@/lib/edge-tts/ssml";
+import { createWordLocator } from "@/lib/edge-tts/words";
 import { getErrorMessage } from "@/lib/errors";
 import { IDLE_STATE, PlayerStatus, type SpeakingState } from "@/lib/player-status";
 

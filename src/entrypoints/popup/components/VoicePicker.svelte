@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Voice } from "@/lib/edge-tts/client";
+  import type { Voice } from "@/lib/edge-tts/voice-list";
   import type { Settings } from "@/lib/settings";
   import { getVoiceName, groupVoicesByLocale } from "@/lib/voices";
 

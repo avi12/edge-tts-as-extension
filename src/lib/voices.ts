@@ -1,4 +1,4 @@
-import { fetchVoices, type Voice } from "@/lib/edge-tts/client";
+import { fetchVoices, type Voice } from "@/lib/edge-tts/voice-list";
 import { storage } from "wxt/utils/storage";
 
 const VOICE_CACHE_MS = 24 * 60 * 60 * 1000;

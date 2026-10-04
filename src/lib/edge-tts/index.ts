@@ -5,4 +5,5 @@ export * from "./gec";
 export * from "./language";
 export * from "./protocol";
 export * from "./ssml";
+export * from "./voice-list";
 export * from "./words";

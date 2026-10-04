@@ -14,21 +14,27 @@ extension. Give each card a spoken script, with `[[cue]]` markers right before t
   <svg>... <path data-cue="wire" /> ...</svg>
 </section>
 <style>
-  [data-narrating]:not([data-cued~="wire"]) [data-cue="wire"] { opacity: 0.2 }
-  [data-cued~="wire"] [data-cue="wire"] { animation: draw 0.6s both }
+  [data-narrating] [data-cue]:not([data-cue-reached]) { opacity: 0.2 }
+  [data-cue-reached] { animation: enter 0.6s both }
 </style>
 ```
 
 ```sh
-pnpm narrate page.html                   # embeds mp3 audio, word and cue timings and the runtime, in place
-pnpm narrate page.html --out narrated.html --voice en-GB-SoniaNeural --rate 1.1
+pnpm narrate page.src.html --out page.html   # embeds mp3 audio, word and cue timings and the runtime
+pnpm narrate page.html --voice en-GB-SoniaNeural --rate 1.1   # in place; re-running replaces its own block
 pnpm narrate page.html --export clips    # also writes NN-slug.mp3 + timings JSON per card, for Manim
 ```
 
 The embedded runtime (`src/narration-runtime/`, about 11 KB) adds a play button to each narrated card and a
-tour panel with live subtitles. While a card plays it sets `data-narrating` on it and adds each cue to
-`data-cued` the moment its word is spoken, so the page's own CSS animates in step with the voice. It also
-fires a bubbling `narration:cue` event. Re-running the CLI replaces its own block.
+tour panel with live subtitles. While a card plays it sets `data-narrating` on it, and the moment a cue's
+word is spoken it adds the cue to the card's `data-cued` list and sets `data-cue-reached` on every matching
+`data-cue` element, so the page's own CSS animates in step with the voice - two generic rules cover every
+cue. Both follow seeks and clear when the clip ends. It also fires a bubbling `narration:cue` event.
+
+Cue names are letters, digits, `_` and `-`, scoped to their card. The CLI fails on an empty script and warns
+when a marker has no `data-cue` element or the reverse. Relative paths resolve from where you ran it, so
+`pnpm --dir <repo> narrate page.html` works from anywhere. Keep the authored page as `page.src.html` and
+narrate into `page.html`: the embedded audio (about 8 KB per spoken second) makes the output hard to diff.
 
 ## The extension
 

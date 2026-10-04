@@ -1,5 +1,5 @@
 // The contract between narrated artifact pages, the narrate CLI and the embedded runtime -
-// documented for page authors in the global CLAUDE.md ("Narrate the artifact")
+// documented for page authors in README.md ("Narrated artifacts")
 
 import type { WordBoundary } from "@/lib/edge-tts/protocol";
 import { sanitizeText } from "@/lib/edge-tts/ssml";
@@ -10,7 +10,8 @@ export enum NarrationAttribute {
   Title = "data-narrate-title",
   Narrating = "data-narrating",
   Cued = "data-cued",
-  Cue = "data-cue"
+  Cue = "data-cue",
+  CueReached = "data-cue-reached"
 }
 
 export const NARRATION_DATA_ID = "narration-data";

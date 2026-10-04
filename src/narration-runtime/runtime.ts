@@ -120,6 +120,9 @@ function startNarration(data: NarrationData) {
     const reachedAttribute = [...reachedCueNames].join(CUE_SEPARATOR);
     if (reachedAttribute !== cuedAttribute) {
       card.elCard.setAttribute(NarrationAttribute.Cued, reachedAttribute);
+      for (const elCue of card.elCard.querySelectorAll(`[${NarrationAttribute.Cue}]`)) {
+        elCue.toggleAttribute(NarrationAttribute.CueReached, reachedCueNames.has(elCue.getAttribute(NarrationAttribute.Cue) ?? ""));
+      }
     }
 
     for (const cue of reachedCueNames.difference(previouslyCued)) {
@@ -186,6 +189,10 @@ function startNarration(data: NarrationData) {
     if (card) {
       card.elCard.removeAttribute(NarrationAttribute.Narrating);
       card.elCard.removeAttribute(NarrationAttribute.Cued);
+      for (const elCue of card.elCard.querySelectorAll(`[${NarrationAttribute.CueReached}]`)) {
+        elCue.removeAttribute(NarrationAttribute.CueReached);
+      }
+
       card.overlay.setStatus(PlayerStatus.Idle);
     }
 

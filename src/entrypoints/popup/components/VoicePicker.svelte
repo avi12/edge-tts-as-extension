@@ -58,10 +58,38 @@
     cursor: pointer;
 
     input {
-      width: 16px;
-      height: 16px;
+      appearance: none;
+      display: grid;
+      place-content: center;
+      width: 18px;
+      height: 18px;
       margin: 0;
-      accent-color: var(--primary);
+      border: 2px solid var(--border-strong);
+      background: var(--surface-2);
+      cursor: pointer;
+
+      &::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: var(--primary);
+        box-shadow: var(--cyber-glow-primary);
+        transition: scale var(--dur-short) var(--ease-emph);
+        scale: 0;
+      }
+
+      &:checked {
+        background: var(--primary-container);
+
+        &::before {
+          scale: 1;
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--border-strong);
+        outline-offset: 2px;
+      }
     }
   }
 

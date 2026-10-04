@@ -40,8 +40,27 @@
   }
 
   input {
+    appearance: none;
     width: 100%;
+    height: 12px;
     margin: 0;
-    accent-color: var(--primary);
+    border: 2px solid var(--border);
+    background: var(--surface-2);
+    cursor: pointer;
+
+    /* Chrome has no standard pseudo-element for a range thumb */
+    &::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 22px;
+      border: 2px solid var(--border-strong);
+      background: var(--primary-container);
+      box-shadow: var(--cyber-glow-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--border-strong);
+      outline-offset: 3px;
+    }
   }
 </style>

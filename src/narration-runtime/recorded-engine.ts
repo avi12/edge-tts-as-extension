@@ -107,6 +107,14 @@ export function createRecordedEngine(reportState: ReportState) {
       elAudio.pause();
     },
     resume: start,
+    seek(start) {
+      const word = clip?.words.find(([, wordStart]) => wordStart >= start);
+      if (!word) {
+        return;
+      }
+
+      elAudio.currentTime = word[0];
+    },
     stop() {
       clip = null;
       status = PlayerStatus.Idle;

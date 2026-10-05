@@ -7,6 +7,7 @@ import { type PlayerState, PlayerStatus, type SpeakingState } from "@/lib/player
 export enum PanelAction {
   Tour = "tour",
   Previous = "previous",
+  Back = "back",
   Pause = "pause",
   Resume = "resume",
   Next = "next",
@@ -18,6 +19,9 @@ const STATIC_POSITION = "static";
 const RELATIVE_POSITION = "relative";
 const HOST_ATTRIBUTE = "data-narration-host";
 const VOICE_NAME_SEPARATOR = "-";
+const SUBTITLE_WORD = /\S+/g;
+const WORD_START_ATTRIBUTE = "data-start";
+const SPOKEN_ATTRIBUTE = "data-spoken";
 const VOICE_NAME_SUFFIX = /(?:Multilingual)?Neural$/;
 
 enum HostKind {
@@ -48,6 +52,7 @@ const PANEL_TEMPLATE = `
     <menu class="controls">
       <li><button type="button" data-action="${PanelAction.Tour}">${PLAY_ICON}<span class="tour-label"></span></button></li>
       <li><button type="button" data-action="${PanelAction.Previous}" title="Previous card">Prev</button></li>
+      <li><button type="button" data-action="${PanelAction.Back}" title="Back to the start of the sentence">Back</button></li>
       <li><button type="button" data-action="${PanelAction.Pause}" title="Pause">${PAUSE_ICON}</button></li>
       <li><button type="button" data-action="${PanelAction.Resume}" title="Resume">${PLAY_ICON}</button></li>
       <li><button type="button" data-action="${PanelAction.Next}" title="Next card">Next</button></li>
@@ -123,27 +128,55 @@ export function createCardOverlay({ elCard, onPlay }: {
   };
 }
 
-function renderSubtitle({ elSubtitle, state }: {
+// Every word is its own span, so clicking one jumps the narration there
+function writeSubtitleWords({ elSubtitle, text }: {
+  elSubtitle: HTMLElement;
+  text: string;
+}) {
+  const nodes: (HTMLElement | string)[] = [];
+  let iTextEnd = 0;
+  for (const match of text.matchAll(SUBTITLE_WORD)) {
+    const elWord = document.createElement("span");
+    elWord.setAttribute(WORD_START_ATTRIBUTE, String(match.index));
+    elWord.textContent = match[0];
+    nodes.push(text.slice(iTextEnd, match.index), elWord);
+    iTextEnd = match.index + match[0].length;
+  }
+
+  elSubtitle.replaceChildren(...nodes, text.slice(iTextEnd));
+}
+
+function highlightSpokenWord({ elSubtitle, state }: {
   elSubtitle: HTMLElement;
   state: PlayerState;
 }) {
-  const { text, word } = state;
-  if (!word) {
-    elSubtitle.textContent = text;
+  const spokenStart = state.word?.start ?? -1;
+  let elSpoken: HTMLElement | null = null;
+  for (const elWord of elSubtitle.querySelectorAll<HTMLElement>(`[${WORD_START_ATTRIBUTE}]`)) {
+    const wordStart = Number(elWord.getAttribute(WORD_START_ATTRIBUTE));
+    const wordEnd = wordStart + (elWord.textContent?.length ?? 0);
+    const isSpoken = wordStart <= spokenStart && spokenStart < wordEnd;
+    elWord.toggleAttribute(SPOKEN_ATTRIBUTE, isSpoken);
+
+    if (isSpoken) {
+      elSpoken = elWord;
+    }
+  }
+
+  if (!elSpoken) {
     return;
   }
 
-  const elMark = document.createElement("mark");
-  elMark.textContent = text.slice(word.start, word.start + word.length);
-  elSubtitle.replaceChildren(text.slice(0, word.start), elMark, text.slice(word.start + word.length));
-  const centeredScrollTop = elMark.offsetTop - (elSubtitle.clientHeight - elMark.offsetHeight) / 2;
+  const centeredScrollTop = elSpoken.offsetTop - (elSubtitle.clientHeight - elSpoken.offsetHeight) / 2;
   elSubtitle.scrollTop = Math.max(centeredScrollTop, 0);
 }
 
-export function createTourPanel({ cardCount, onAction }: {
+export function createTourPanel({ cardCount, onAction, onSeek }: {
   cardCount: number;
   onAction: (action: PanelAction) => void;
+  onSeek: (start: number) => void;
 }) {
+  let subtitleText = "";
   const { elHost, shadowRoot } = createShadowHost({
     css: panelCss,
     template: PANEL_TEMPLATE,
@@ -175,6 +208,12 @@ export function createTourPanel({ cardCount, onAction }: {
   }).textContent = `Play tour · ${cardCount} ${cardCount === 1 ? "card" : "cards"}`;
 
   shadowRoot.addEventListener("click", e => {
+    const elWord = e.target instanceof Element ? e.target.closest(`[${WORD_START_ATTRIBUTE}]`) : null;
+    if (elWord) {
+      onSeek(Number(elWord.getAttribute(WORD_START_ATTRIBUTE)));
+      return;
+    }
+
     const elButton = e.target instanceof Element ? e.target.closest<HTMLButtonElement>("button[data-action]") : null;
     const action = elButton?.dataset.action;
     if (isPanelAction(action)) {
@@ -199,12 +238,20 @@ export function createTourPanel({ cardCount, onAction }: {
       elError.textContent = state?.error ?? "";
       elSubtitle.lang = locale ?? "";
 
-      if (!state || state.status === PlayerStatus.Error) {
-        elSubtitle.textContent = "";
+      const text = !state || state.status === PlayerStatus.Error ? "" : state.text;
+      if (text !== subtitleText) {
+        subtitleText = text;
+        writeSubtitleWords({
+          elSubtitle,
+          text
+        });
+      }
+
+      if (!state) {
         return;
       }
 
-      renderSubtitle({
+      highlightSpokenWord({
         elSubtitle,
         state
       });

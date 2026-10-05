@@ -28,6 +28,10 @@ function isBridgeMessage(data: unknown): data is BridgeMessage {
 export function createLiveEngine(reportState: ReportState) {
   let isAvailable = false;
   let speakingText: string | null = null;
+  let fullText = "";
+  let locale = "";
+  // The player cannot seek, so a jump re-speaks the text from that word and positions are shifted back
+  let spokenOffset = 0;
   // Late states for a card this page already left are not a takeover
   const sentTexts = new Set<string>();
 
@@ -37,7 +41,14 @@ export function createLiveEngine(reportState: ReportState) {
     }
 
     if (state.text === speakingText) {
-      reportState(state);
+      reportState({
+        ...state,
+        text: fullText,
+        word: state.word && {
+          start: state.word.start + spokenOffset,
+          length: state.word.length
+        }
+      });
       return;
     }
 
@@ -70,10 +81,21 @@ export function createLiveEngine(reportState: ReportState) {
     event: BridgeEvent.Hello
   });
 
+  function speakFrom(start: number) {
+    spokenOffset = start;
+    speakingText = fullText.slice(start);
+    sentTexts.add(speakingText);
+    sendRequest({
+      type: Command.Speak,
+      text: speakingText,
+      locale
+    });
+  }
+
   const engine: NarrationEngine = {
     async play(clip) {
-      speakingText = clip.text;
-      sentTexts.add(clip.text);
+      fullText = clip.text;
+      locale = clip.locale;
       reportState({
         status: PlayerStatus.Loading,
         text: clip.text,
@@ -81,11 +103,14 @@ export function createLiveEngine(reportState: ReportState) {
         error: null,
         voice: null
       });
-      sendRequest({
-        type: Command.Speak,
-        text: clip.text,
-        locale: clip.locale
-      });
+      speakFrom(0);
+    },
+    seek(start) {
+      if (speakingText === null) {
+        return;
+      }
+
+      speakFrom(start);
     },
     pause() {
       sendRequest({ type: Command.Pause });

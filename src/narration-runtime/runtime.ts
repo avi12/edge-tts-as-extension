@@ -16,6 +16,9 @@ const HEADING_SELECTOR = "h1, h2, h3, h4, .card-head";
 const SCROLL_BLOCK = "start";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const CUE_SEPARATOR = " ";
+const SENTENCE_START = /(?:^|[.!?]\s+)(?=\S)/g;
+// Back from the first few characters of a sentence goes to the previous one, like a music player's back button
+const BACK_GRACE_CHARACTERS = 12;
 
 interface NarratedCard {
   elCard: HTMLElement;
@@ -92,6 +95,23 @@ function markCues({ card, state }: {
   }
 }
 
+function findBackTarget({ text, spokenStart }: {
+  text: string;
+  spokenStart: number;
+}) {
+  let target = 0;
+  for (const match of text.matchAll(SENTENCE_START)) {
+    const sentenceStart = match.index + match[0].length;
+    if (sentenceStart > spokenStart - BACK_GRACE_CHARACTERS) {
+      break;
+    }
+
+    target = sentenceStart;
+  }
+
+  return target;
+}
+
 function releaseCard(card: NarratedCard) {
   card.elCard.removeAttribute(NarrationAttribute.Narrating);
   card.elCard.removeAttribute(NarrationAttribute.Cued);
@@ -119,7 +139,8 @@ function startNarration(data: NarrationData) {
 
   const panel = createTourPanel({
     cardCount: Math.min(elCards.length, data.clips.length),
-    onAction: action => void handlePanelAction(action)
+    onAction: action => void handlePanelAction(action),
+    onSeek: start => seek(start)
   });
   const cards: NarratedCard[] = [];
   for (const [iCard, clip] of data.clips.entries()) {
@@ -267,6 +288,14 @@ function startNarration(data: NarrationData) {
     stop();
   }
 
+  function seek(start: number) {
+    if (iActive === null) {
+      return;
+    }
+
+    engine.seek(start);
+  }
+
   async function handleCardButton(iCard: number) {
     const isThisCardActive = iActive === iCard;
     const status = getStatus();
@@ -299,6 +328,14 @@ function startNarration(data: NarrationData) {
         return;
       case PanelAction.Next:
         await narrateCard((iActive ?? -1) + 1);
+        return;
+      case PanelAction.Back:
+        seek(
+          findBackTarget({
+            text: getActiveCard()?.clip.text ?? "",
+            spokenStart: state?.word?.start ?? 0
+          })
+        );
         return;
       case PanelAction.Pause:
         engine.pause();

@@ -7,6 +7,8 @@ export interface NarrationEngine {
   play: (clip: NarrationClip) => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;
+  // Jumps to the word at (or after) this position in the clip's text
+  seek: (start: number) => void;
   stop: () => void;
 }
 

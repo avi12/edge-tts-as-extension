@@ -1,7 +1,11 @@
 .panel {
+  position: sticky;
+  top: 16px;
+  bottom: 16px;
   display: grid;
   gap: 8px;
   width: min(360px, calc(100vw - 32px));
+  margin-top: auto;
   padding: 10px 12px;
   border: 2px solid var(--narrator-ink);
   background: var(--narrator-ground);

@@ -26,28 +26,37 @@
   z-index: 2147483001;
 }
 
+[data-narrating] {
+  anchor-name: --narration-card;
+}
+
 /* The column holding the narrated card - for a card in a row of cards that is the row, so the panel never covers a sibling */
 :has(> [data-narrating]) {
   anchor-name: --narration-column;
 }
 
-/* Pinned to the top of the screen, in the page margin beside the column when there is room, otherwise in the corner */
+/* While a card narrates, the panel rides along it: in the margin beside its column when there is room (else the other
+   margin, else over the card itself), sticking to the screen edge while the card scrolls through */
 :root:has([data-narrating]) {
-  scroll-padding-block: 16px 210px;
+  position: relative;
+  scroll-padding-block-start: 16px;
 
   [data-narration-host="panel"] {
-    top: 16px;
+    position: absolute;
+    top: anchor(top);
     right: auto;
-    bottom: auto;
-    left: calc(anchor(right) + 24px);
-    position-anchor: --narration-column;
-    position-try-fallbacks: flip-inline, --narration-corner;
+    bottom: anchor(bottom);
+    left: calc(anchor(--narration-column right) + 24px);
+    display: flex;
+    flex-direction: column;
+    width: min(360px, 100vw - 32px);
+    position-anchor: --narration-card;
+    position-try-fallbacks: flip-inline, --narration-over-card;
   }
 }
 
-@position-try --narration-corner {
-  top: auto;
-  right: 16px;
-  bottom: 16px;
-  left: auto;
+@position-try --narration-over-card {
+  right: anchor(right);
+  left: anchor(left);
+  width: auto;
 }

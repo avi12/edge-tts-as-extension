@@ -3,7 +3,8 @@
   "entry": [
     "research/*.mjs",
     "src/narration-runtime/runtime.ts",
-    "src/cli/narrate.ts"
+    "src/cli/narrate.ts",
+    "src/cli/render-icons.ts"
   ],
   "ignorePatterns": [
     "research/edge-microsoft-voices/**",

@@ -16,9 +16,11 @@
     "svelte:check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check": "pnpm compile && pnpm svelte:check && pnpm lint && pnpm stylelint && fallow dead-code --root . && pnpm test",
     "postinstall": "wxt prepare",
-    "narrate": "tsx src/cli/narrate.ts"
+    "narrate": "tsx src/cli/narrate.ts",
+    "icons": "tsx src/cli/render-icons.ts"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/chrome": "^0.3.4",
     "@types/node": "^26.6.4",

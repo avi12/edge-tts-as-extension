@@ -33,30 +33,78 @@ const PLAY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l
 const PAUSE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>`;
 const SPEAKER_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>`;
 
+// A hint popover renders in the top layer, so the chamfer clip-paths around it never cut it off
+function hint({ id, text }: {
+  id: string;
+  text: string;
+}) {
+  return `<span class="hint" id="${id}" popover="hint">${text}</span>`;
+}
+
 const OVERLAY_TEMPLATE = `
   <span class="frame"></span>
-  <button class="play" type="button" title="Narrate this card">
+  <button class="play" type="button" interestfor="hint-play" aria-labelledby="hint-play">
     <span class="icon icon-play">${SPEAKER_ICON}</span>
     <span class="icon icon-pause">${PAUSE_ICON}</span>
-  </button>`;
+  </button>
+  ${hint({
+    id: "hint-play",
+    text: "Narrate this card"
+  })}`;
 
 const PANEL_TEMPLATE = `
   <section class="panel">
     <header>
       <span class="label">Narration</span>
       <output class="title" dir="auto"></output>
-      <output class="voice" title="Voice"></output>
+      <output class="voice" aria-label="Voice"></output>
     </header>
     <p class="subtitle" dir="auto"></p>
     <p class="error"></p>
     <menu class="controls">
       <li><button type="button" data-action="${PanelAction.Tour}">${PLAY_ICON}<span class="tour-label"></span></button></li>
-      <li><button type="button" data-action="${PanelAction.Previous}" title="Previous card">Prev</button></li>
-      <li><button type="button" data-action="${PanelAction.Back}" title="Back to the start of the sentence">Back</button></li>
-      <li><button type="button" data-action="${PanelAction.Pause}" title="Pause">${PAUSE_ICON}</button></li>
-      <li><button type="button" data-action="${PanelAction.Resume}" title="Resume">${PLAY_ICON}</button></li>
-      <li><button type="button" data-action="${PanelAction.Next}" title="Next card">Next</button></li>
-      <li><button type="button" data-action="${PanelAction.Stop}" title="Stop">Stop</button></li>
+      <li>
+        <button type="button" data-action="${PanelAction.Previous}" interestfor="hint-previous">Prev</button>
+        ${hint({
+          id: "hint-previous",
+          text: "Previous card"
+        })}
+      </li>
+      <li>
+        <button type="button" data-action="${PanelAction.Back}" interestfor="hint-back">Back</button>
+        ${hint({
+          id: "hint-back",
+          text: "Back to the start of the sentence"
+        })}
+      </li>
+      <li>
+        <button type="button" data-action="${PanelAction.Pause}" interestfor="hint-pause" aria-labelledby="hint-pause">${PAUSE_ICON}</button>
+        ${hint({
+          id: "hint-pause",
+          text: "Pause"
+        })}
+      </li>
+      <li>
+        <button type="button" data-action="${PanelAction.Resume}" interestfor="hint-resume" aria-labelledby="hint-resume">${PLAY_ICON}</button>
+        ${hint({
+          id: "hint-resume",
+          text: "Resume"
+        })}
+      </li>
+      <li>
+        <button type="button" data-action="${PanelAction.Next}" interestfor="hint-next">Next</button>
+        ${hint({
+          id: "hint-next",
+          text: "Next card"
+        })}
+      </li>
+      <li>
+        <button type="button" data-action="${PanelAction.Stop}" interestfor="hint-stop">Stop</button>
+        ${hint({
+          id: "hint-stop",
+          text: "Stop"
+        })}
+      </li>
     </menu>
   </section>`;
 

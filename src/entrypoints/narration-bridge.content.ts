@@ -1,19 +1,17 @@
-import { requestSchema } from "@/lib/messages";
-import { BridgeEvent, type BridgeMessage, NARRATION_CHANNEL, NARRATION_PORT } from "@/lib/narration-bridge";
+import {
+  BridgeEvent,
+  type BridgeMessage,
+  NARRATION_CHANNEL,
+  NARRATION_PORT,
+  type PageMessage
+} from "@/lib/narration-bridge";
 import type { SpeakingState } from "@/lib/player-status";
-import { z } from "@/lib/zod";
 
-const pageMessageSchema = z.discriminatedUnion("event", [
-  z.object({
-    channel: z.literal(NARRATION_CHANNEL),
-    event: z.literal(BridgeEvent.Hello)
-  }),
-  z.object({
-    channel: z.literal(NARRATION_CHANNEL),
-    event: z.literal(BridgeEvent.Request),
-    request: requestSchema
-  })
-]);
+// Only the envelope is checked here: the background zod-validates every request arriving on the port,
+// which keeps zod out of this script injected into every artifact frame
+function isPageMessage(data: unknown): data is PageMessage {
+  return typeof data === "object" && data !== null && "channel" in data && data.channel === NARRATION_CHANNEL;
+}
 
 // Claude's artifact frames, plus local previews of narrated pages
 export default defineContentScript({
@@ -53,17 +51,16 @@ export default defineContentScript({
 
     window.addEventListener("message", e => {
       const isFromThisPage = e.source === window;
-      const parsed = pageMessageSchema.safeParse(e.data);
-      if (!isFromThisPage || !parsed.success) {
+      if (!isFromThisPage || !isPageMessage(e.data)) {
         return;
       }
 
-      if (parsed.data.event === BridgeEvent.Hello) {
+      if (e.data.event === BridgeEvent.Hello) {
         announce();
         return;
       }
 
-      connect().postMessage(parsed.data.request);
+      connect().postMessage(e.data.request);
     });
     connect();
     announce();

@@ -41,6 +41,11 @@ recorded one: a small bridge content script (in Claude's artifact frames and on 
 the extension's player, a card in another language still gets a voice that speaks it, and cues and subtitles
 follow the live words. Without the extension, or if live speech fails, the recorded audio plays.
 
+A page never run through the CLI - say, an artifact a Claude chat just wrote with `data-narrate` scripts and
+`data-cue` parts - still speaks when the extension is installed: its `narration-live` content script finds the
+scripts and starts the runtime itself, live only. Such a page has no recording, so without the extension it
+stays a silent (complete) page.
+
 Cue names are letters, digits, `_` and `-`, scoped to their card. The CLI fails on an empty script and warns
 when a marker has no `data-cue` element or the reverse. Relative paths resolve from where you ran it, so
 `pnpm --dir <repo> narrate page.html` works from anywhere. Keep the authored page as `page.src.html` and
@@ -67,6 +72,7 @@ pnpm dev            # opens a Chrome with the extension and hot reload
 | `src/lib/narration.ts` | Narration contract, `[[cue]]` parser and timing |
 | `src/cli/narrate.ts` | The `narrate` CLI: pre-renders and embeds page narration |
 | `src/narration-runtime/` | The runtime embedded in narrated pages: buttons, tour panel, cue sync |
+| `src/entrypoints/narration-live.content.ts` | Runs that runtime, live only, on pages the CLI never narrated |
 | `src/lib/messages.ts` | Message contract shared by every part of the extension |
 | `src/entrypoints/background.ts` | Header-rewrite rule, message routing |
 | `src/entrypoints/offscreen/` | Player: streams audio into a `MediaSource`, tracks the spoken word |

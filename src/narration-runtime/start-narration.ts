@@ -40,7 +40,8 @@ function getReachedCueNames({ clip, state }: {
   const isFinished = state.status === PlayerStatus.Finished;
   const spokenStart = state.word?.start ?? -1;
   for (const [name, , start] of clip.cues) {
-    if (isFinished || start <= spokenStart) {
+    const isCueReached = isFinished || start <= spokenStart;
+    if (isCueReached) {
       reachedCueNames.add(name);
     }
   }
@@ -126,8 +127,8 @@ export function startNarration(data: NarrationData) {
 
   const panel = createTourPanel({
     cardCount: Math.min(elCards.length, data.clips.length),
-    onAction: action => void handlePanelAction(action),
-    onSeek: start => seek(start)
+    onAction: handlePanelAction,
+    onSeek: seek
   });
   const cards: NarratedCard[] = [];
   for (const [iCard, clip] of data.clips.entries()) {
@@ -145,7 +146,7 @@ export function startNarration(data: NarrationData) {
       }),
       overlay: createCardOverlay({
         elCard,
-        onPlay: () => void handleCardButton(iCard)
+        onPlay: () => handleCardButton(iCard)
       })
     });
   }
@@ -189,9 +190,9 @@ export function startNarration(data: NarrationData) {
     });
   }
 
-  function stop() {
+  // The card is released before the engine is told, so no state can arrive for a card already let go
+  async function stop() {
     isTouring = false;
-    engine.stop();
     const card = getActiveCard();
     if (card) {
       releaseCard(card);
@@ -200,12 +201,13 @@ export function startNarration(data: NarrationData) {
     iActive = null;
     state = null;
     render();
+    await engine.stop();
   }
 
   async function narrateCard(iCard: number) {
     const card = cards[iCard];
     if (!card) {
-      stop();
+      await stop();
       return;
     }
 
@@ -227,7 +229,7 @@ export function startNarration(data: NarrationData) {
     const isLive = liveEngine.isAvailable() || !hasRecording(card.clip);
     const nextEngine = isLive ? liveEngine : recordedEngine;
     if (nextEngine !== engine) {
-      engine.stop();
+      await engine.stop();
       engine = nextEngine;
     }
 
@@ -235,21 +237,26 @@ export function startNarration(data: NarrationData) {
   }
 
   // Both engines report here; only the active card's own text counts
-  function followEngine(nextState: SpeakingState) {
+  async function followEngine(nextState: SpeakingState) {
     const card = getActiveCard();
-    if (!card || nextState.text !== card.clip.text && nextState.status !== PlayerStatus.Idle) {
+    if (!card) {
+      return;
+    }
+
+    const isStateForActiveCard = nextState.text === card.clip.text || nextState.status === PlayerStatus.Idle;
+    if (!isStateForActiveCard) {
       return;
     }
 
     const isLiveFailure = engine === liveEngine && nextState.status === PlayerStatus.Error;
     if (isLiveFailure && hasRecording(card.clip)) {
       engine = recordedEngine;
-      void recordedEngine.play(card.clip);
+      await recordedEngine.play(card.clip);
       return;
     }
 
     if (nextState.status === PlayerStatus.Idle) {
-      stop();
+      await stop();
       return;
     }
 
@@ -257,7 +264,7 @@ export function startNarration(data: NarrationData) {
 
     if (nextState.status === PlayerStatus.Error) {
       error = nextState.error;
-      stop();
+      await stop();
       return;
     }
 
@@ -270,26 +277,26 @@ export function startNarration(data: NarrationData) {
     const iNext = (iActive ?? 0) + 1;
     const isTourContinuing = isTouring && iNext < cards.length;
     if (isTourContinuing) {
-      void narrateCard(iNext);
+      await narrateCard(iNext);
       return;
     }
 
-    stop();
+    await stop();
   }
 
-  function seek(start: number) {
+  async function seek(start: number) {
     if (iActive === null) {
       return;
     }
 
-    engine.seek(start);
+    await engine.seek(start);
   }
 
   async function handleCardButton(iCard: number) {
     const isThisCardActive = iActive === iCard;
     const status = getStatus();
     if (isThisCardActive && status === PlayerStatus.Playing) {
-      engine.pause();
+      await engine.pause();
       return;
     }
 
@@ -319,7 +326,7 @@ export function startNarration(data: NarrationData) {
         await narrateCard((iActive ?? -1) + 1);
         return;
       case PanelAction.Back:
-        seek(
+        await seek(
           findBackTarget({
             text: getActiveCard()?.clip.text ?? "",
             spokenStart: state?.word?.start ?? 0
@@ -327,13 +334,13 @@ export function startNarration(data: NarrationData) {
         );
         return;
       case PanelAction.Pause:
-        engine.pause();
+        await engine.pause();
         return;
       case PanelAction.Resume:
         await engine.resume();
         return;
       case PanelAction.Stop:
-        stop();
+        await stop();
     }
   }
 

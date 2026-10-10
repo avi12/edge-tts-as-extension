@@ -14,8 +14,8 @@ export default defineContentScript({
   main() {
     function startWhenNarrated() {
       const isPreRendered = document.getElementById(NARRATION_DATA_ID) !== null;
-      const hasNarratedCards = document.querySelector(NARRATED_CARD_SELECTOR) !== null;
-      if (isPreRendered || !hasNarratedCards) {
+      const isAnyCardNarrated = document.querySelector(NARRATED_CARD_SELECTOR) !== null;
+      if (isPreRendered || !isAnyCardNarrated) {
         return isPreRendered;
       }
 

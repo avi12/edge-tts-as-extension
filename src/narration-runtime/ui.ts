@@ -108,10 +108,10 @@ const PANEL_TEMPLATE = `
     </menu>
   </section>`;
 
-const panelActionValues = new Set<string>(Object.values(PanelAction));
+const PANEL_ACTION_VALUES = new Set<string>(Object.values(PanelAction));
 
 function isPanelAction(value: string | undefined): value is PanelAction {
-  return value !== undefined && panelActionValues.has(value);
+  return value !== undefined && PANEL_ACTION_VALUES.has(value);
 }
 
 function createShadowHost({ css, template, kind }: {
@@ -151,7 +151,7 @@ function getVoiceName(voice: string) {
 
 export function createCardOverlay({ elCard, onPlay }: {
   elCard: HTMLElement;
-  onPlay: () => void;
+  onPlay: () => Promise<void>;
 }) {
   const { elHost, shadowRoot } = createShadowHost({
     css: overlayCss,
@@ -221,8 +221,8 @@ function highlightSpokenWord({ elSubtitle, state }: {
 
 export function createTourPanel({ cardCount, onAction, onSeek }: {
   cardCount: number;
-  onAction: (action: PanelAction) => void;
-  onSeek: (start: number) => void;
+  onAction: (action: PanelAction) => Promise<void>;
+  onSeek: (start: number) => Promise<void>;
 }) {
   let subtitleText = "";
   const { elHost, shadowRoot } = createShadowHost({
@@ -255,17 +255,17 @@ export function createTourPanel({ cardCount, onAction, onSeek }: {
     selector: ".tour-label"
   }).textContent = `Play tour · ${cardCount} ${cardCount === 1 ? "card" : "cards"}`;
 
-  shadowRoot.addEventListener("click", e => {
+  shadowRoot.addEventListener("click", async e => {
     const elWord = e.target instanceof Element ? e.target.closest(`[${WORD_START_ATTRIBUTE}]`) : null;
     if (elWord) {
-      onSeek(Number(elWord.getAttribute(WORD_START_ATTRIBUTE)));
+      await onSeek(Number(elWord.getAttribute(WORD_START_ATTRIBUTE)));
       return;
     }
 
     const elButton = e.target instanceof Element ? e.target.closest<HTMLButtonElement>("button[data-action]") : null;
     const action = elButton?.dataset.action;
     if (isPanelAction(action)) {
-      onAction(action);
+      await onAction(action);
     }
   });
   document.body.append(elHost);

@@ -103,11 +103,11 @@ export function createRecordedEngine(reportState: ReportState) {
       report();
       await start();
     },
-    pause() {
+    async pause() {
       elAudio.pause();
     },
     resume: start,
-    seek(start) {
+    async seek(start) {
       const word = clip?.words.find(([, wordStart]) => wordStart >= start);
       if (!word) {
         return;
@@ -115,7 +115,7 @@ export function createRecordedEngine(reportState: ReportState) {
 
       elAudio.currentTime = word[0];
     },
-    stop() {
+    async stop() {
       clip = null;
       status = PlayerStatus.Idle;
       cancelAnimationFrame(frameRequest);

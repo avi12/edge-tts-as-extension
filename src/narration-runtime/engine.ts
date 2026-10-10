@@ -5,11 +5,11 @@ import type { SpeakingState } from "@/lib/player-status";
 // follows a recorded clip and a live voice the same way
 export interface NarrationEngine {
   play: (clip: NarrationClip) => Promise<void>;
-  pause: () => void;
+  pause: () => Promise<void>;
   resume: () => Promise<void>;
   // Jumps to the word at (or after) this position in the clip's text
-  seek: (start: number) => void;
-  stop: () => void;
+  seek: (start: number) => Promise<void>;
+  stop: () => Promise<void>;
 }
 
 export type ReportState = (state: SpeakingState) => void;

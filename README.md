@@ -1,8 +1,22 @@
-# Edge Read Aloud, reverse engineered
+# Edge TTS as an Extension
 
-Microsoft Edge's Read Aloud voices, usable outside Edge: a `narrate` CLI that bakes voice narration into
-Claude artifact pages, and a Chrome extension (built with [WXT](https://wxt.dev)) that reads text aloud.
-How the Edge feature works, and how it was recovered, is in [research/README.md](research/README.md).
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
+Microsoft Edge's Read Aloud voices, usable outside Edge: a Chrome extension (built with
+[WXT](https://wxt.dev)) that reads any text aloud in 322 neural voices, and a `narrate` CLI that bakes that
+narration into a standalone HTML page. How the Edge feature works, and how it was recovered from Edge
+itself, is written up in [research/README.md](research/README.md) - every constant in the code says which
+document or which Edge file it came from.
+
+## Install
+
+Grab the [latest release](https://github.com/avi12/edge-tts-as-extension/releases/latest):
+
+- **`.crx`** - drag it onto `chrome://extensions` with developer mode on
+- **`.zip`** - unzip it, then `chrome://extensions` -> *Load unpacked* -> pick the folder
+
+Nothing to sign up for and no key to paste: the extension talks to the same endpoint Edge's own Read Aloud
+talks to, with the client token Edge ships.
 
 ## Narrated artifacts
 
@@ -92,7 +106,19 @@ pnpm check          # compile, svelte-check, lint, stylelint, fallow dead-code, 
 
 ## Caveat
 
-This uses an undocumented Microsoft endpoint by impersonating Edge. It can
-break whenever Microsoft changes the checks, and it may conflict with their
-terms of use. If it stops working, re-run `research/probe.mjs` and compare
-against the current Edge build with `research/unpak.mjs`.
+This uses an undocumented Microsoft endpoint by impersonating Edge. It can break whenever Microsoft
+changes the checks, and it may conflict with their terms of use - use it on your own text, at your own
+risk. If it stops working, re-run `research/probe.mjs` and compare against the current Edge build with
+`research/unpak.mjs`; the research notes say what each check was last measured to be.
+
+## Credits and license
+
+Written by **Avi ([avi12](https://github.com/avi12))**, and licensed under the
+[Apache License 2.0](LICENSE) - see [NOTICE](NOTICE) for the attribution that has to travel with any
+distribution or derivative.
+
+`research/edge-microsoft-voices/` is the exception: those files are Microsoft's own JavaScript, kept
+unmodified as the evidence behind the research, and they are **not** covered by this project's license.
+See [that directory's README](research/edge-microsoft-voices/README.md).
+
+This project is not affiliated with, endorsed by, or sponsored by Microsoft.

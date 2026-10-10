@@ -10,6 +10,8 @@ const PATH_WILDCARD = ".*";
 const REGEXP_CHARACTERS = /[.+?^${}()|[\]\\]/g;
 const MATCH_PATTERN = /^([^:]+):\/\/([^/]+)(\/.*)$/;
 const RELOAD_EXPRESSION = "chrome.runtime.reload()";
+const NEW_CONTEXT_WAIT_MS = 100;
+const NEW_CONTEXT_ATTEMPTS = 25;
 const POPUP_PATH = "popup.html";
 const OFFSCREEN_PATH = "offscreen.html";
 
@@ -27,6 +29,37 @@ function findExtensionTarget({ targets, origin }: {
   return ownTargets.find(target => target.url.endsWith(OFFSCREEN_PATH))
     ?? ownTargets.find(target => target.type === SERVICE_WORKER_TYPE)
     ?? ownTargets[0];
+}
+
+async function listExtensionTargetIds({ port, origin }: {
+  port: number;
+  origin: string;
+}) {
+  const targets = await listTargets(port);
+  return new Set(targets.filter(target => target.url.startsWith(origin)).map(target => target.id));
+}
+
+// chrome.runtime.reload() drops every context the extension had and starts the new build a moment
+// later. A page reloaded inside that gap is left with no content script at all, so the loop waits
+// for a context the old build did not have - the new one announcing itself
+async function waitForNewExtensionContext({ port, origin, previousIds }: {
+  port: number;
+  origin: string;
+  previousIds: Set<string>;
+}) {
+  for (let attempt = 0; attempt < NEW_CONTEXT_ATTEMPTS; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, NEW_CONTEXT_WAIT_MS));
+    const currentIds = await listExtensionTargetIds({
+      port,
+      origin
+    });
+    const isNewContextUp = [...currentIds].some(id => !previousIds.has(id));
+    if (isNewContextUp) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 async function reloadThroughTarget({ socketUrl }: { socketUrl: string }) {
@@ -147,17 +180,26 @@ export async function reloadExtension({ port, extensionId }: {
   extensionId: string;
 }) {
   const origin = `${EXTENSION_SCHEME}${extensionId}/`;
+  const previousIds = await listExtensionTargetIds({
+    port,
+    origin
+  });
   const target = findExtensionTarget({
     targets: await listTargets(port),
     origin
   });
   if (target?.webSocketDebuggerUrl) {
     await reloadThroughTarget({ socketUrl: target.webSocketDebuggerUrl });
-    return;
+  } else {
+    await reloadThroughNewPopup({
+      port,
+      origin
+    });
   }
 
-  await reloadThroughNewPopup({
+  return waitForNewExtensionContext({
     port,
-    origin
+    origin,
+    previousIds
   });
 }

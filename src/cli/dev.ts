@@ -5,6 +5,7 @@ import { launchBrowser, stopBrowser } from "./dev/browser";
 import { waitForDebugPort } from "./dev/cdp";
 import { enableDeveloperMode } from "./dev/developer-mode";
 import { extensionIdForPath } from "./dev/extension-id";
+import { syncExtensionOutput } from "./dev/output";
 import { reloadExtension, reloadMatchingPages } from "./dev/reload";
 import { getErrorMessage } from "@/lib/errors";
 import { NARRATED_SITES } from "@/lib/narrated-sites";
@@ -14,7 +15,11 @@ import { build } from "wxt";
 
 const CDP_PORT = 9223;
 const PROFILE_DIRECTORY = ".dev-profile";
-const OUTPUT_DIRECTORY = ".output/chrome-mv3";
+const BUILD_TARGET = "chrome-mv3";
+// What the browser loaded, and where each rebuild lands before its changed files are copied across
+const OUTPUT_DIRECTORY = `.output/${BUILD_TARGET}`;
+const STAGING_BASE = ".output/dev-staging";
+const STAGING_DIRECTORY = `${STAGING_BASE}/${BUILD_TARGET}`;
 const WATCHED_PATHS = ["src", "wxt.config.ts"];
 const SOURCE_FILE = /\.(?:ts|svelte|css|html|json|svg)$/;
 const REBUILD_DEBOUNCE_MS = 120;
@@ -42,8 +47,15 @@ function logEvent(message: string) {
 
 async function buildExtension() {
   const startedAt = Date.now();
-  await build();
-  return Date.now() - startedAt;
+  await build({ outDir: resolveInProject(STAGING_BASE) });
+  const changedCount = await syncExtensionOutput({
+    from: resolveInProject(STAGING_DIRECTORY),
+    to: resolveInProject(OUTPUT_DIRECTORY)
+  });
+  return {
+    buildMs: Date.now() - startedAt,
+    changedCount
+  };
 }
 
 async function reloadInPlace() {
@@ -58,14 +70,15 @@ async function reloadInPlace() {
 }
 
 async function rebuildAndReload(changedFile: string) {
-  const buildMs = await buildExtension().catch((error: unknown) => {
+  const built = await buildExtension().catch((error: unknown) => {
     logEvent(`Build failed: ${getErrorMessage(error)}`);
     return null;
   });
-  if (buildMs === null) {
+  if (built === null) {
     return;
   }
 
+  const { buildMs, changedCount } = built;
   const isReloadBlind = RELOAD_BLIND_FILES.some(file => changedFile.endsWith(file));
   if (isReloadBlind) {
     logEvent(`Built in ${buildMs}ms - ${changedFile} changes the manifest, so reopen the browser to pick it up`);
@@ -80,7 +93,10 @@ async function rebuildAndReload(changedFile: string) {
     return;
   }
 
-  logEvent(`Built in ${buildMs}ms, reloaded the extension and ${pageCount} page(s) - ${changedFile}`);
+  logEvent(
+    `Built in ${buildMs}ms, ${changedCount} file(s) changed, `
+    + `reloaded the extension and ${pageCount} page(s) - ${changedFile}`
+  );
 }
 
 // A save landing mid-build is not dropped, it starts the next round

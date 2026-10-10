@@ -256,6 +256,8 @@ export default [
     ".output/",
     ".wxt/",
     ".claude/",
+    // The dev loop's browser profile: Edge's own bundled scripts, and nothing of ours
+    ".dev-profile/",
     "research/edge-microsoft-voices/"
   ]),
   {

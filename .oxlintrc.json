@@ -73,6 +73,7 @@
     ".output/**",
     ".wxt/**",
     ".claude/**",
+    ".dev-profile/**",
     "research/edge-microsoft-voices/**"
   ]
 }

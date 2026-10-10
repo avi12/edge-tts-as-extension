@@ -1,5 +1,5 @@
 import { Command } from "@/lib/command";
-import { EDGE_EXTENSION_ORIGIN, EDGE_USER_AGENT, SERVICE_HOST } from "@/lib/edge-tts/constants";
+import { EDGE_USER_AGENT, SYNTHESIZE_HOST } from "@/lib/edge-tts/constants";
 import { detectLanguage, pickVoice } from "@/lib/edge-tts/language";
 import { DEFAULT_PROSODY } from "@/lib/edge-tts/ssml";
 import {
@@ -17,11 +17,7 @@ import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
 import { readSettings } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
 
-enum HeaderName {
-  Origin = "Origin",
-  UserAgent = "User-Agent"
-}
-
+const USER_AGENT_HEADER = "User-Agent";
 const OFFSCREEN_PATH = "/offscreen.html";
 const HEADER_RULE_ID = 1;
 const HEADER_RULE_PRIORITY = 1;
@@ -29,8 +25,8 @@ const HEADER_RULE_PRIORITY = 1;
 let offscreenCreation: Promise<void> | null = null;
 const narrationPorts = new Set<Browser.runtime.Port>();
 
-// The service only accepts handshakes that carry Edge's extension Origin and an Edge User-Agent -
-// rewrite both, but only for this extension's requests
+// The service turns down handshakes whose User-Agent does not say Edge - rewrite it, but only on this
+// extension's own requests to the synthesis host
 async function installHeaderRule() {
   const { HeaderOperation, ResourceType, RuleActionType } = browser.declarativeNetRequest;
   await browser.declarativeNetRequest.updateSessionRules({
@@ -43,21 +39,16 @@ async function installHeaderRule() {
           type: RuleActionType.MODIFY_HEADERS,
           requestHeaders: [
             {
-              header: HeaderName.Origin,
-              operation: HeaderOperation.SET,
-              value: EDGE_EXTENSION_ORIGIN
-            },
-            {
-              header: HeaderName.UserAgent,
+              header: USER_AGENT_HEADER,
               operation: HeaderOperation.SET,
               value: EDGE_USER_AGENT
             }
           ]
         },
         condition: {
-          requestDomains: [SERVICE_HOST],
+          requestDomains: [SYNTHESIZE_HOST],
           initiatorDomains: [browser.runtime.id],
-          resourceTypes: [ResourceType.WEBSOCKET, ResourceType.XMLHTTPREQUEST]
+          resourceTypes: [ResourceType.WEBSOCKET]
         }
       }
     ]

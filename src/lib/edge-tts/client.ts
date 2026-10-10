@@ -13,7 +13,7 @@ import {
 import { buildSsml, type Prosody } from "./ssml";
 
 enum QueryParameter {
-  TrustedClientToken = "TrustedClientToken",
+  SubscriptionKey = "Ocp-Apim-Subscription-Key",
   SecMsGec = "Sec-MS-GEC",
   SecMsGecVersion = "Sec-MS-GEC-Version",
   ConnectionId = "ConnectionId"
@@ -36,7 +36,7 @@ interface SynthesizeOptions {
 
 async function createSynthesizeUrl() {
   const parameters = new URLSearchParams({
-    [QueryParameter.TrustedClientToken]: TRUSTED_CLIENT_TOKEN,
+    [QueryParameter.SubscriptionKey]: TRUSTED_CLIENT_TOKEN,
     [QueryParameter.SecMsGec]: await secMsGec(),
     [QueryParameter.SecMsGecVersion]: SEC_MS_GEC_VERSION,
     [QueryParameter.ConnectionId]: createId()
@@ -44,8 +44,9 @@ async function createSynthesizeUrl() {
   return `${SYNTHESIZE_URL}?${parameters}`;
 }
 
-// Streams one request and resolves on turn.end. The browser sets Origin and User-Agent itself -
-// the extension rewrites them with declarativeNetRequest, Node passes openEdgeSocket
+// Streams one request and resolves on turn.end. The gateway turns down anything whose User-Agent does
+// not say Edge, which the browser sets itself - the extension rewrites it with declarativeNetRequest,
+// Node passes openEdgeSocket
 export async function synthesize({
   text,
   voice,

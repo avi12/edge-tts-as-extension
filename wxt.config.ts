@@ -12,6 +12,10 @@ export default defineConfig({
       "offscreen",
       "storage"
     ],
-    host_permissions: ["https://speech.platform.bing.com/*", "wss://speech.platform.bing.com/*"]
+    host_permissions: [
+      "https://speech.platform.bing.com/*",
+      "https://api.msedgeservices.com/*",
+      "wss://api.msedgeservices.com/*"
+    ]
   }
 });

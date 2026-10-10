@@ -1,6 +1,6 @@
 import type { Prosody } from "@/lib/edge-tts/ssml";
 import type { ControlCommand, SpeakRequest } from "@/lib/message-schemas";
-import type { SpeakingState } from "@/lib/player-status";
+import type { ReadingSource, SpeakingState } from "@/lib/player-status";
 import { defineExtensionMessaging } from "@webext-core/messaging";
 
 export type { ControlCommand, SpeakRequest };
@@ -9,6 +9,7 @@ export interface PlayerSpeakRequest {
   text: string;
   voice: string;
   prosody: Prosody;
+  source: ReadingSource;
 }
 
 // One runtime bus carries both halves of the extension, and the message type is the routing: the

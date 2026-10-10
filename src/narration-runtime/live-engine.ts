@@ -78,7 +78,8 @@ export function createLiveEngine(reportState: ReportState) {
         text: clip.text,
         word: null,
         error: null,
-        voice: null
+        voice: null,
+        source: null
       });
       await speakFrom(0);
     },

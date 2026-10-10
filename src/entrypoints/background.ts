@@ -9,7 +9,7 @@ import {
   speakRequestSchema
 } from "@/lib/message-schemas";
 import { SpeechMessage, speechMessenger } from "@/lib/messages";
-import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
+import { IDLE_STATE, ReadingSource, type SpeakingState } from "@/lib/player-status";
 import { readSettings } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
 import { z } from "@/lib/zod";
@@ -133,7 +133,10 @@ async function chooseVoice({ text, voice, isMatchingLanguage, locale }: {
   });
 }
 
-async function speak(request: SpeakRequest) {
+async function speak({ request, source }: {
+  request: SpeakRequest;
+  source: ReadingSource;
+}) {
   const text = request.text.trim();
   if (!text) {
     return IDLE_STATE;
@@ -155,7 +158,8 @@ async function speak(request: SpeakRequest) {
     prosody: {
       ...DEFAULT_PROSODY,
       rate: request.rate ?? savedSettings.rate
-    }
+    },
+    source
   });
 }
 
@@ -170,9 +174,17 @@ async function control(command: ControlCommand) {
 }
 
 // A narrated page reaches this through the bridge content script, so what it asks for is page data
-function speakValidated(request: unknown) {
+function speakValidated({ request, source }: {
+  request: unknown;
+  source: ReadingSource;
+}) {
   const parsed = speakRequestSchema.safeParse(request);
-  return parsed.success ? speak(parsed.data) : Promise.resolve(IDLE_STATE);
+  return parsed.success
+    ? speak({
+      request: parsed.data,
+      source
+    })
+    : Promise.resolve(IDLE_STATE);
 }
 
 function controlValidated(command: unknown) {
@@ -206,7 +218,11 @@ async function relayStateToFrame(state: SpeakingState) {
 export default defineBackground(async () => {
   speechMessenger.onMessage(SpeechMessage.Speak, ({ data, sender }) => {
     rememberFrame(sender);
-    return speakValidated(data);
+    // Only a page's request comes from a tab - the popup has none of its own
+    return speakValidated({
+      request: data,
+      source: sender.tab === undefined ? ReadingSource.Popup : ReadingSource.Page
+    });
   });
   speechMessenger.onMessage(SpeechMessage.Control, ({ data, sender }) => {
     rememberFrame(sender);
@@ -221,7 +237,12 @@ export default defineBackground(async () => {
     }
 
     const { type } = parsed.data;
-    const answer = type === Command.Speak ? speak(parsed.data) : control(type);
+    const answer = type === Command.Speak
+      ? speak({
+        request: parsed.data,
+        source: ReadingSource.Extension
+      })
+      : control(type);
     // Chrome keeps sendResponse alive only for a listener that returned true synchronously, so the
     // answer rides the promise instead of an await here - "return a literal true (not just a truthy
     // value) ... will keep the message channel open to the other end until sendResponse is called"

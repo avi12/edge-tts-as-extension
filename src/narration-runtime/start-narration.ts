@@ -177,7 +177,8 @@ export function startNarration(data: NarrationData) {
           text: "",
           word: null,
           error,
-          voice: null
+          voice: null,
+          source: null
         },
         title: null,
         iCard: null,

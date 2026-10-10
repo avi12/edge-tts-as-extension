@@ -52,7 +52,8 @@ export function createRecordedEngine(reportState: ReportState) {
         seconds: elAudio.currentTime
       }),
       error,
-      voice: clip.voice
+      voice: clip.voice,
+      source: null
     });
   }
 

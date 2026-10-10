@@ -9,6 +9,14 @@ export enum PlayerStatus {
   Error = "error"
 }
 
+// Who asked for the reading, so a listener only ever sees their own: the popup keeps showing the text
+// you typed while a page reads, and the background knows whose reading a settings change belongs to
+export enum ReadingSource {
+  Popup = "popup",
+  Page = "page",
+  Extension = "extension"
+}
+
 export interface SpokenWord {
   start: number;
   length: number;
@@ -21,9 +29,11 @@ export interface PlayerState {
   error: string | null;
 }
 
-// The extension's player also says which voice reads - with language matching on, not always the one picked
+// The extension's player also says which voice reads - with language matching on, not always the one
+// picked - and who the reading belongs to
 export interface SpeakingState extends PlayerState {
   voice: string | null;
+  source: ReadingSource | null;
 }
 
 // Ours: the state a player starts in and returns to, and the answer every caller gets when there is
@@ -33,7 +43,8 @@ export const IDLE_STATE: SpeakingState = {
   text: "",
   word: null,
   error: null,
-  voice: null
+  voice: null,
+  source: null
 };
 
 // Ours: the three statuses that mean a reading is in flight, so the popup and the narration runtime

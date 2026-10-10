@@ -14,10 +14,14 @@
     updateSettings,
     updateText
   } from "./popup-state.svelte";
-  import { isReadingStatus } from "@/lib/player-status";
+  import { isReadingStatus, ReadingSource } from "@/lib/player-status";
   import { onMount } from "svelte";
 
-  const isReading = $derived(isReadingStatus(popup.player.status));
+  // A page's narration drives the same player, so the read-along pane is only for the popup's own
+  // reading - otherwise the text you typed would be replaced by whatever the page is saying
+  const isReadingHere = $derived(
+    isReadingStatus(popup.player.status) && popup.player.source === ReadingSource.Popup
+  );
   const readingVoice = $derived(popup.voices.find(voice => voice.ShortName === popup.player.voice));
 
   onMount(startPopup);
@@ -29,7 +33,7 @@
 </header>
 
 <section class="card" aria-label="Text">
-  {#if isReading}
+  {#if isReadingHere}
     <ReadAlong text={popup.player.text} word={popup.player.word} />
   {:else}
     <TextEditor oninput={updateText} text={popup.text} />

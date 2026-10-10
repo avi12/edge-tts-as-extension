@@ -275,7 +275,9 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     });
   }
 
-  async function streamText({ text, voice, prosody, signal }: PlayerSpeakRequest & { signal: AbortSignal }) {
+  async function streamText({ text, voice, prosody, signal }: Omit<PlayerSpeakRequest, "source"> & {
+    signal: AbortSignal;
+  }) {
     const mediaSource = new MediaSource();
     // createObjectURL takes "a Blob (such as a File) or MediaSource object", which is the only way an
     // audio element reads from a MediaSource
@@ -310,7 +312,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     startTicker();
   }
 
-  async function speak({ text, voice, prosody }: PlayerSpeakRequest) {
+  async function speak({ text, voice, prosody, source }: PlayerSpeakRequest) {
     release();
     const controller = new AbortController();
     session = controller;
@@ -318,7 +320,8 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
       ...IDLE_STATE,
       status: PlayerStatus.Loading,
       text,
-      voice
+      voice,
+      source
     });
 
     try {

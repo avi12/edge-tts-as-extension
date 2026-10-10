@@ -2,6 +2,7 @@ node_modules/
 .output/
 .wxt/
 .claude/worktrees/
+.dev-profile/
 *.webm
 *.log
 

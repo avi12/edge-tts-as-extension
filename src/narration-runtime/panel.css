@@ -104,29 +104,25 @@ header {
   list-style: none;
 }
 
-li:has([data-action="previous"]),
-li:has([data-action="back"]),
-li:has([data-action="pause"]),
-li:has([data-action="resume"]),
-li:has([data-action="next"]),
-li:has([data-action="stop"]) {
+/* Only the tour button until a reading starts, then the transport that drives it */
+[data-action]:not([data-action="tour"]) {
   display: none;
 }
 
 .panel:is([data-status="loading"], [data-status="playing"], [data-status="paused"]) {
-  li:has([data-action="tour"]) {
+  [data-action="tour"] {
     display: none;
   }
 
-  li:has([data-action="previous"]),
-  li:has([data-action="back"]),
-  li:has([data-action="next"]),
-  li:has([data-action="stop"]) {
+  [data-action="previous"],
+  [data-action="back"],
+  [data-action="next"],
+  [data-action="stop"] {
     display: list-item;
   }
 }
 
-.panel:is([data-status="loading"], [data-status="playing"]) li:has([data-action="pause"]),
-.panel[data-status="paused"] li:has([data-action="resume"]) {
+.panel:is([data-status="loading"], [data-status="playing"]) [data-action="pause"],
+.panel[data-status="paused"] [data-action="resume"] {
   display: list-item;
 }

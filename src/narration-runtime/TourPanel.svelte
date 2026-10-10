@@ -102,21 +102,21 @@
     data-start={part.start}>{part.word}</span>{/each}{trailingText}</p>
   <p class="error">{reading?.error ?? ""}</p>
   <menu class="controls">
-    <li>
+    <li data-action={PanelAction.Tour}>
       <button onclick={() => onaction(PanelAction.Tour)} type="button">
         <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
         <span class="tour-label">{tourLabel}</span>
       </button>
     </li>
-    <li>
+    <li data-action={PanelAction.Previous}>
       <button {@attach interest("hint-previous")} onclick={() => onaction(PanelAction.Previous)} type="button">Prev</button>
       <span id="hint-previous" class="hint" popover="hint">Previous card</span>
     </li>
-    <li>
+    <li data-action={PanelAction.Back}>
       <button {@attach interest("hint-back")} onclick={() => onaction(PanelAction.Back)} type="button">Back</button>
       <span id="hint-back" class="hint" popover="hint">Back to the start of the sentence</span>
     </li>
-    <li>
+    <li data-action={PanelAction.Pause}>
       <button
         {@attach interest("hint-pause")}
         aria-labelledby="hint-pause"
@@ -127,7 +127,7 @@
       </button>
       <span id="hint-pause" class="hint" popover="hint">Pause</span>
     </li>
-    <li>
+    <li data-action={PanelAction.Resume}>
       <button
         {@attach interest("hint-resume")}
         aria-labelledby="hint-resume"
@@ -138,11 +138,11 @@
       </button>
       <span id="hint-resume" class="hint" popover="hint">Resume</span>
     </li>
-    <li>
+    <li data-action={PanelAction.Next}>
       <button {@attach interest("hint-next")} onclick={() => onaction(PanelAction.Next)} type="button">Next</button>
       <span id="hint-next" class="hint" popover="hint">Next card</span>
     </li>
-    <li>
+    <li data-action={PanelAction.Stop}>
       <button {@attach interest("hint-stop")} onclick={() => onaction(PanelAction.Stop)} type="button">Stop</button>
       <span id="hint-stop" class="hint" popover="hint">Stop</span>
     </li>

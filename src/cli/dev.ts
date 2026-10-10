@@ -2,8 +2,11 @@
 // loaded, then rebuilds and reloads the extension in place on every save
 // Usage: pnpm dev:edge [--url <page>] [--browser <path to the exe>]
 import { launchBrowser, stopBrowser } from "./dev/browser";
+import { waitForDebugPort } from "./dev/cdp";
+import { enableDeveloperMode } from "./dev/developer-mode";
 import { extensionIdForPath } from "./dev/extension-id";
 import { reloadExtension, reloadMatchingPages } from "./dev/reload";
+import { getErrorMessage } from "@/lib/errors";
 import { NARRATED_SITES } from "@/lib/narrated-sites";
 import { watch } from "node:fs";
 import path from "node:path";
@@ -16,6 +19,8 @@ const WATCHED_PATHS = ["src", "wxt.config.ts"];
 const SOURCE_FILE = /\.(?:ts|svelte|css|html|json|svg)$/;
 const REBUILD_DEBOUNCE_MS = 120;
 const DEFAULT_START_URL = "about:blank";
+const EDGE_BROWSER_URL = "edge://";
+const CHROMIUM_BROWSER_URL = "chrome://";
 // Manifest and permission changes only take with a fresh load, so the loop says so instead of
 // pretending a reload was enough
 const RELOAD_BLIND_FILES = ["wxt.config.ts"];
@@ -33,10 +38,6 @@ function readOption(name: string) {
 
 function logEvent(message: string) {
   console.log(`[dev ${new Date().toLocaleTimeString()}] ${message}`);
-}
-
-function describeError(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
 }
 
 async function buildExtension() {
@@ -58,7 +59,7 @@ async function reloadInPlace() {
 
 async function rebuildAndReload(changedFile: string) {
   const buildMs = await buildExtension().catch((error: unknown) => {
-    logEvent(`Build failed: ${describeError(error)}`);
+    logEvent(`Build failed: ${getErrorMessage(error)}`);
     return null;
   });
   if (buildMs === null) {
@@ -72,7 +73,7 @@ async function rebuildAndReload(changedFile: string) {
   }
 
   const pageCount = await reloadInPlace().catch((error: unknown) => {
-    logEvent(`Built in ${buildMs}ms, reload failed: ${describeError(error)}`);
+    logEvent(`Built in ${buildMs}ms, reload failed: ${getErrorMessage(error)}`);
     return null;
   });
   if (pageCount === null) {
@@ -119,7 +120,21 @@ const browser = launchBrowser({
   port: CDP_PORT,
   startUrl: readOption("url") ?? DEFAULT_START_URL
 });
-logEvent(`Browser up on port ${CDP_PORT}, extension ${extensionId}`);
+const isDebugPortUp = await waitForDebugPort(CDP_PORT);
+if (!isDebugPortUp) {
+  logEvent(`The browser never opened its debugging port on ${CDP_PORT}`);
+  stopBrowser(browser.pid);
+  process.exit(1);
+}
+
+const browserUrl = readOption("browser") === undefined ? EDGE_BROWSER_URL : CHROMIUM_BROWSER_URL;
+const developerMode = await enableDeveloperMode({
+  port: CDP_PORT,
+  browserUrl
+});
+logEvent(`Browser up on port ${CDP_PORT}, extension ${extensionId}, developer mode ${developerMode}`);
+// An extension that started disabled only runs once developer mode is on
+await reloadInPlace().catch(() => undefined);
 logEvent("Watching for changes - Ctrl+C stops only this browser");
 
 let pendingRebuild: ReturnType<typeof setTimeout> | undefined;
@@ -129,7 +144,8 @@ let queuedFile: string | null = null;
 for (const watchedPath of WATCHED_PATHS) {
   watch(resolveInProject(watchedPath), { recursive: true }, (_event, fileName) => {
     const changedFile = fileName ?? watchedPath;
-    if (SOURCE_FILE.test(changedFile)) {
+    const isSourceFile = SOURCE_FILE.test(changedFile);
+    if (isSourceFile) {
       scheduleRebuild(changedFile);
     }
   });

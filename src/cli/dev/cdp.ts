@@ -1,6 +1,8 @@
 import { z } from "@/lib/zod";
 
 const COMMAND_TIMEOUT_MS = 5000;
+const PORT_POLL_MS = 250;
+const PORT_ATTEMPTS = 80;
 
 const targetSchema = z.object({
   id: z.string(),
@@ -29,6 +31,23 @@ async function fetchJson({ port, path }: {
   }
 
   return response.json();
+}
+
+// The browser needs a moment before its debugging port answers
+export async function waitForDebugPort(port: number) {
+  for (let attempt = 0; attempt < PORT_ATTEMPTS; attempt++) {
+    const isUp = await fetchJson({
+      port,
+      path: "/json/version"
+    }).then(() => true, () => false);
+    if (isUp) {
+      return true;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, PORT_POLL_MS));
+  }
+
+  return false;
 }
 
 export async function listTargets(port: number) {

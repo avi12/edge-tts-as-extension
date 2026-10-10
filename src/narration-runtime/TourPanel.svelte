@@ -74,10 +74,13 @@
     return lastPart ? subtitleText.slice(lastPart.start + lastPart.word.length) : subtitleText;
   });
 
-  // The spoken word stays in the middle of the pane instead of scrolling off the bottom of it
+  // The spoken word stays in the middle of the pane instead of scrolling off the bottom of it.
+  // The word the effect follows is found in the DOM, so the position it follows has to be read here
+  // for the effect to run again on the next word
   $effect(() => {
+    const isFollowingAWord = spokenStart >= 0 && subtitleText !== "";
     const elSpoken = elSubtitle?.querySelector<HTMLElement>("[data-spoken]");
-    if (!elSubtitle || !elSpoken) {
+    if (!isFollowingAWord || !elSubtitle || !elSpoken) {
       return;
     }
 

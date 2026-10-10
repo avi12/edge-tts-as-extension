@@ -1,3 +1,5 @@
+// Our own vocabulary for what a reading is doing, not the media element's readyState or network state:
+// only the offscreen player sees those, and Loading covers waiting for the first bytes off the socket
 export enum PlayerStatus {
   Idle = "idle",
   Loading = "loading",
@@ -24,6 +26,8 @@ export interface SpeakingState extends PlayerState {
   voice: string | null;
 }
 
+// Ours: the state a player starts in and returns to, and the answer every caller gets when there is
+// nothing to say - so no reader has to handle a missing state
 export const IDLE_STATE: SpeakingState = {
   status: PlayerStatus.Idle,
   text: "",
@@ -32,6 +36,8 @@ export const IDLE_STATE: SpeakingState = {
   voice: null
 };
 
+// Ours: the three statuses that mean a reading is in flight, so the popup and the narration runtime
+// treat them alike instead of each listing them
 const READING_STATUSES: ReadonlySet<PlayerStatus> = new Set([
   PlayerStatus.Loading,
   PlayerStatus.Playing,

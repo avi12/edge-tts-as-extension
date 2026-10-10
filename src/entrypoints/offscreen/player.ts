@@ -8,12 +8,31 @@ import { getErrorMessage } from "@/lib/errors";
 import type { PlayerSpeakRequest } from "@/lib/messages";
 import { IDLE_STATE, PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
+// The next four are ours, tuned for read-along highlighting, not the platform's: how often the spoken
+// word is recomputed from the audio clock, how much played audio is kept behind the playhead when the
+// buffer has to be trimmed, and how long to wait for playback when there is nothing behind to drop yet
 const WORD_TICK_MS = 50;
 const KEEP_BEHIND_SECONDS = 10;
 const QUOTA_RETRY_DELAY_MS = 1000;
+
+// What appendBuffer throws when "the buffer is full, and no more data can be appended"
+// https://developer.mozilla.org/docs/Web/API/SourceBuffer/appendBuffer
 const QUOTA_EXCEEDED_ERROR = "QuotaExceededError";
+
+// "The order in which the segments are appended to the SourceBuffer determines the order in which they
+// are played. Segment timestamps are generated automatically" - what several separate requests need,
+// since each one's audio starts its own timeline at zero
+// https://developer.mozilla.org/docs/Web/API/SourceBuffer/mode
 const SOURCE_BUFFER_MODE = "sequence";
+
+// addSourceBuffer throws InvalidStateError unless the MediaSource readyState is "open", which this
+// event is what announces
+// https://developer.mozilla.org/docs/Web/API/MediaSource/sourceopen_event
 const SOURCE_OPEN_EVENT = "sourceopen";
+
+// The event that says an append or a remove finished - appendBuffer throws while the SourceBuffer's
+// updating flag is true, so "you must wait for the updateend event before calling appendBuffer() again"
+// https://developer.mozilla.org/docs/Web/API/SourceBuffer/updateend_event
 const UPDATE_END_EVENT = "updateend";
 
 interface TimedWord {
@@ -105,6 +124,8 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     session = null;
     elAudio.pause();
 
+    // An object URL keeps its MediaSource alive until it is revoked, so every reading releases its own
+    // https://developer.mozilla.org/docs/Web/API/URL/revokeObjectURL_static
     if (elAudio.src) {
       URL.revokeObjectURL(elAudio.src);
     }
@@ -256,6 +277,9 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
   async function streamText({ text, voice, prosody, signal }: PlayerSpeakRequest & { signal: AbortSignal }) {
     const mediaSource = new MediaSource();
+    // createObjectURL takes "a Blob (such as a File) or MediaSource object", which is the only way an
+    // audio element reads from a MediaSource
+    // https://developer.mozilla.org/docs/Web/API/URL/createObjectURL_static
     elAudio.src = URL.createObjectURL(mediaSource);
     await new Promise(resolve => mediaSource.addEventListener(SOURCE_OPEN_EVENT, resolve, { once: true }));
     const sourceBuffer = mediaSource.addSourceBuffer(OUTPUT_MIME_TYPES[DEFAULT_OUTPUT_FORMAT]);
@@ -329,7 +353,10 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     setState({ status: PlayerStatus.Paused });
   }
 
-  // Playback interrupted again before it starts rejects, which is nothing to report
+  // Playback interrupted again before it starts rejects, which is nothing to report - play() returns a
+  // promise, and beyond NotAllowedError and NotSupportedError "other exceptions may be reported,
+  // depending on browser implementation details"
+  // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/play
   async function resume() {
     if (state.status !== PlayerStatus.Paused) {
       return;
@@ -338,6 +365,11 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     await elAudio.play().catch(ignoreError);
   }
 
+  // "playing" is "fired after playback is first started, and whenever it is restarted", including after
+  // a stall for data, so it is the real transition out of loading or paused; "ended" fires when
+  // "playback or streaming has stopped because the end of the media was reached"
+  // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/playing_event
+  // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/ended_event
   elAudio.onplaying = () => setState({ status: PlayerStatus.Playing });
   elAudio.onended = finish;
 

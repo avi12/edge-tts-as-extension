@@ -1,6 +1,8 @@
 <script lang="ts" module>
   import { PlayerStatus } from "@/lib/player-status";
 
+  // Ours: the player's own statuses said in the popup's words, one label each so a new status cannot slip
+  // through unlabelled
   const STATUS_LABEL: Record<PlayerStatus, string> = {
     [PlayerStatus.Idle]: "Ready",
     [PlayerStatus.Loading]: "Loading…",

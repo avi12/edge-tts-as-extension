@@ -5,6 +5,10 @@ import { NarrationMessage, narrationMessenger } from "@/lib/narration-bridge";
 // Every site a narrated page lives on - the list is in lib/narrated-sites.ts. This script carries a
 // page's requests to the background and the player's state back, and validates neither: the
 // background zod-checks what a page asks for, which keeps zod out of every artifact frame
+//
+// allFrames because a published artifact renders in a child frame, and the key "defaults to false,
+// meaning that only the top frame is matched"
+// https://developer.chrome.com/docs/extensions/reference/manifest/content-scripts#frames
 export default defineContentScript({
   matches: NARRATED_SITES,
   allFrames: true,

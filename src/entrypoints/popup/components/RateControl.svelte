@@ -1,6 +1,7 @@
 <script lang="ts" module>
   import { RATE_RANGE } from "@/lib/edge-tts/ssml";
 
+  // Ours: one decimal reads the slider back at exactly the precision the step moves it in
   const RATE_FRACTION_DIGITS = 1;
   // How finely the slider cuts the range the service honors - the service has no say in it
   const RATE_STEP = 0.1;

@@ -12,7 +12,9 @@ export interface PlayerSpeakRequest {
 }
 
 // One runtime bus carries both halves of the extension, and the message type is the routing: the
-// background answers Speak and Control, the offscreen player answers the Player pair
+// background answers Speak and Control, the offscreen player answers the Player pair. The strings are
+// ours - @webext-core/messaging keys its protocol map by them, so they only have to stay distinct
+// https://webext-core.aklinker1.io/messaging/installation
 export enum SpeechMessage {
   Speak = "speak",
   Control = "control",

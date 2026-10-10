@@ -14,8 +14,20 @@ import { readSettings } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
 import { z } from "@/lib/zod";
 
+// The one header the gateway checks, spelled as HTTP defines it - the probe table in research/README.md
+// has every combination that passes and fails
+// https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/User-Agent
 const USER_AGENT_HEADER = "User-Agent";
+
+// Where WXT builds entrypoints/offscreen/index.html to: entrypoints/{name}/index.html -> /{name}.html
+// https://wxt.dev/guide/essentials/entrypoints.html
 const OFFSCREEN_PATH = "/offscreen.html";
+
+// Ours, because this extension has exactly one session rule. The id is "mandatory and should be >= 1",
+// and the priority only decides between rules that match the same request, where 1 is the documented
+// default - so both are the smallest legal value rather than a ranking
+// https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#type-Rule
+// https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#priority-key
 const HEADER_RULE_ID = 1;
 const HEADER_RULE_PRIORITY = 1;
 
@@ -27,14 +39,19 @@ const externalRequestSchema = z.discriminatedUnion("type", [
 
 let offscreenCreation: Promise<void> | null = null;
 // Only one reading plays at a time, so the player's state goes to the frame that asked for it last.
-// It is re-learnt from every request, because a service worker that idles out forgets it
+// It is re-learnt from every request, because a service worker that idles out forgets it: Chrome
+// terminates one "after 30 seconds of inactivity", and "any global variables you set will be lost"
+// https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle#idle-shutdown
 let readingFrame: {
   tabId: number;
   frameId: number;
 } | null = null;
 
 // The service turns down handshakes whose User-Agent does not say Edge - rewrite it, but only on this
-// extension's own requests to the synthesis host
+// extension's own requests to the synthesis host. Session rules are "cleared when the browser shuts
+// down and when a new version of the extension is installed", which is why this reinstalls on startup;
+// initiatorDomains narrows the rule to this extension's own origin and resourceTypes to the handshake
+// https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#dynamic-and-session-rules
 async function installHeaderRule() {
   const { HeaderOperation, ResourceType, RuleActionType } = browser.declarativeNetRequest;
   await browser.declarativeNetRequest.updateSessionRules({
@@ -63,6 +80,9 @@ async function installHeaderRule() {
   });
 }
 
+// getContexts is the documented way to ask whether the offscreen document is open, and
+// OFFSCREEN_DOCUMENT is its ContextType for one
+// https://developer.chrome.com/docs/extensions/reference/api/runtime#method-getContexts
 async function hasOffscreen() {
   const contexts = await browser.runtime.getContexts({
     contextTypes: [browser.runtime.ContextType.OFFSCREEN_DOCUMENT],
@@ -77,7 +97,11 @@ async function ensureOffscreen() {
   }
 
   // AUDIO_PLAYBACK alone gets the document closed after 30 s of silence, which would kill a paused
-  // reading. BLOBS is also true: the audio is streamed through a MediaSource object URL
+  // reading - "the AUDIO_PLAYBACK reason sets the document to close after 30 seconds without audio
+  // playing", and no other reason carries a timeout. BLOBS is also true: the audio is streamed through
+  // a MediaSource object URL. The justification is required, and its wording is ours
+  // https://developer.chrome.com/docs/extensions/reference/api/offscreen#type-Reason
+  // https://developer.chrome.com/docs/extensions/reference/api/offscreen#property-CreateParameters-justification
   offscreenCreation ??= browser.offscreen
     .createDocument({
       url: OFFSCREEN_PATH,
@@ -199,12 +223,16 @@ export default defineBackground(async () => {
     const { type } = parsed.data;
     const answer = type === Command.Speak ? speak(parsed.data) : control(type);
     // Chrome keeps sendResponse alive only for a listener that returned true synchronously, so the
-    // answer rides the promise instead of an await here
+    // answer rides the promise instead of an await here - "return a literal true (not just a truthy
+    // value) ... will keep the message channel open to the other end until sendResponse is called"
+    // https://developer.chrome.com/docs/extensions/develop/concepts/messaging
     answer.then(sendResponse, () => sendResponse(IDLE_STATE));
     return true;
   });
 
   // Every listener above is registered before this first await, or an event that woke the service
-  // worker would arrive before it is listening
+  // worker would arrive before it is listening - handlers must be "registered synchronously on initial
+  // script execution, which enables Chrome to dispatch events to the service worker as soon as it starts"
+  // https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/events
   await installHeaderRule();
 });

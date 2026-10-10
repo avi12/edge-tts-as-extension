@@ -11,6 +11,8 @@
   const spoken = $derived(word ? text.slice(word.start, iWordEnd) : "");
   const after = $derived(word ? text.slice(iWordEnd) : "");
 
+  // "nearest" scrolls as little as it takes, so a word already in the pane never moves it
+  // https://developer.mozilla.org/docs/Web/API/Element/scrollIntoView
   function followWord(elMark: HTMLElement) {
     elMark.scrollIntoView({ block: "nearest" });
   }

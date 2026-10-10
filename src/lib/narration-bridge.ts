@@ -5,8 +5,12 @@ import type { ControlCommand, SpeakRequest } from "@/lib/messages";
 import type { SpeakingState } from "@/lib/player-status";
 import { defineCustomEventMessaging } from "@webext-core/messaging/page";
 
+// Ours, named after the extension so it cannot collide with another custom event on a page it shares:
+// "only messengers of the same type (window vs custom event) and same namespace will communicate"
+// https://webext-core.aklinker1.io/messaging/installation
 const NARRATION_NAMESPACE = "edge-read-aloud:narration";
 
+// Ours, like the extension bus's keys: the library routes on them, so they only have to stay distinct
 export enum NarrationMessage {
   // The bridge announcing itself, for a page whose runtime was already listening
   ExtensionReady = "extension-ready",

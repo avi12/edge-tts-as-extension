@@ -3,27 +3,35 @@ import { EDGE_USER_AGENT, SYNTHESIZE_HOST } from "@/lib/edge-tts/constants";
 import { detectLanguage, pickVoice } from "@/lib/edge-tts/language";
 import { DEFAULT_PROSODY } from "@/lib/edge-tts/ssml";
 import {
-  OFFSCREEN_TARGET,
-  type PlayerRequest,
-  playerTargetSchema,
-  type Request,
-  requestSchema,
-  sendRequest,
+  type ControlCommand,
+  controlCommandSchema,
   type SpeakRequest,
-  stateEventSchema
-} from "@/lib/messages";
-import { NARRATION_PORT } from "@/lib/narration-bridge";
+  speakRequestSchema
+} from "@/lib/message-schemas";
+import { SpeechMessage, speechMessenger } from "@/lib/messages";
 import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
 import { readSettings } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
+import { z } from "@/lib/zod";
 
 const USER_AGENT_HEADER = "User-Agent";
 const OFFSCREEN_PATH = "/offscreen.html";
 const HEADER_RULE_ID = 1;
 const HEADER_RULE_PRIORITY = 1;
 
+// Another extension asks in the shape the README documents, not in the messenger's envelope
+const externalRequestSchema = z.discriminatedUnion("type", [
+  speakRequestSchema.extend({ type: z.literal(Command.Speak) }),
+  z.object({ type: controlCommandSchema })
+]);
+
 let offscreenCreation: Promise<void> | null = null;
-const narrationPorts = new Set<Browser.runtime.Port>();
+// Only one reading plays at a time, so the player's state goes to the frame that asked for it last.
+// It is re-learnt from every request, because a service worker that idles out forgets it
+let readingFrame: {
+  tabId: number;
+  frameId: number;
+} | null = null;
 
 // The service turns down handshakes whose User-Agent does not say Edge - rewrite it, but only on this
 // extension's own requests to the synthesis host
@@ -52,13 +60,6 @@ async function installHeaderRule() {
         }
       }
     ]
-  });
-}
-
-function sendToPlayer(request: PlayerRequest) {
-  return sendRequest({
-    ...request,
-    target: OFFSCREEN_TARGET
   });
 }
 
@@ -124,8 +125,7 @@ async function speak(request: SpeakRequest) {
     }),
     ensureOffscreen()
   ]);
-  return sendToPlayer({
-    type: Command.Speak,
+  return speechMessenger.sendMessage(SpeechMessage.PlayerSpeak, {
     text,
     voice,
     prosody: {
@@ -135,81 +135,76 @@ async function speak(request: SpeakRequest) {
   });
 }
 
-async function handle(request: Request) {
-  if (request.type === Command.Speak) {
-    return speak(request);
-  }
-
+// Nothing to control while the player is closed, and waking it just to answer would start it silent
+async function control(command: ControlCommand) {
   const isPlayerOpen = await hasOffscreen();
   if (!isPlayerOpen) {
     return IDLE_STATE;
   }
 
-  return sendToPlayer(request);
+  return speechMessenger.sendMessage(SpeechMessage.PlayerControl, command);
 }
 
-function respondToRequest({ message, sendResponse }: {
-  message: unknown;
-  sendResponse: (state: SpeakingState) => void;
+// A narrated page reaches this through the bridge content script, so what it asks for is page data
+function speakValidated(request: unknown) {
+  const parsed = speakRequestSchema.safeParse(request);
+  return parsed.success ? speak(parsed.data) : Promise.resolve(IDLE_STATE);
+}
+
+function controlValidated(command: unknown) {
+  const parsed = controlCommandSchema.safeParse(command);
+  return parsed.success ? control(parsed.data) : Promise.resolve(IDLE_STATE);
+}
+
+// The popup and other extensions have no tab of their own, and hear the player over the runtime anyway
+function rememberFrame({ tab, frameId }: {
+  tab?: { id?: number };
+  frameId?: number;
 }) {
-  const parsed = requestSchema.safeParse(message);
-  if (!parsed.success) {
-    return false;
-  }
-
-  void handle(parsed.data).then(sendResponse);
-  return true;
-}
-
-// Narrated pages reach the player through the bridge content script's port; every state the player
-// broadcasts goes back to all of them, and each page follows only the text it asked for
-function acceptNarrationPort(port: Browser.runtime.Port) {
-  if (port.name !== NARRATION_PORT) {
+  if (tab?.id === undefined || frameId === undefined) {
     return;
   }
 
-  narrationPorts.add(port);
-  port.onDisconnect.addListener(() => narrationPorts.delete(port));
-  port.onMessage.addListener(async message => {
-    const parsed = requestSchema.safeParse(message);
-    if (!parsed.success) {
-      return;
-    }
-
-    port.postMessage(await handle(parsed.data));
-  });
+  readingFrame = {
+    tabId: tab.id,
+    frameId
+  };
 }
 
-function relayStateToPages(state: SpeakingState) {
-  for (const port of narrationPorts) {
-    port.postMessage(state);
+async function relayStateToFrame(state: SpeakingState) {
+  if (readingFrame === null) {
+    return;
   }
+
+  await speechMessenger.sendMessage(SpeechMessage.PlayerState, state, readingFrame);
 }
 
-export default defineBackground(() => {
-  void installHeaderRule();
-  browser.runtime.onConnect.addListener(acceptNarrationPort);
+export default defineBackground(async () => {
+  speechMessenger.onMessage(SpeechMessage.Speak, ({ data, sender }) => {
+    rememberFrame(sender);
+    return speakValidated(data);
+  });
+  speechMessenger.onMessage(SpeechMessage.Control, ({ data, sender }) => {
+    rememberFrame(sender);
+    return controlValidated(data);
+  });
+  speechMessenger.onMessage(SpeechMessage.PlayerState, ({ data }) => relayStateToFrame(data));
 
-  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    const isForPlayer = playerTargetSchema.safeParse(message).success;
-    if (isForPlayer) {
+  browser.runtime.onMessageExternal.addListener((message, _sender, sendResponse) => {
+    const parsed = externalRequestSchema.safeParse(message);
+    if (!parsed.success) {
       return false;
     }
 
-    const parsedState = stateEventSchema.safeParse(message);
-    if (parsedState.success) {
-      relayStateToPages(parsedState.data.state);
-      return false;
-    }
-
-    return respondToRequest({
-      message,
-      sendResponse
-    });
+    const { type } = parsed.data;
+    const answer = type === Command.Speak ? speak(parsed.data) : control(type);
+    // Chrome keeps sendResponse alive only for a listener that returned true synchronously, so the
+    // answer rides the promise instead of an await here
+    answer.then(sendResponse, () => sendResponse(IDLE_STATE));
+    return true;
   });
 
-  browser.runtime.onMessageExternal.addListener((message, _sender, sendResponse) => respondToRequest({
-    message,
-    sendResponse
-  }));
+  // Every listener above is registered before this first await, or an event that woke the service
+  // worker would arrive before it is listening
+  await installHeaderRule();
 });

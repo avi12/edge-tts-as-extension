@@ -1,12 +1,12 @@
 <script lang="ts">
   import { Command } from "@/lib/command";
-  import type { ControlRequest } from "@/lib/messages";
+  import type { ControlCommand } from "@/lib/messages";
   import { isReadingStatus, PlayerStatus } from "@/lib/player-status";
 
   const { status, onspeak, oncontrol }: {
     status: PlayerStatus;
     onspeak: () => void;
-    oncontrol: (type: ControlRequest["type"]) => void;
+    oncontrol: (command: ControlCommand) => void;
   } = $props();
 
   const isReading = $derived(isReadingStatus(status));

@@ -1,78 +1,35 @@
-import { Command } from "@/lib/command";
 import type { Prosody } from "@/lib/edge-tts/ssml";
-import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
-import { z } from "@/lib/zod";
-import { browser } from "wxt/browser";
+import type { ControlCommand, SpeakRequest } from "@/lib/message-schemas";
+import type { SpeakingState } from "@/lib/player-status";
+import { defineExtensionMessaging } from "@webext-core/messaging";
 
-export const STATE_EVENT = "state";
-export const OFFSCREEN_TARGET = "offscreen";
+export type { ControlCommand, SpeakRequest };
 
-const speakRequestSchema = z.object({
-  type: z.literal(Command.Speak),
-  text: z.string().default(""),
-  voice: z.string().optional(),
-  rate: z.number().optional(),
-  isMatchingLanguage: z.boolean().optional(),
-  // The language the text is known to be in, e.g. a narrated card's - a voice that does not speak it is swapped
-  locale: z.string().optional()
-});
-
-const controlRequestSchema = z.object({
-  type: z.enum([
-    Command.Stop,
-    Command.Pause,
-    Command.Resume,
-    Command.GetState
-  ])
-});
-
-export const requestSchema = z.discriminatedUnion("type", [speakRequestSchema, controlRequestSchema]);
-
-const prosodySchema = z.object({
-  rate: z.number(),
-  volume: z.number(),
-  pitchHz: z.number()
-}) satisfies z.ZodType<Prosody>;
-
-const playerRequestSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal(Command.Speak),
-    text: z.string(),
-    voice: z.string(),
-    prosody: prosodySchema
-  }),
-  controlRequestSchema
-]);
-
-export const playerTargetSchema = z.object({ target: z.literal(OFFSCREEN_TARGET) });
-
-export const playerMessageSchema = z.intersection(playerRequestSchema, playerTargetSchema);
-
-const playerStateSchema = z.object({
-  status: z.enum(PlayerStatus),
-  text: z.string(),
-  word: z.object({
-    start: z.number(),
-    length: z.number()
-  }).nullable(),
-  error: z.string().nullable(),
-  voice: z.string().nullable()
-}) satisfies z.ZodType<SpeakingState>;
-
-export const stateEventSchema = z.object({
-  type: z.literal(STATE_EVENT),
-  state: playerStateSchema
-});
-
-export type Request = z.infer<typeof requestSchema>;
-export type SpeakRequest = z.infer<typeof speakRequestSchema>;
-export type ControlRequest = z.infer<typeof controlRequestSchema>;
-export type PlayerRequest = z.infer<typeof playerRequestSchema>;
-export type StateEvent = z.infer<typeof stateEventSchema>;
-type PlayerMessage = z.infer<typeof playerMessageSchema>;
-
-// Every request, to the background or the player, is answered with the player's state
-export async function sendRequest(request: Request | PlayerMessage) {
-  const state: SpeakingState = await browser.runtime.sendMessage(request);
-  return state;
+export interface PlayerSpeakRequest {
+  text: string;
+  voice: string;
+  prosody: Prosody;
 }
+
+// One runtime bus carries both halves of the extension, and the message type is the routing: the
+// background answers Speak and Control, the offscreen player answers the Player pair
+export enum SpeechMessage {
+  Speak = "speak",
+  Control = "control",
+  PlayerSpeak = "player-speak",
+  PlayerControl = "player-control",
+  // The player's own state, broadcast to the background and the popup, and relayed to the frame
+  // that asked for the reading
+  PlayerState = "player-state"
+}
+
+// Every request is answered with the player's state
+interface SpeechProtocolMap {
+  [SpeechMessage.Speak](request: SpeakRequest): SpeakingState;
+  [SpeechMessage.Control](command: ControlCommand): SpeakingState;
+  [SpeechMessage.PlayerSpeak](request: PlayerSpeakRequest): SpeakingState;
+  [SpeechMessage.PlayerControl](command: ControlCommand): SpeakingState;
+  [SpeechMessage.PlayerState](state: SpeakingState): void;
+}
+
+export const speechMessenger = defineExtensionMessaging<SpeechProtocolMap>();

@@ -5,6 +5,7 @@ import type { WordBoundary } from "@/lib/edge-tts/protocol";
 import { type Prosody, sanitizeText } from "@/lib/edge-tts/ssml";
 import { createWordLocator } from "@/lib/edge-tts/words";
 import { getErrorMessage } from "@/lib/errors";
+import type { PlayerSpeakRequest } from "@/lib/messages";
 import { IDLE_STATE, PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
 const WORD_TICK_MS = 50;
@@ -19,12 +20,6 @@ interface TimedWord {
   time: number;
   start: number;
   length: number;
-}
-
-interface SpeakOptions {
-  text: string;
-  voice: string;
-  prosody: Prosody;
 }
 
 function ignoreError() {}
@@ -218,7 +213,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
       });
     }
 
-    function onAppended(startedAt: number) {
+    async function onAppended(startedAt: number) {
       if (chunkStartTime !== null) {
         return;
       }
@@ -233,7 +228,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
       const isWaitingToStart = elAudio.paused && state.status === PlayerStatus.Loading;
       if (isWaitingToStart) {
-        elAudio.play().catch(ignoreError);
+        await elAudio.play().catch(ignoreError);
       }
     }
 
@@ -259,7 +254,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     });
   }
 
-  async function streamText({ text, voice, prosody, signal }: SpeakOptions & { signal: AbortSignal }) {
+  async function streamText({ text, voice, prosody, signal }: PlayerSpeakRequest & { signal: AbortSignal }) {
     const mediaSource = new MediaSource();
     elAudio.src = URL.createObjectURL(mediaSource);
     await new Promise(resolve => mediaSource.addEventListener(SOURCE_OPEN_EVENT, resolve, { once: true }));
@@ -291,7 +286,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     startTicker();
   }
 
-  async function speak({ text, voice, prosody }: SpeakOptions) {
+  async function speak({ text, voice, prosody }: PlayerSpeakRequest) {
     release();
     const controller = new AbortController();
     session = controller;
@@ -334,12 +329,13 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     setState({ status: PlayerStatus.Paused });
   }
 
-  function resume() {
+  // Playback interrupted again before it starts rejects, which is nothing to report
+  async function resume() {
     if (state.status !== PlayerStatus.Paused) {
       return;
     }
 
-    void elAudio.play();
+    await elAudio.play().catch(ignoreError);
   }
 
   elAudio.onplaying = () => setState({ status: PlayerStatus.Playing });

@@ -1,32 +1,28 @@
-// The window.postMessage protocol between a narrated page and the extension's bridge content script.
-// Zod-free - the page side ships inside every artifact; the bridge validates what it receives
-import type { Request } from "@/lib/messages";
+// The channel between a narrated page and the extension's bridge content script. Custom events cross
+// the page/extension world boundary, and this module is zod-free: the page side ships inside every
+// narrated artifact, and the background validates whatever the page asks for
+import type { ControlCommand, SpeakRequest } from "@/lib/messages";
 import type { SpeakingState } from "@/lib/player-status";
+import { defineCustomEventMessaging } from "@webext-core/messaging/page";
 
-export const NARRATION_CHANNEL = "edge-read-aloud:narration";
-export const NARRATION_PORT = "narration";
+const NARRATION_NAMESPACE = "edge-read-aloud:narration";
 
-export enum BridgeEvent {
-  Hello = "hello",
-  Request = "request",
-  Ready = "ready",
-  State = "state"
+export enum NarrationMessage {
+  // The bridge announcing itself, for a page whose runtime was already listening
+  ExtensionReady = "extension-ready",
+  // The page asking whether the bridge is there, for a runtime that started after it
+  IsExtensionReady = "is-extension-ready",
+  Speak = "speak",
+  Control = "control",
+  PlayerState = "player-state"
 }
 
-export type PageMessage = {
-  channel: typeof NARRATION_CHANNEL;
-  event: BridgeEvent.Hello;
-} | {
-  channel: typeof NARRATION_CHANNEL;
-  event: BridgeEvent.Request;
-  request: Request;
-};
+interface NarrationProtocolMap {
+  [NarrationMessage.ExtensionReady](): void;
+  [NarrationMessage.IsExtensionReady](): boolean;
+  [NarrationMessage.Speak](request: SpeakRequest): void;
+  [NarrationMessage.Control](command: ControlCommand): void;
+  [NarrationMessage.PlayerState](state: SpeakingState): void;
+}
 
-export type BridgeMessage = {
-  channel: typeof NARRATION_CHANNEL;
-  event: BridgeEvent.Ready;
-} | {
-  channel: typeof NARRATION_CHANNEL;
-  event: BridgeEvent.State;
-  state: SpeakingState;
-};
+export const narrationMessenger = defineCustomEventMessaging<NarrationProtocolMap>({ namespace: NARRATION_NAMESPACE });

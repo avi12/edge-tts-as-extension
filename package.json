@@ -15,7 +15,7 @@
     "stylelint": "stylelint \"**/*.{css,svelte}\" --fix",
     "fallow": "fallow audit --base HEAD",
     "svelte:check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
-    "check": "pnpm compile && pnpm svelte:check && pnpm lint && pnpm stylelint && fallow dead-code --root . && pnpm test",
+    "check": "pnpm compile && pnpm svelte:check && pnpm lint && pnpm stylelint && pnpm fallow && pnpm test",
     "postinstall": "wxt prepare",
     "narrate": "tsx src/cli/narrate.ts",
     "icons": "tsx src/cli/render-icons.ts"
@@ -54,6 +54,7 @@
   "dependencies": {
     "@fontsource/chakra-petch": "^5.3.0",
     "@fontsource/share-tech-mono": "^5.3.0",
+    "@webext-core/messaging": "^4.0.0",
     "zod": "4.4.3"
   }
 }

@@ -1,28 +1,7 @@
 import type { NarrationEngine, ReportState } from "./engine";
 import { Command } from "@/lib/command";
-import type { Request } from "@/lib/messages";
-import { BridgeEvent, type BridgeMessage, NARRATION_CHANNEL, type PageMessage } from "@/lib/narration-bridge";
+import { NarrationMessage, narrationMessenger } from "@/lib/narration-bridge";
 import { isReadingStatus, PlayerStatus, type SpeakingState } from "@/lib/player-status";
-
-// Same window on both ends, and an artifact frame's sandboxed origin is "null"
-const ANY_ORIGIN = "*";
-
-function postToBridge(message: PageMessage) {
-  window.postMessage(message, ANY_ORIGIN);
-}
-
-function sendRequest(request: Request) {
-  postToBridge({
-    channel: NARRATION_CHANNEL,
-    event: BridgeEvent.Request,
-    request
-  });
-}
-
-function isBridgeMessage(data: unknown): data is BridgeMessage {
-  const isFromBridge = typeof data === "object" && data !== null && "channel" in data && data.channel === NARRATION_CHANNEL;
-  return isFromBridge && "event" in data && (data.event === BridgeEvent.Ready || data.event === BridgeEvent.State);
-}
 
 // Speaks through the Edge Read Aloud extension when it is installed, in the voice picked in its popup
 export function createLiveEngine(reportState: ReportState) {
@@ -64,29 +43,22 @@ export function createLiveEngine(reportState: ReportState) {
     }
   }
 
-  window.addEventListener("message", e => {
-    if (e.source !== window || !isBridgeMessage(e.data)) {
-      return;
-    }
-
-    if (e.data.event === BridgeEvent.Ready) {
-      isAvailable = true;
-      return;
-    }
-
-    followPlayer(e.data.state);
+  // The bridge announces itself for a runtime that was already listening; a runtime that started
+  // later asks instead, and a page with no extension is simply never answered - the one send that
+  // cannot be awaited, since nothing settles it
+  narrationMessenger.onMessage(NarrationMessage.ExtensionReady, () => {
+    isAvailable = true;
   });
-  postToBridge({
-    channel: NARRATION_CHANNEL,
-    event: BridgeEvent.Hello
+  narrationMessenger.onMessage(NarrationMessage.PlayerState, ({ data }) => followPlayer(data));
+  void narrationMessenger.sendMessage(NarrationMessage.IsExtensionReady).then(() => {
+    isAvailable = true;
   });
 
-  function speakFrom(start: number) {
+  async function speakFrom(start: number) {
     spokenOffset = start;
     speakingText = fullText.slice(start);
     sentTexts.add(speakingText);
-    sendRequest({
-      type: Command.Speak,
+    await narrationMessenger.sendMessage(NarrationMessage.Speak, {
       text: speakingText,
       locale
     });
@@ -103,28 +75,28 @@ export function createLiveEngine(reportState: ReportState) {
         error: null,
         voice: null
       });
-      speakFrom(0);
+      await speakFrom(0);
     },
-    seek(start) {
+    async seek(start) {
       if (speakingText === null) {
         return;
       }
 
-      speakFrom(start);
+      await speakFrom(start);
     },
-    pause() {
-      sendRequest({ type: Command.Pause });
+    async pause() {
+      await narrationMessenger.sendMessage(NarrationMessage.Control, Command.Pause);
     },
     async resume() {
-      sendRequest({ type: Command.Resume });
+      await narrationMessenger.sendMessage(NarrationMessage.Control, Command.Resume);
     },
-    stop() {
+    async stop() {
       if (speakingText === null) {
         return;
       }
 
       speakingText = null;
-      sendRequest({ type: Command.Stop });
+      await narrationMessenger.sendMessage(NarrationMessage.Control, Command.Stop);
     }
   };
   return {

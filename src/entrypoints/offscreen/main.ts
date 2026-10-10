@@ -1,38 +1,37 @@
 import { createPlayer } from "./player";
 import { Command } from "@/lib/command";
-import { playerMessageSchema, STATE_EVENT, type StateEvent } from "@/lib/messages";
+import { type ControlCommand, SpeechMessage, speechMessenger } from "@/lib/messages";
 
 function ignoreClosedPopup() {}
 
-const player = createPlayer(state => {
-  const event: StateEvent = {
-    type: STATE_EVENT,
-    state
-  };
-  browser.runtime.sendMessage(event).catch(ignoreClosedPopup);
+const player = createPlayer(async state => {
+  await speechMessenger.sendMessage(SpeechMessage.PlayerState, state).catch(ignoreClosedPopup);
 });
 
-browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  const parsed = playerMessageSchema.safeParse(message);
-  if (!parsed.success) {
-    return;
-  }
-
-  const request = parsed.data;
-  switch (request.type) {
-    case Command.Speak:
-      void player.speak(request);
-      break;
+async function control(command: ControlCommand) {
+  switch (command) {
     case Command.Pause:
       player.pause();
-      break;
+      return;
     case Command.Resume:
-      player.resume();
-      break;
+      await player.resume();
+      return;
     case Command.Stop:
       player.stop();
-      break;
+      return;
+    case Command.GetState:
   }
+}
 
-  sendResponse(player.getState());
+// Only the background sends here, and it has already validated what a page asked for
+speechMessenger.onMessage(SpeechMessage.PlayerSpeak, ({ data }) => {
+  // The reading outlives the message that starts it: the answer is the state it starts in, and the
+  // rest of it follows through PlayerState
+  void player.speak(data);
+  return player.getState();
+});
+
+speechMessenger.onMessage(SpeechMessage.PlayerControl, async ({ data }) => {
+  await control(data);
+  return player.getState();
 });

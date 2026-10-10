@@ -1,7 +1,7 @@
 import { Command } from "@/lib/command";
 import type { Voice } from "@/lib/edge-tts/voice-list";
 import { getErrorMessage } from "@/lib/errors";
-import { type ControlRequest, type Request, sendRequest, stateEventSchema } from "@/lib/messages";
+import { type ControlCommand, SpeechMessage, speechMessenger } from "@/lib/messages";
 import { IDLE_STATE, type SpeakingState } from "@/lib/player-status";
 import {
   DEFAULT_SETTINGS,
@@ -11,7 +11,6 @@ import {
   type Settings
 } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
-import { browser } from "wxt/browser";
 
 interface PopupState {
   text: string;
@@ -29,13 +28,8 @@ export const popup: PopupState = $state({
   error: null
 });
 
-async function send(request: Request) {
-  popup.player = await sendRequest(request);
-}
-
-export function speak() {
-  return send({
-    type: Command.Speak,
+export async function speak() {
+  popup.player = await speechMessenger.sendMessage(SpeechMessage.Speak, {
     text: popup.text,
     voice: popup.settings.voice,
     rate: popup.settings.rate,
@@ -43,13 +37,13 @@ export function speak() {
   });
 }
 
-export function control(type: ControlRequest["type"]) {
-  return send({ type });
+export async function control(command: ControlCommand) {
+  popup.player = await speechMessenger.sendMessage(SpeechMessage.Control, command);
 }
 
-export function updateText(text: string) {
+export async function updateText(text: string) {
   popup.text = text;
-  void draft.setValue(text);
+  await draft.setValue(text);
 }
 
 export async function updateSettings(patch: Partial<Settings>) {
@@ -64,15 +58,6 @@ export async function updateSettings(patch: Partial<Settings>) {
   }
 }
 
-function receiveState(message: unknown) {
-  const parsed = stateEventSchema.safeParse(message);
-  if (!parsed.success) {
-    return;
-  }
-
-  popup.player = parsed.data.state;
-}
-
 async function showVoices() {
   try {
     popup.voices = await loadVoices();
@@ -82,7 +67,9 @@ async function showVoices() {
 }
 
 export async function startPopup() {
-  browser.runtime.onMessage.addListener(receiveState);
+  speechMessenger.onMessage(SpeechMessage.PlayerState, ({ data }) => {
+    popup.player = data;
+  });
   [popup.settings, popup.text] = await Promise.all([readSettings(), draft.getValue()]);
-  await Promise.all([send({ type: Command.GetState }), showVoices()]);
+  await Promise.all([control(Command.GetState), showVoices()]);
 }

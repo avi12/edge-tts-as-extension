@@ -73,7 +73,8 @@ pnpm dev            # opens a Chrome with the extension and hot reload
 | `src/cli/narrate.ts` | The `narrate` CLI: pre-renders and embeds page narration |
 | `src/narration-runtime/` | The runtime embedded in narrated pages: buttons, tour panel, cue sync |
 | `src/entrypoints/narration-live.content.ts` | Runs that runtime, live only, on pages the CLI never narrated |
-| `src/lib/messages.ts` | Message contract shared by every part of the extension |
+| `src/lib/messages.ts` | The extension's message bus: one `@webext-core/messaging` protocol map, keyed by an enum |
+| `src/lib/narration-bridge.ts` | The page's message bus: custom events between a narrated page and the bridge |
 | `src/entrypoints/background.ts` | Header-rewrite rule, message routing |
 | `src/entrypoints/offscreen/` | Player: streams audio into a `MediaSource`, tracks the spoken word |
 | `src/entrypoints/popup/` | Svelte 5 UI with read-along highlighting |

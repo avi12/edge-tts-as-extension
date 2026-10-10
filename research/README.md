@@ -45,8 +45,11 @@ The **voice list stayed on `speech.platform.bing.com`** and still answers a bare
 
 1. `GET https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=…` → JSON voice list (no extra headers needed)
 2. `wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1?ConnectionId=<uuid hex>`,
-   with `Ocp-Apim-Subscription-Key`, `Sec-MS-GEC`, `Sec-MS-GEC-Version` and an Edge `User-Agent`
-   as **request headers** - as query parameters they are ignored
+   with `Ocp-Apim-Subscription-Key`, `Sec-MS-GEC` and `Sec-MS-GEC-Version` as **request headers or
+   query parameters - either is accepted** (this client sends them as query parameters: the token is
+   recomputed per connection, and a `declarativeNetRequest` rule carrying it would have to be
+   rewritten before every socket, while the `User-Agent` it does rewrite never changes), and an
+   Edge `User-Agent`, which is the one thing that has to be a header
 3. Send text frame `Path:speech.config` with `outputFormat: webm-24khz-16bit-mono-opus` and `wordBoundaryEnabled: "true"`
 4. Send text frame `Path:ssml` with `<speak><voice><prosody>escaped text</prosody></voice></speak>`
 5. Receive:
@@ -88,16 +91,24 @@ the service's to extend, so the client keeps that field a string.
 | header | header | Chrome | anything | rejected |
 | header | none | Edge | - | rejected |
 | none | header | Edge | - | rejected |
-| query parameter | query parameter | Edge | Edge extension | rejected |
+| query parameter | query parameter | Edge | Edge extension | OK |
+| query parameter | query parameter | Chrome | - | rejected |
+| none | none | Edge | - | rejected |
+
+The last three rows were re-measured on 2026-10-10, and the first of them corrects what this file
+said before: the gateway reads the credentials from the query string just as happily as from the
+headers, and sending them both ways at once is fine too. What it will not do is let a handshake
+through without them, or with a `User-Agent` that does not say `Edg/`.
 
 So, compared with the old endpoint:
 
 - **Origin is no longer checked** - a Chrome extension's own origin passes
-- the key and the token must be **headers**, not query parameters
-- the `User-Agent` must still say `Edg/`
+- the key and the token may be **headers or query parameters**
+- the `User-Agent` must still say `Edg/`, and it is the only one that has to be a header
 - `Sec-MS-GEC-Version` must parse as `1-<version>`; which version hardly matters (`1-0.0.0.0` passes), but a missing or garbage one is rejected
 - the token is accepted for its own 5 minute window and one window either side, so it has to be recomputed per connection
 
-A Chrome extension therefore rewrites **User-Agent** and adds the three service headers to its own
-handshake with `declarativeNetRequest`. Only the background can reach that API (an offscreen
-document cannot), so the offscreen player asks the background to refresh the rule before each socket.
+A Chrome extension therefore only has to rewrite **User-Agent** with `declarativeNetRequest`, and
+carries the three credentials in the socket's query string. Only the background can reach that API
+(an offscreen document cannot), so the rule is installed there, once, for this extension's own
+requests to the gateway host.

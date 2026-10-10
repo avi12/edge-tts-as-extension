@@ -10,6 +10,7 @@ export default {
     ".output/**",
     ".wxt/**",
     ".claude/**",
+    ".dev-profile/**",
     "research/**",
     "**/*.svg"
   ],

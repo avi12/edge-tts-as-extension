@@ -2,6 +2,7 @@ import expandNestedObjectExpression from "./eslint-rules/expand-nested-object-ex
 import expandNestedTypeLiteral from "./eslint-rules/expand-nested-type-literal.js";
 import expandSvelteBlock from "./eslint-rules/expand-svelte-block.js";
 import multilineArgParenNewline from "./eslint-rules/multiline-arg-paren-newline.js";
+import noPaddedTag from "./eslint-rules/no-padded-tag.js";
 import stylistic from "@stylistic/eslint-plugin";
 import importNewlines from "eslint-plugin-import-newlines";
 import perfectionist from "eslint-plugin-perfectionist";
@@ -13,7 +14,8 @@ import svelteParser from "svelte-eslint-parser";
 import tsEslint from "typescript-eslint";
 
 // Logic and correctness rules live in oxlint (.oxlintrc.json) - ESLint only
-// carries what oxlint cannot: formatting, selector bans and the local custom rules
+// carries what oxlint cannot: formatting, Svelte template rules, selector
+// bans and the local custom rules
 const tsStyleRules = {
   "perfectionist/sort-imports": [
     "error",
@@ -192,6 +194,7 @@ const tsStyleRules = {
   "local/expand-nested-object-expression": "error",
   "local/expand-nested-type-literal": "error",
   "local/multiline-arg-paren-newline": "error",
+  "local/no-padded-tag": "error",
   // Only the auto-removal of dead imports lives here - unused *variable* detection stays in
   // oxlint's type-aware typescript/no-unused-vars (this plugin's syntactic no-unused-vars, and
   // even @typescript-eslint's, false-positive on a const used only via `typeof`, e.g. a zod
@@ -219,6 +222,13 @@ const tsStyleRules = {
     {
       selector: "VariableDeclarator[init.type='ConditionalExpression'][init.alternate.type='ArrowFunctionExpression']",
       message: "Declare a named function instead of assigning an arrow function to a variable - fold the condition inside the function body."
+    },
+    {
+      // Svelte content tags only: a `{cond ? a : b}` that outputs text. Use an {#if}/{:else}
+      // block (or a $derived.by with if/else for a value) so the branch reads as markup. Scoped
+      // to content mustaches - attribute/directive value ternaries (attr={a ? b : c}) are fine.
+      selector: "SvelteMustacheTag:not([parent.type='SvelteAttribute']):not([parent.type='SvelteStyleDirective']) > ConditionalExpression",
+      message: "Do not use a ternary in a template tag - use an {#if}/{:else} block instead."
     }
   ]
 };
@@ -234,7 +244,8 @@ const sharedPlugins = {
       "expand-nested-object-expression": expandNestedObjectExpression,
       "expand-nested-type-literal": expandNestedTypeLiteral,
       "expand-svelte-block": expandSvelteBlock,
-      "multiline-arg-paren-newline": multilineArgParenNewline
+      "multiline-arg-paren-newline": multilineArgParenNewline,
+      "no-padded-tag": noPaddedTag
     }
   }
 };
@@ -293,7 +304,10 @@ export default [
       "svelte/shorthand-directive": "error",
       "svelte/first-attribute-linebreak": ["error"],
       "svelte/shorthand-attribute": ["error", { prefer: "always" }],
-      "local/expand-svelte-block": "error"
+      "local/expand-svelte-block": "error",
+      // oxlint turns prefer-const off for .svelte, where a rune's let is not a reassignment -
+      // so ESLint carries it for Svelte files instead of nobody carrying it
+      "prefer-const": ["error", { destructuring: "all" }]
     }
   }
 ];

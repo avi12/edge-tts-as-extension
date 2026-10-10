@@ -35,6 +35,7 @@ import { parseHTML } from "linkedom";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { compile } from "svelte/compiler";
 
 const RUNTIME_ENTRY = path.join(import.meta.dirname, "..", "narration-runtime", "runtime.ts");
 // The ?raw suffix is Vite's, so the runtime's imports read the same here as they do in the extension
@@ -59,6 +60,23 @@ const BITS_PER_BYTE = 8;
 const SLUG_LENGTH = 40;
 const NON_SLUG_CHARACTERS = /[^a-z0-9]+/g;
 const SURROUNDING_DASHES = /^-|-$/g;
+// The runtime's UI is Svelte, and a page gets it compiled rather than compiling anything itself. The
+// components carry no styles, so nothing needs the css output - each shadow root adopts its own sheet
+// https://svelte.dev/docs/svelte/svelte-compiler#compile
+const svelteComponentPlugin: Plugin = {
+  name: "svelte-component",
+  setup(pluginBuild) {
+    pluginBuild.onLoad({ filter: /\.svelte$/ }, async args => ({
+      contents: compile(await readFile(args.path, "utf8"), {
+        filename: args.path,
+        generate: "client",
+        css: "external"
+      }).js.code,
+      loader: "js"
+    }));
+  }
+};
+
 const rawTextPlugin: Plugin = {
   name: "raw-text",
   setup(pluginBuild) {
@@ -171,7 +189,7 @@ async function bundleRuntime() {
     minify: true,
     write: false,
     target: "es2022",
-    plugins: [rawTextPlugin]
+    plugins: [rawTextPlugin, svelteComponentPlugin]
   });
   return result.outputFiles[0]?.text ?? "";
 }

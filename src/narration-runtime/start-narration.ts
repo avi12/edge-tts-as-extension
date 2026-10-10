@@ -1,7 +1,8 @@
 import type { NarrationEngine } from "./engine";
 import { createLiveEngine } from "./live-engine";
+import { PanelAction } from "./panel-action";
 import { createRecordedEngine } from "./recorded-engine";
-import { createCardOverlay, createTourPanel, PanelAction } from "./ui";
+import { createCardOverlay, createTourPanel } from "./ui";
 import { NARRATION_CUE_EVENT, NarrationAttribute, type NarrationClip, type NarrationData } from "@/lib/narration";
 import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 

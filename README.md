@@ -39,7 +39,7 @@ pnpm narrate page.html --voice en-GB-SoniaNeural --rate 1.1   # in place; re-run
 pnpm narrate page.html --export clips    # also writes NN-slug.mp3 + timings JSON per card, for Manim
 ```
 
-The embedded runtime (`src/narration-runtime/`, about 11 KB) adds a play button to each narrated card and a
+The embedded runtime (`src/narration-runtime/`, about 75 KB with its Svelte UI) adds a play button to each narrated card and a
 tour panel with live subtitles. While a card plays it sets `data-narrating` on it, and the moment a cue's
 word is spoken it adds the cue to the card's `data-cued` list and sets `data-cue-reached` on every matching
 `data-cue` element, so the page's own CSS animates in step with the voice - two generic rules cover every

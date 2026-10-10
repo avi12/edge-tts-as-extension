@@ -40,3 +40,10 @@ export async function readSettings() {
 export async function saveSettings(value: Settings) {
   await settingsItem.setValue(value);
 }
+
+// Fires wherever the settings were changed from, which is how a reading already in progress hears
+// about a voice picked in the popup. The callback may be async: storage listeners are a platform
+// boundary that awaits nothing, so the awaiting ends here
+export function watchSettings(onChange: () => Promise<void>) {
+  return settingsItem.watch(onChange);
+}

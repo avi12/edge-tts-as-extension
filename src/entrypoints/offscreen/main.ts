@@ -31,6 +31,13 @@ speechMessenger.onMessage(SpeechMessage.PlayerSpeak, ({ data }) => {
   return player.getState();
 });
 
+// The reading carries on under the new voice, so the answer is the state it carries on in
+speechMessenger.onMessage(SpeechMessage.PlayerRespeak, ({ data }) => {
+  // Same as a speak: the reading outlives the message, and the rest follows through PlayerState
+  void player.respeak(data);
+  return player.getState();
+});
+
 speechMessenger.onMessage(SpeechMessage.PlayerControl, async ({ data }) => {
   await control(data);
   return player.getState();

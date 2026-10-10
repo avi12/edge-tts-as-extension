@@ -5,7 +5,7 @@ import type { WordBoundary } from "@/lib/edge-tts/protocol";
 import { type Prosody, sanitizeText } from "@/lib/edge-tts/ssml";
 import { createWordLocator } from "@/lib/edge-tts/words";
 import { getErrorMessage } from "@/lib/errors";
-import type { PlayerSpeakRequest } from "@/lib/messages";
+import type { PlayerSpeakRequest, PlayerVoiceChange } from "@/lib/messages";
 import { IDLE_STATE, PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
 // The next four are ours, tuned for read-along highlighting, not the platform's: how often the spoken
@@ -78,6 +78,13 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
   let session: AbortController | null = null;
   let words: TimedWord[] = [];
   let tickerId: ReturnType<typeof setInterval> | undefined;
+  // The whole reading, and how far into it the audio now being streamed starts. A voice picked
+  // mid-reading synthesizes the rest from the current word, so only the offset moves - what the
+  // listener is told, text and word positions alike, stays in terms of the whole reading
+  let fullText = "";
+  let spokenOffset = 0;
+  // A voice picked while paused has nothing to continue yet, so it waits for the resume
+  let pausedVoiceChange: PlayerVoiceChange | null = null;
 
   function setState(patch: Partial<SpeakingState>) {
     state = {
@@ -100,7 +107,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
     const word = currentWord
       ? {
-        start: currentWord.start,
+        start: currentWord.start + spokenOffset,
         length: currentWord.length
       }
       : null;
@@ -275,7 +282,8 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     });
   }
 
-  async function streamText({ text, voice, prosody, signal }: Omit<PlayerSpeakRequest, "source"> & {
+  async function streamText({ text, voice, prosody, signal }: PlayerVoiceChange & {
+    text: string;
     signal: AbortSignal;
   }) {
     const mediaSource = new MediaSource();
@@ -312,21 +320,22 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     startTicker();
   }
 
-  async function speak({ text, voice, prosody, source }: PlayerSpeakRequest) {
+  // Streams from spokenOffset to the end of the reading. The text, the source and the word positions
+  // the listener sees are the whole reading's either way, so starting over and carrying on look alike
+  async function streamRest({ voice, prosody }: PlayerVoiceChange) {
     release();
     const controller = new AbortController();
     session = controller;
     setState({
-      ...IDLE_STATE,
       status: PlayerStatus.Loading,
-      text,
       voice,
-      source
+      word: null,
+      error: null
     });
 
     try {
       await streamText({
-        text,
+        text: fullText.slice(spokenOffset),
         voice,
         prosody,
         signal: controller.signal
@@ -338,13 +347,44 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
       release();
       setState({
-        ...IDLE_STATE,
         status: PlayerStatus.Error,
-        text,
-        voice,
+        word: null,
         error: getErrorMessage(error)
       });
     }
+  }
+
+  async function speak({ text, voice, prosody, source }: PlayerSpeakRequest) {
+    fullText = text;
+    spokenOffset = 0;
+    pausedVoiceChange = null;
+    setState({
+      ...IDLE_STATE,
+      status: PlayerStatus.Loading,
+      text,
+      voice,
+      source
+    });
+    await streamRest({
+      voice,
+      prosody
+    });
+  }
+
+  // The word being spoken is where the new voice takes over, so the listener keeps their place
+  async function respeak(change: PlayerVoiceChange) {
+    if (state.status === PlayerStatus.Paused) {
+      pausedVoiceChange = change;
+      return;
+    }
+
+    const isReading = state.status === PlayerStatus.Loading || state.status === PlayerStatus.Playing;
+    if (!isReading) {
+      return;
+    }
+
+    spokenOffset = state.word?.start ?? spokenOffset;
+    await streamRest(change);
   }
 
   function pause() {
@@ -365,6 +405,15 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
       return;
     }
 
+    // A voice picked while paused takes effect here, from the word the pause stopped on
+    if (pausedVoiceChange !== null) {
+      const change = pausedVoiceChange;
+      pausedVoiceChange = null;
+      spokenOffset = state.word?.start ?? spokenOffset;
+      await streamRest(change);
+      return;
+    }
+
     await elAudio.play().catch(ignoreError);
   }
 
@@ -378,6 +427,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
   return {
     speak,
+    respeak,
     pause,
     resume,
     stop,

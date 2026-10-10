@@ -9,8 +9,8 @@ import {
   speakRequestSchema
 } from "@/lib/message-schemas";
 import { SpeechMessage, speechMessenger } from "@/lib/messages";
-import { IDLE_STATE, ReadingSource, type SpeakingState } from "@/lib/player-status";
-import { readSettings } from "@/lib/settings";
+import { IDLE_STATE, isReadingStatus, ReadingSource, type SpeakingState } from "@/lib/player-status";
+import { readSettings, watchSettings } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
 import { z } from "@/lib/zod";
 
@@ -46,6 +46,10 @@ let readingFrame: {
   tabId: number;
   frameId: number;
 } | null = null;
+// What the current reading asked for, so a voice picked halfway through is chosen the way it was
+// chosen the first time. Forgotten with the worker, which costs only the locale a page declared - the
+// text's own writing system still speaks for itself
+let readingLocale: string | undefined;
 
 // The service turns down handshakes whose User-Agent does not say Edge - rewrite it, but only on this
 // extension's own requests to the synthesis host. Session rules are "cleared when the browser shuts
@@ -142,6 +146,8 @@ async function speak({ request, source }: {
     return IDLE_STATE;
   }
 
+  readingLocale = request.locale;
+
   const savedSettings = await readSettings();
   const [voice] = await Promise.all([
     chooseVoice({
@@ -160,6 +166,34 @@ async function speak({ request, source }: {
       rate: request.rate ?? savedSettings.rate
     },
     source
+  });
+}
+
+// A voice or a speed picked while something is reading belongs to that reading too, not only to the
+// next one - the player carries it on from the word it has reached
+async function applySettingsToReading() {
+  const isPlayerOpen = await hasOffscreen();
+  if (!isPlayerOpen) {
+    return;
+  }
+
+  const reading = await speechMessenger.sendMessage(SpeechMessage.PlayerControl, Command.GetState);
+  if (!isReadingStatus(reading.status)) {
+    return;
+  }
+
+  const settings = await readSettings();
+  await speechMessenger.sendMessage(SpeechMessage.PlayerRespeak, {
+    voice: await chooseVoice({
+      text: reading.text,
+      voice: settings.voice,
+      isMatchingLanguage: settings.isMatchingLanguage,
+      locale: readingLocale
+    }),
+    prosody: {
+      ...DEFAULT_PROSODY,
+      rate: settings.rate
+    }
   });
 }
 
@@ -250,6 +284,10 @@ export default defineBackground(async () => {
     answer.then(sendResponse, () => sendResponse(IDLE_STATE));
     return true;
   });
+
+  // Watched here rather than in the popup, because an external caller's reading answers to the same
+  // stored voice, and because the popup is gone by the time a long reading is still going
+  watchSettings(applySettingsToReading);
 
   // Every listener above is registered before this first await, or an event that woke the service
   // worker would arrive before it is listening - handlers must be "registered synchronously on initial

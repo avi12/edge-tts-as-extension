@@ -31,16 +31,23 @@ const STRAIGHT_QUOTES: Record<string, AsciiQuote> = {
   "″": "\""
 };
 
-// Control characters other than tab/newline/carriage return break the service
+// Control characters other than tab/newline/carriage return break the service - Edge's ssml.js draws
+// the same line, everything below tab plus everything between carriage return and space
 const NON_WHITESPACE_CONTROL = /[\u0000-\u0008\u000E-\u001F]/g;
 const XML_SPECIAL_CHARACTERS = new RegExp(`[${Object.keys(XML_ESCAPES).join("")}]`, "g");
 const XML_UNESCAPES = Object.fromEntries(Object.entries(XML_ESCAPES).map(([character, entity]) => [entity, character]));
 const XML_ENTITIES = new RegExp(Object.keys(XML_UNESCAPES).join("|"), "g");
 const TYPOGRAPHIC_QUOTES = new RegExp(`[${Object.keys(STRAIGHT_QUOTES).join("")}]`, "g");
 
+// The namespace W3C defines for SSML, written as Edge's ssml.js writes it, beside its version='1.0'
+// https://www.w3.org/TR/speech-synthesis11/
 const SSML_NAMESPACE = "http://www.w3.org/2001/10/synthesis";
 const LOCALE_SEPARATOR = "-";
 const VOICE_LOCALE_PARTS = 2;
+
+// rate and volume travel as the documented relative percentage, pitch as a relative number of Hz -
+// Edge's ssml.js converts its multipliers into the same two forms
+// https://learn.microsoft.com/azure/ai-services/speech-service/speech-synthesis-markup-voice#adjust-prosody
 const PERCENT = 100;
 
 export interface Prosody {
@@ -49,6 +56,8 @@ export interface Prosody {
   pitchHz: number;
 }
 
+// The neutral point, as Edge's ssml.js has it: rate and volume default to 1 and go out as +0%. Its
+// pitch defaults to 1 too and it sends pitch minus 1 as Hz, which is the 0 Hz this stores directly
 export const DEFAULT_PROSODY: Prosody = {
   rate: 1,
   volume: 1,

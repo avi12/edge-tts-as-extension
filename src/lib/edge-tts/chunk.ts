@@ -1,4 +1,9 @@
+// Our chunk size, not the service's - Edge sends a whole utterance in one request, capped at 32768
+// characters in its audioViewModel.js
 const MAX_CHUNK_LENGTH = 3000;
+
+// Ours as well, cut points and taste alike: a sentence end past half the chunk beats the last space.
+// Edge never splits, it truncates at its cap
 const SENTENCE_ENDS = [". ", "! ", "? ", "\n"];
 const MIN_SENTENCE_CUT_RATIO = 0.5;
 

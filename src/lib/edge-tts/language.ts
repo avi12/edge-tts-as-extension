@@ -21,6 +21,9 @@ const SCRIPT_LANGUAGES = [
 type ScriptLanguage = (typeof SCRIPT_LANGUAGES)[number][1];
 
 const LATIN_LETTER = /\p{Script=Latin}/gu;
+// BCP 47 writes a locale as hyphen-separated subtags, a 2 to 3 letter language first and each later one
+// 2 to 8 characters (section 2.1) - matched loosely, only to tell a tag from free text
+// https://www.rfc-editor.org/rfc/rfc5646
 const LOCALE_SEPARATOR = "-";
 const LANGUAGE_TAG = /^[a-z]{2,3}(?:-[a-z\d]{2,8})*$/i;
 

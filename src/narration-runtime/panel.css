@@ -37,8 +37,10 @@ header {
   white-space: nowrap;
 }
 
+/* Above the subtitle, which is positioned too and would otherwise paint over this one's tip */
 .voice {
   position: relative;
+  z-index: 1;
   flex: none;
   margin-inline-start: auto;
   color: var(--narrator-ink);

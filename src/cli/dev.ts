@@ -72,7 +72,8 @@ async function buildExtension() {
 async function reloadInPlace() {
   await reloadExtension({
     port: CDP_PORT,
-    extensionId
+    extensionId,
+    browserUrl
   });
   return reloadMatchingPages({
     port: CDP_PORT,

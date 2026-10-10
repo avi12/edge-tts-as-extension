@@ -23,6 +23,38 @@ const MATCH_PATTERN = /^([^:]+):\/\/([^/]+)(\/.*)$/;
 // changed files - there is no protocol method for it, hence the trip through a live context below
 // https://developer.chrome.com/docs/extensions/reference/api/runtime#method-reload
 const RELOAD_EXPRESSION = "chrome.runtime.reload()";
+const EXTENSIONS_PAGE = "extensions/";
+const RELOAD_BUTTON_LABEL = "Reload";
+// The extensions page's own Reload control, found the way the developer-mode switch is: by walking
+// every shadow root, because Edge's page and Chromium's spell the button differently
+const CLICK_RELOAD_EXPRESSION = `(() => {
+  const findDeep = (root, match) => {
+    for (const el of root.querySelectorAll("*")) {
+      if (match(el)) {
+        return el;
+      }
+
+      const found = el.shadowRoot && findDeep(el.shadowRoot, match);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
+  };
+  const isReloadButton = el => {
+    const isButton = /button/i.test(el.tagName) || el.getAttribute("role") === "button";
+    const label = el.getAttribute("aria-label") || "";
+    const text = el.textContent ? el.textContent.trim() : "";
+    return isButton && (/reload/i.test(el.id) || label === "${RELOAD_BUTTON_LABEL}" || text === "${RELOAD_BUTTON_LABEL}");
+  };
+  const button = findDeep(document, isReloadButton);
+  if (!button) {
+    return "no reload button";
+  }
+
+  button.click();
+  return "clicked";
+})()`;
 const NEW_CONTEXT_WAIT_MS = 100;
 const NEW_CONTEXT_ATTEMPTS = 25;
 // WXT builds each HTML entrypoint to its own name at the extension root, so these are our entrypoint
@@ -210,26 +242,75 @@ export async function reloadMatchingPages({ port, matchPatterns }: {
   return injectedPages.length;
 }
 
-export async function reloadExtension({ port, extensionId }: {
+// chrome.runtime.reload() is throttled: call it a few times in a few minutes, as a save-driven loop
+// does, and the browser quietly keeps serving the service worker it already has - the files on disk
+// are new while the worker running them is not. Clicking Reload on the extensions page is not
+// throttled, and brings the worker back from disk, so that is the way in. The API call stays as the
+// fallback for a browser whose page this cannot find
+async function reloadThroughExtensionsPage({ port, browserUrl }: {
+  port: number;
+  browserUrl: string;
+}) {
+  const browser = await connectToBrowser(port);
+  const page = (await listTargets(port)).find(target => target.url.includes(EXTENSIONS_PAGE));
+  const targetId = page
+    ? page.id
+    : createdTargetSchema.parse(
+      await browser.send({
+        method: "Target.createTarget",
+        params: {
+          url: `${browserUrl}${EXTENSIONS_PAGE}`
+        }
+      })
+    ).targetId;
+  const { sessionId } = attachedSessionSchema.parse(
+    await browser.send({
+      method: "Target.attachToTarget",
+      params: {
+        targetId,
+        flatten: true
+      }
+    })
+  );
+  const outcome = await browser.send({
+    method: "Runtime.evaluate",
+    params: {
+      expression: CLICK_RELOAD_EXPRESSION,
+      returnByValue: true
+    },
+    sessionId
+  }).catch(() => null);
+  browser.close();
+  return z.object({ result: z.object({ value: z.string() }) }).safeParse(outcome).data?.result.value === "clicked";
+}
+
+export async function reloadExtension({ port, extensionId, browserUrl }: {
   port: number;
   extensionId: string;
+  browserUrl: string;
 }) {
   const origin = `${EXTENSION_SCHEME}${extensionId}/`;
   const previousIds = await listExtensionTargetIds({
     port,
     origin
   });
-  const target = findExtensionTarget({
-    targets: await listTargets(port),
-    origin
+  const isPageReloaded = await reloadThroughExtensionsPage({
+    port,
+    browserUrl
   });
-  if (target?.webSocketDebuggerUrl) {
-    await reloadThroughTarget({ socketUrl: target.webSocketDebuggerUrl });
-  } else {
-    await reloadThroughNewPopup({
-      port,
+  if (!isPageReloaded) {
+    const target = findExtensionTarget({
+      targets: await listTargets(port),
       origin
     });
+    if (target?.webSocketDebuggerUrl) {
+      await reloadThroughTarget({ socketUrl: target.webSocketDebuggerUrl });
+    } else {
+      await reloadThroughNewPopup({
+        port,
+        origin
+      });
+    }
   }
 
   return waitForNewExtensionContext({

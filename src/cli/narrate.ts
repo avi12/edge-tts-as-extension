@@ -9,8 +9,8 @@ import {
   detectLanguage,
   fetchVoices,
   MP3_BITS_PER_SECOND,
-  MP3_MIME_TYPE,
-  MP3_OUTPUT_FORMAT,
+  OUTPUT_MIME_TYPES,
+  OutputFormat,
   pickVoice,
   RATE_RANGE,
   synthesize,
@@ -159,7 +159,7 @@ async function synthesizeClip({ script, voice, rate }: {
       ...DEFAULT_PROSODY,
       rate
     },
-    outputFormat: MP3_OUTPUT_FORMAT,
+    outputFormat: OutputFormat.Mp3,
     openSocket: openEdgeSocket,
     onAudio: chunk => chunks.push(chunk),
     onWordBoundary: boundary => boundaries.push(boundary)
@@ -167,7 +167,7 @@ async function synthesizeClip({ script, voice, rate }: {
   const audio = Buffer.concat(chunks);
   const duration = audio.byteLength * BITS_PER_BYTE / MP3_BITS_PER_SECOND;
   const clip: NarrationClip = {
-    audio: `data:${MP3_MIME_TYPE};base64,${audio.toString("base64")}`,
+    audio: `data:${OUTPUT_MIME_TYPES[OutputFormat.Mp3]};base64,${audio.toString("base64")}`,
     voice: voice.ShortName,
     locale: voice.Locale,
     duration,

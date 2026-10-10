@@ -23,13 +23,24 @@ const EDGE_MAJOR_VERSION = EDGE_VERSION.split(".")[0];
 export const EDGE_USER_AGENT = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 `
   + `(KHTML, like Gecko) Chrome/${EDGE_MAJOR_VERSION}.0.0.0 Safari/537.36 Edg/${EDGE_MAJOR_VERSION}.0.0.0`;
 
-// The format Edge requests - streamable through MediaSource
-export const OUTPUT_FORMAT = "webm-24khz-16bit-mono-opus";
-export const AUDIO_MIME_TYPE = "audio/webm; codecs=opus";
+// Two of the output formats the service documents, named as it spells them
+// https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#audio-outputs
+export enum OutputFormat {
+  WebmOpus = "webm-24khz-16bit-mono-opus",
+  Mp3 = "audio-24khz-48kbitrate-mono-mp3"
+}
 
-// MP3 plays everywhere, for audio embedded in pages
-export const MP3_OUTPUT_FORMAT = "audio-24khz-48kbitrate-mono-mp3";
-export const MP3_MIME_TYPE = "audio/mpeg";
+// What the bytes of each format are, so whoever reads the stream never has to guess: audio/mpeg is
+// RFC 3003, and the WebM Opus mapping is MDN's
+// https://developer.mozilla.org/docs/Web/Media/Guides/Formats/WebM
+export const OUTPUT_MIME_TYPES: Record<OutputFormat, string> = {
+  [OutputFormat.WebmOpus]: "audio/webm; codecs=opus",
+  [OutputFormat.Mp3]: "audio/mpeg"
+};
+
+// The format Edge requests - streamable through MediaSource. MP3 plays everywhere instead, which is
+// what audio embedded in a page needs
+export const DEFAULT_OUTPUT_FORMAT = OutputFormat.WebmOpus;
 export const MP3_BITS_PER_SECOND = 48_000;
 
 // Word boundary offsets arrive in 100 ns ticks

@@ -1,6 +1,6 @@
 import { chunkText, type TextChunk } from "@/lib/edge-tts/chunk";
 import { synthesize } from "@/lib/edge-tts/client";
-import { AUDIO_MIME_TYPE } from "@/lib/edge-tts/constants";
+import { DEFAULT_OUTPUT_FORMAT, OUTPUT_MIME_TYPES } from "@/lib/edge-tts/constants";
 import type { WordBoundary } from "@/lib/edge-tts/protocol";
 import { type Prosody, sanitizeText } from "@/lib/edge-tts/ssml";
 import { createWordLocator } from "@/lib/edge-tts/words";
@@ -258,7 +258,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     const mediaSource = new MediaSource();
     elAudio.src = URL.createObjectURL(mediaSource);
     await new Promise(resolve => mediaSource.addEventListener(SOURCE_OPEN_EVENT, resolve, { once: true }));
-    const sourceBuffer = mediaSource.addSourceBuffer(AUDIO_MIME_TYPE);
+    const sourceBuffer = mediaSource.addSourceBuffer(OUTPUT_MIME_TYPES[DEFAULT_OUTPUT_FORMAT]);
     sourceBuffer.mode = SOURCE_BUFFER_MODE;
     const appender = createAppender({
       sourceBuffer,

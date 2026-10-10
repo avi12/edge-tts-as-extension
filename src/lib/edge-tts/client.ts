@@ -1,4 +1,4 @@
-import { SEC_MS_GEC_VERSION, SYNTHESIZE_URL, TRUSTED_CLIENT_TOKEN } from "./constants";
+import { type OutputFormat, SEC_MS_GEC_VERSION, SYNTHESIZE_URL, TRUSTED_CLIENT_TOKEN } from "./constants";
 import { secMsGec } from "./gec";
 import {
   configMessage,
@@ -30,7 +30,7 @@ interface SynthesizeOptions {
   onAudio: (chunk: Uint8Array<ArrayBuffer>) => void;
   onWordBoundary?: (boundary: WordBoundary) => void;
   signal?: AbortSignal;
-  outputFormat?: string;
+  outputFormat?: OutputFormat;
   openSocket?: (url: string) => WebSocket;
 }
 

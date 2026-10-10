@@ -2,7 +2,7 @@
 // Text frames: "Header:value\r\n...\r\n\r\n<body>"
 // Binary frames: u16 big-endian header length, header text, audio bytes
 
-import { OUTPUT_FORMAT, TICKS_PER_SECOND } from "./constants";
+import { DEFAULT_OUTPUT_FORMAT, TICKS_PER_SECOND } from "./constants";
 import { unescapeXml } from "./ssml";
 import { z } from "@/lib/zod";
 
@@ -72,7 +72,7 @@ function formatTextFrame({ headers, body }: {
   return `${head}${LINE_BREAK}${body}`;
 }
 
-export function configMessage(outputFormat = OUTPUT_FORMAT) {
+export function configMessage(outputFormat = DEFAULT_OUTPUT_FORMAT) {
   const config = {
     context: {
       synthesis: {

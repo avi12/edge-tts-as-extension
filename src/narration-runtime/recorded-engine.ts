@@ -2,6 +2,9 @@ import type { NarrationEngine, ReportState } from "./engine";
 import type { NarrationClip } from "@/lib/narration";
 import { PlayerStatus, type SpokenWord } from "@/lib/player-status";
 
+// Setting src runs the media element load algorithm, which rejects the play promise still in flight with
+// this name - an interruption, not a failure to report
+// https://html.spec.whatwg.org/multipage/media.html#media-load-algorithm
 const ABORT_ERROR = "AbortError";
 
 function getSpokenWord({ clip, seconds }: {
@@ -26,6 +29,9 @@ function getSpokenWord({ clip, seconds }: {
 // Plays the audio the narrate CLI embedded in the page - works in any browser
 export function createRecordedEngine(reportState: ReportState) {
   const elAudio = new Audio();
+  // "auto" asks for the whole clip up front - a hint the browser may ignore, and a cheap one here, since
+  // the source is a data URI already in the page
+  // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/preload
   elAudio.preload = "auto";
   let clip: NarrationClip | null = null;
   let status = PlayerStatus.Idle;

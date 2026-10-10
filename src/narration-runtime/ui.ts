@@ -14,14 +14,26 @@ export enum PanelAction {
   Stop = "stop"
 }
 
+// An open root stays reachable through Element.shadowRoot, so a page's own script can find the panel;
+// either mode keeps the page's CSS out
+// https://developer.mozilla.org/docs/Web/API/Element/attachShadow
 const SHADOW_MODE = "open";
+// The overlay's frame and button are absolutely positioned, and only an ancestor whose position is not
+// static forms their containing block - static being position's initial value
+// https://developer.mozilla.org/docs/Web/CSS/CSS_display/Containing_block
 const STATIC_POSITION = "static";
 const RELATIVE_POSITION = "relative";
+// Ours: page.css places and themes both hosts by this attribute
 const HOST_ATTRIBUTE = "data-narration-host";
+// A voice id is the service's ShortName, spelled language-region-NameNeural, with Multilingual before
+// Neural on the multilingual voices
+// https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#get-a-list-of-voices
 const VOICE_NAME_SEPARATOR = "-";
 const SUBTITLE_WORD = /\S+/g;
+// Ours, and private to the panel's shadow tree - not part of the contract pages author against
 const WORD_START_ATTRIBUTE = "data-start";
 const SPOKEN_ATTRIBUTE = "data-spoken";
+// The ending of the same ShortName
 const VOICE_NAME_SUFFIX = /(?:Multilingual)?Neural$/;
 
 enum HostKind {
@@ -29,11 +41,14 @@ enum HostKind {
   Panel = "panel"
 }
 
+// Ours, drawn by hand on the 24 unit grid icon sets use, so they scale with the button's font size
 const PLAY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
 const PAUSE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>`;
 const SPEAKER_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>`;
 
-// A hint popover renders in the top layer, so the chamfer clip-paths around it never cut it off
+// A hint popover renders in the top layer, so the chamfer clip-paths around it never cut it off. The hint
+// state is in the HTML standard, and a browser without it treats the popover as manual
+// https://html.spec.whatwg.org/multipage/popover.html#the-popover-attribute
 function hint({ id, text }: {
   id: string;
   text: string;
@@ -41,6 +56,10 @@ function hint({ id, text }: {
   return `<span class="hint" id="${id}" popover="hint">${text}</span>`;
 }
 
+// interestfor is a draft: Open UI has settled the design and the HTML spec PR is open, so hovering or
+// focusing a button shows its hint. A browser without it never shows them, and aria-labelledby still
+// names the button
+// https://open-ui.org/components/interest-invokers.explainer/
 const OVERLAY_TEMPLATE = `
   <span class="frame"></span>
   <button class="play" type="button" interestfor="hint-play" aria-labelledby="hint-play">
@@ -122,6 +141,9 @@ function createShadowHost({ css, template, kind }: {
   const elHost = document.createElement("span");
   elHost.setAttribute(HOST_ATTRIBUTE, kind);
   const shadowRoot = elHost.attachShadow({ mode: SHADOW_MODE });
+  // replaceSync fills a constructed sheet there and then, and adoptedStyleSheets is what carries a
+  // constructed sheet into a shadow root
+  // https://developer.mozilla.org/docs/Web/API/CSSStyleSheet/replaceSync
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(themeCss + css);
   shadowRoot.adoptedStyleSheets = [sheet];
@@ -271,6 +293,8 @@ export function createTourPanel({ cardCount, onAction, onSeek }: {
   document.body.append(elHost);
   const pageSheet = new CSSStyleSheet();
   pageSheet.replaceSync(pageCss);
+  // Appended, never assigned, so a page that adopted sheets of its own keeps them
+  // https://developer.mozilla.org/docs/Web/API/Document/adoptedStyleSheets
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, pageSheet];
 
   return {

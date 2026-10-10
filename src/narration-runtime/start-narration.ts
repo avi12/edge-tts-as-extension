@@ -5,13 +5,22 @@ import { createCardOverlay, createTourPanel, PanelAction } from "./ui";
 import { NARRATION_CUE_EVENT, NarrationAttribute, type NarrationClip, type NarrationData } from "@/lib/narration";
 import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
+// Ours: the headings a card is likely to carry, plus the skin's own card header class
 const HEADING_SELECTOR = "h1, h2, h3, h4, .card-head";
-// Narration walks a card from the top, and tall cards on phones cannot fit beside the panel anyway
+// Narration walks a card from the top, and tall cards on phones cannot fit beside the panel anyway -
+// "start" is also scrollIntoView's own default, named here because the choice is deliberate
+// https://developer.mozilla.org/docs/Web/API/Element/scrollIntoView
 const SCROLL_BLOCK = "start";
+// The OS-level reduce-motion setting, which decides whether the jump to a card animates
+// https://developer.mozilla.org/docs/Web/CSS/@media/prefers-reduced-motion
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+// data-cued is a space-separated list of names, as the narration contract promises page authors (README.md)
 const CUE_SEPARATOR = " ";
+// Ours: narration scripts are plain spoken prose, so a full stop, bang or question mark plus whitespace
+// is as much sentence splitting as the back button needs
 const SENTENCE_START = /(?:^|[.!?]\s+)(?=\S)/g;
-// Back from the first few characters of a sentence goes to the previous one, like a music player's back button
+// Back from the first few characters of a sentence goes to the previous one, like a music player's back
+// button - the count is tuned by hand
 const BACK_GRACE_CHARACTERS = 12;
 
 interface NarratedCard {

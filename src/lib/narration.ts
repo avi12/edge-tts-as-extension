@@ -28,10 +28,15 @@ export function getDeclaredLanguage({ text, cardLanguage, rootLanguage }: {
   return detectLanguage(text) ?? (isPageLanguage ? null : cardLanguage);
 }
 
+// Both names are the contract's own, promised to page authors in README.md
 export const NARRATION_DATA_ID = "narration-data";
 export const NARRATION_CUE_EVENT = "narration:cue";
 
+// The contract's marker syntax: [[name]] right before the words that introduce a part, names limited to
+// letters, digits, underscore and hyphen
 const CUE_MARKER = /\[\[([\w-]+)\]\]/g;
+// A script is written for the eye in an attribute, so every run of whitespace speaks as one space - and a
+// cue's position has to count what is spoken, not what was typed
 const WHITESPACE_RUN = /\s+/g;
 const SPACE = " ";
 
@@ -46,6 +51,8 @@ export type WordTiming = [number, number, number];
 export type CueTiming = [string, number, number];
 
 export interface NarrationClip {
+  // The whole mp3 as a data URI - data:[<media-type>][;base64],<data> - so a page plays with no network
+  // https://developer.mozilla.org/docs/Web/URI/Reference/Schemes/data
   audio: string;
   voice: string;
   // The voice's locale, so subtitles render in the right language and direction
@@ -101,6 +108,8 @@ export function parseNarrationScript(script: string) {
   };
 }
 
+// Boundary times reach here as 100-nanosecond ticks turned into seconds, with far more digits than the
+// embedded JSON needs - rounding to the millisecond is ours, and still finer than any spoken word
 const TIMING_PRECISION = 1000;
 
 function roundTime(seconds: number) {

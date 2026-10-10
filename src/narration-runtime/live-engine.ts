@@ -8,7 +8,10 @@ export function createLiveEngine(reportState: ReportState) {
   let isAvailable = false;
   let speakingText: string | null = null;
   let fullText = "";
-  let locale = "";
+  // What the card asks for: a pinned voice by name, or the language it declared. A card that asks for
+  // neither is read by the voice picked in the popup, whatever language that voice speaks
+  let pinnedVoice: string | undefined;
+  let declaredLanguage: string | undefined;
   // The player cannot seek, so a jump re-speaks the text from that word and positions are shifted back
   let spokenOffset = 0;
   // Late states for a card this page already left are not a takeover
@@ -60,14 +63,16 @@ export function createLiveEngine(reportState: ReportState) {
     sentTexts.add(speakingText);
     await narrationMessenger.sendMessage(NarrationMessage.Speak, {
       text: speakingText,
-      locale
+      voice: pinnedVoice,
+      locale: declaredLanguage
     });
   }
 
   const engine: NarrationEngine = {
     async play(clip) {
       fullText = clip.text;
-      locale = clip.locale;
+      pinnedVoice = clip.pinnedVoice ?? undefined;
+      declaredLanguage = clip.declaredLanguage ?? undefined;
       reportState({
         status: PlayerStatus.Loading,
         text: clip.text,

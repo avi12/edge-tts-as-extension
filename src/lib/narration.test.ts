@@ -1,4 +1,4 @@
-import { parseNarrationScript, timeNarration } from "@/lib/narration";
+import { getDeclaredLanguage, parseNarrationScript, timeNarration } from "@/lib/narration";
 import { describe, expect, it } from "vitest";
 
 describe("parseNarrationScript", () => {
@@ -84,5 +84,47 @@ describe("timeNarration", () => {
       words: [[0, 0, 4], [0.5, 5, 3], [1, 10, 4], [1.5, 16, 4]],
       cues: [["quote", 0.5, 5]]
     });
+  });
+});
+
+describe("getDeclaredLanguage", () => {
+  it("declares nothing for a card that only inherits the page's own language", () => {
+    expect(
+      getDeclaredLanguage({
+        text: "This card asks for nothing",
+        cardLanguage: "en",
+        rootLanguage: "en"
+      })
+    ).toBeNull();
+  });
+
+  it("declares a lang attribute that differs from the page's", () => {
+    expect(
+      getDeclaredLanguage({
+        text: "Bonjour tout le monde",
+        cardLanguage: "fr",
+        rootLanguage: "en"
+      })
+    ).toBe("fr");
+  });
+
+  it("lets the writing system speak for itself, whatever the page says", () => {
+    expect(
+      getDeclaredLanguage({
+        text: "הכרטיס הזה כתוב בעברית",
+        cardLanguage: "en",
+        rootLanguage: "en"
+      })
+    ).toBe("he");
+  });
+
+  it("declares nothing when the page says nothing either", () => {
+    expect(
+      getDeclaredLanguage({
+        text: "Plain words",
+        cardLanguage: null,
+        rootLanguage: null
+      })
+    ).toBeNull();
   });
 });

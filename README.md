@@ -38,8 +38,11 @@ pins one card's voice outright. Subtitles take the voice's language and directio
 
 With the extension installed, narrated pages speak live in the voice picked in its popup instead of the
 recorded one: a small bridge content script (in Claude's artifact frames and on `localhost`) hands each card to
-the extension's player, a card in another language still gets a voice that speaks it, and cues and subtitles
-follow the live words. Without the extension, or if live speech fails, the recorded audio plays.
+the extension's player, and cues and subtitles follow the live words. The picked voice reads every card that
+asked for nothing, whatever language that voice speaks - so a French voice reads an English page in French.
+Only a card that asked for something of its own overrides it: a card written in another writing system, or
+sitting under a `lang` attribute, is read by a voice that speaks that language, and `data-narrate-voice` is
+read by exactly the voice it names. Without the extension, or if live speech fails, the recorded audio plays.
 
 A page never run through the CLI - say, an artifact a Claude chat just wrote with `data-narrate` scripts and
 `data-cue` parts - still speaks when the extension is installed: its `narration-live` content script finds the

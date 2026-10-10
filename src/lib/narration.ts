@@ -1,6 +1,7 @@
 // The contract between narrated artifact pages, the narrate CLI and the embedded runtime -
 // documented for page authors in README.md ("Narrated artifacts")
 
+import { detectLanguage } from "@/lib/edge-tts/language";
 import type { WordBoundary } from "@/lib/edge-tts/protocol";
 import { sanitizeText } from "@/lib/edge-tts/ssml";
 import { createWordLocator } from "@/lib/edge-tts/words";
@@ -13,6 +14,18 @@ export enum NarrationAttribute {
   Cued = "data-cued",
   Cue = "data-cue",
   CueReached = "data-cue-reached"
+}
+
+// A card declares a language only where it says so itself: the writing system of its script, or a lang
+// attribute that is not simply the page's own. A card that declares nothing is read by the voice the
+// listener picked, whatever language that voice speaks
+export function getDeclaredLanguage({ text, cardLanguage, rootLanguage }: {
+  text: string;
+  cardLanguage: string | null;
+  rootLanguage: string | null;
+}) {
+  const isPageLanguage = cardLanguage === rootLanguage;
+  return detectLanguage(text) ?? (isPageLanguage ? null : cardLanguage);
 }
 
 export const NARRATION_DATA_ID = "narration-data";
@@ -37,6 +50,11 @@ export interface NarrationClip {
   voice: string;
   // The voice's locale, so subtitles render in the right language and direction
   locale: string;
+  // What the card asks a live voice for: a pinned voice reads as itself, a declared language (a
+  // non-Latin script or a lang attribute) is read by any voice that speaks it, and a card that
+  // declares neither is read by the voice picked in the extension's popup, whatever its language
+  pinnedVoice: string | null;
+  declaredLanguage: string | null;
   duration: number;
   text: string;
   words: WordTiming[];

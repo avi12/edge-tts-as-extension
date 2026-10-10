@@ -21,6 +21,7 @@ import { openEdgeSocket } from "@/lib/edge-tts/node-socket";
 import { getErrorMessage } from "@/lib/errors";
 import { rateSchema } from "@/lib/message-schemas";
 import {
+  getDeclaredLanguage,
   NARRATION_DATA_ID,
   NarrationAttribute,
   type NarrationClip,
@@ -68,10 +69,12 @@ const rawTextPlugin: Plugin = {
 // The same query the runtime runs in the browser, so scripts and clips pair up card by card
 function readCards(html: string) {
   const { document } = parseHTML(html);
+  const rootLanguage = document.documentElement?.getAttribute("lang") ?? null;
   return [...document.querySelectorAll(`[${NarrationAttribute.Script}]`)].map(elCard => ({
     script: elCard.getAttribute(NarrationAttribute.Script) ?? "",
     pinnedVoice: elCard.getAttribute(NarrationAttribute.Voice),
-    inheritedLocale: elCard.closest("[lang]")?.getAttribute("lang") ?? null,
+    cardLanguage: elCard.closest("[lang]")?.getAttribute("lang") ?? null,
+    rootLanguage,
     cueNames: new Set([...elCard.querySelectorAll(`[${NarrationAttribute.Cue}]`)].map(elCue => elCue.getAttribute(NarrationAttribute.Cue) ?? ""))
   }));
 }
@@ -90,28 +93,43 @@ function findVoice({ voices, voice }: {
   return found;
 }
 
-// A pinned voice wins; otherwise a non-Latin script names the language, then the nearest lang attribute does
+// A pinned voice wins; otherwise a non-Latin script names the language, then the nearest lang attribute
+// does. What the card asked for travels with the clip, so a live voice can answer the same way
 function chooseVoice({ card, voices, defaultVoice }: {
   card: Card;
   voices: Voice[];
   defaultVoice: string;
 }) {
   if (card.pinnedVoice) {
-    return findVoice({
-      voices,
-      voice: card.pinnedVoice
-    });
+    return {
+      voice: findVoice({
+        voices,
+        voice: card.pinnedVoice
+      }),
+      pinnedVoice: card.pinnedVoice,
+      declaredLanguage: null
+    };
   }
 
-  const locale = detectLanguage(parseNarrationScript(card.script).text) ?? card.inheritedLocale;
-  return findVoice({
-    voices,
-    voice: locale ? pickVoice({
+  const { text } = parseNarrationScript(card.script);
+  // The recording follows the page's own language too; only what a card says for itself travels on
+  const recordedLanguage = detectLanguage(text) ?? card.cardLanguage;
+  return {
+    voice: findVoice({
       voices,
-      locale,
-      preferredVoice: defaultVoice
-    }) : defaultVoice
-  });
+      voice: recordedLanguage ? pickVoice({
+        voices,
+        locale: recordedLanguage,
+        preferredVoice: defaultVoice
+      }) : defaultVoice
+    }),
+    pinnedVoice: null,
+    declaredLanguage: getDeclaredLanguage({
+      text,
+      cardLanguage: card.cardLanguage,
+      rootLanguage: card.rootLanguage
+    })
+  };
 }
 
 function checkCard({ script, cueNames, iCard }: Card & { iCard: number }) {
@@ -144,9 +162,11 @@ async function bundleRuntime() {
   return result.outputFiles[0]?.text ?? "";
 }
 
-async function synthesizeClip({ script, voice, rate }: {
+async function synthesizeClip({ script, voice, pinnedVoice, declaredLanguage, rate }: {
   script: string;
   voice: Voice;
+  pinnedVoice: string | null;
+  declaredLanguage: string | null;
   rate: number;
 }) {
   const { text, cues } = parseNarrationScript(script);
@@ -170,6 +190,8 @@ async function synthesizeClip({ script, voice, rate }: {
     audio: `data:${OUTPUT_MIME_TYPES[OutputFormat.Mp3]};base64,${audio.toString("base64")}`,
     voice: voice.ShortName,
     locale: voice.Locale,
+    pinnedVoice,
+    declaredLanguage,
     duration,
     text,
     ...timeNarration({
@@ -282,12 +304,12 @@ async function main() {
   for (const [iCard, card] of cards.entries()) {
     const synthesized = await synthesizeClip({
       script: card.script,
-      voice: chooseVoice({
+      rate: parsedRate.data,
+      ...chooseVoice({
         card,
         voices,
         defaultVoice: values.voice
-      }),
-      rate: parsedRate.data
+      })
     });
     clips.push(synthesized);
     console.log(`${iCard + 1}/${cards.length}  ${synthesized.clip.duration.toFixed(1)}s  ${synthesized.clip.voice}  cues: ${synthesized.clip.cues.map(([name, time]) => `${name}@${time}`).join(" ") || "-"}`);

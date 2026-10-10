@@ -12,8 +12,13 @@ const ICON_SOURCE = path.join(ROOT, "src", "icon", "icon.svg");
 const SMALL_ICON_SOURCE = path.join(ROOT, "src", "icon", "icon-16.svg");
 const MANIFEST_ICON_DIRECTORY = path.join(ROOT, "src", "public", "icon");
 const STORE_DIRECTORY = path.join(ROOT, "store");
+// documented: the four sizes Chrome lists for the icons key, with the uses the header names
+// https://developer.chrome.com/docs/extensions/develop/ui/configure-icons
 const SMALL_ICON_SIZE = 16;
 const MANIFEST_ICON_SIZES = [SMALL_ICON_SIZE, 32, 48, 128];
+// documented: Partner Center's recommended extension logo, 1:1 and at least 128 px. A store listing
+// requirement, not a manifest one, and not the Chrome Web Store's (which takes the 128 above)
+// https://learn.microsoft.com/microsoft-edge/extensions/publish/publish-extension#step-7-enter-store-listing-details-for-each-language
 const STORE_LOGO_SIZE = 300;
 
 async function renderPng({ source, size, destination }: {

@@ -13,21 +13,32 @@ import { watch } from "node:fs";
 import path from "node:path";
 import { build } from "wxt";
 
+// ours, one past the 9222 every other debugging tool defaults to, so a browser already listening
+// there is left alone
 const CDP_PORT = 9223;
+// ours, a dotted directory beside the output so it is ignored and thrown away like one
 const PROFILE_DIRECTORY = ".dev-profile";
+// WXT's default browser target and default manifest version for it; the directory it builds into is
+// named after the pair, which is WXT's own naming rather than anything configured here
+// https://wxt.dev/guide/essentials/target-different-browsers
 const BUILD_TARGET = "chrome-mv3";
 // What the browser loaded, and where each rebuild lands before its changed files are copied across
 const OUTPUT_DIRECTORY = `.output/${BUILD_TARGET}`;
 const STAGING_BASE = ".output/dev-staging";
 const STAGING_DIRECTORY = `${STAGING_BASE}/${BUILD_TARGET}`;
+// Ours: the paths a build reads, and the file types worth rebuilding for - an editor's swap and lock
+// files land in the same tree and would otherwise each cost a build
 const WATCHED_PATHS = ["src", "wxt.config.ts"];
 const SOURCE_FILE = /\.(?:ts|svelte|css|html|json|svg)$/;
+// ours, long enough that one save of several files is one build, short enough to feel immediate
 const REBUILD_DEBOUNCE_MS = 120;
+// ours, the cheapest page to open when --url says nothing
 const DEFAULT_START_URL = "about:blank";
+// Each browser serves its own internal pages from its own scheme, and only its own
 const EDGE_BROWSER_URL = "edge://";
 const CHROMIUM_BROWSER_URL = "chrome://";
 // Manifest and permission changes only take with a fresh load, so the loop says so instead of
-// pretending a reload was enough
+// pretending a reload was enough. This repo's finding, from watching a permission change not take
 const RELOAD_BLIND_FILES = ["wxt.config.ts"];
 
 const projectRoot = process.env.INIT_CWD ?? process.cwd();

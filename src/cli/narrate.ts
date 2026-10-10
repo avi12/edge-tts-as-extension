@@ -37,15 +37,25 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 
 const RUNTIME_ENTRY = path.join(import.meta.dirname, "..", "narration-runtime", "runtime.ts");
+// The ?raw suffix is Vite's, so the runtime's imports read the same here as they do in the extension
+// build; the namespace is esbuild's marker for a resolved path that is not a file to be read normally
+// https://vite.dev/guide/assets#importing-asset-as-string
+// https://esbuild.github.io/plugins/#namespaces
 const RAW_SUFFIX = /\?raw$/;
 const RAW_NAMESPACE = "raw";
 const USAGE = "Usage: pnpm narrate <page.html> [--out <file>] [--voice <name>] [--rate <n>] [--export <dir>]";
 // A flag arrives as text, and out of range is a mistake worth stopping for
 const rateFlagSchema = z.coerce.number().pipe(rateSchema);
+// Ours: markers that are invisible in the page and let a re-run replace exactly what the last run
+// wrote, which is what makes narrating twice idempotent
 const BLOCK_START = "<!-- narration:start -->";
 const BLOCK_END = "<!-- narration:end -->";
 const EXISTING_BLOCK = new RegExp(`\\n?${BLOCK_START}[\\s\\S]*?${BLOCK_END}`);
+// A byte is eight bits - half of the duration estimate in synthesizeClip, the other half being the
+// format's own bit rate
 const BITS_PER_BYTE = 8;
+// Ours: enough of the first spoken words to tell the exported clips apart in a Manim script, with
+// everything that is not a plain lower-case word character folded away so the name is a safe file name
 const SLUG_LENGTH = 40;
 const NON_SLUG_CHARACTERS = /[^a-z0-9]+/g;
 const SURROUNDING_DASHES = /^-|-$/g;
@@ -149,6 +159,10 @@ function checkCard({ script, cueNames, iCard }: Card & { iCard: number }) {
   }
 }
 
+// iife is esbuild's documented format for a bundle that just runs in a browser, which is all an
+// inline script can be; es2022 is ours, a floor every browser that can play the page's audio clears
+// https://esbuild.github.io/api/#format
+// https://esbuild.github.io/api/#target
 async function bundleRuntime() {
   const result = await build({
     entryPoints: [RUNTIME_ENTRY],
@@ -185,8 +199,14 @@ async function synthesizeClip({ script, voice, pinnedVoice, declaredLanguage, ra
     onWordBoundary: boundary => boundaries.push(boundary)
   });
   const audio = Buffer.concat(chunks);
+  // The format asked for above is a constant bit rate mp3 (its name states the rate), so the length
+  // of the audio is bytes over that rate - no decoding, and it matches what the browser reports
+  // https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#audio-outputs
   const duration = audio.byteLength * BITS_PER_BYTE / MP3_BITS_PER_SECOND;
   const clip: NarrationClip = {
+    // The clip rides inside the page as a base64 data url, the form RFC 2397 defines, so a narrated
+    // page needs no second request and survives being copied anywhere
+    // https://www.rfc-editor.org/rfc/rfc2397
     audio: `data:${OUTPUT_MIME_TYPES[OutputFormat.Mp3]};base64,${audio.toString("base64")}`,
     voice: voice.ShortName,
     locale: voice.Locale,
@@ -229,6 +249,11 @@ async function exportClips({ directory, clips }: {
   }
 }
 
+// A script element whose type is not a JavaScript one is a data block: the browser parses it as text
+// and hands it over instead of running it. Both escapes are the spec's restriction on what may sit
+// inside a script element, where a literal "</script" or "<!--" would close it early
+// https://html.spec.whatwg.org/multipage/scripting.html#data-block
+// https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements
 function embedNarration({ html, data, runtime }: {
   html: string;
   data: NarrationData;

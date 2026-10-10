@@ -1,17 +1,33 @@
 import { connectCdp, connectToBrowser, type DebugTarget, listTargets } from "./cdp";
 import { z } from "@/lib/zod";
 
+// documented: every resource of an extension is served from this scheme plus the extension id
+// https://developer.chrome.com/docs/extensions/reference/manifest/web-accessible-resources
 const EXTENSION_SCHEME = "chrome-extension://";
+// The target type strings the debug endpoint reports. The protocol leaves the field a plain string
+// and points at Chromium's own list, where these two are spelled
+// https://chromium.googlesource.com/chromium/src/+/main/content/browser/devtools/devtools_agent_host_impl.cc
 const PAGE_TYPE = "page";
 const SERVICE_WORKER_TYPE = "service_worker";
+// The pattern side is the documented match pattern grammar: one wildcard character, a host wildcard
+// that may only lead and must be followed by a dot or a slash, a path wildcard matching the rest,
+// and no port (an absent port is treated as :*, which is why the url pattern below allows any)
+// https://developer.chrome.com/docs/extensions/develop/concepts/match-patterns
 const PATTERN_WILDCARD = "*";
+// The regexp side is ours: the translation that gives those three their meaning in a RegExp
 const HOST_WILDCARD = "[^/]*";
 const PATH_WILDCARD = ".*";
 const REGEXP_CHARACTERS = /[.+?^${}()|[\]\\]/g;
 const MATCH_PATTERN = /^([^:]+):\/\/([^/]+)(\/.*)$/;
+// documented: the extension's own API for restarting itself, which is the only reload that picks up
+// changed files - there is no protocol method for it, hence the trip through a live context below
+// https://developer.chrome.com/docs/extensions/reference/api/runtime#method-reload
 const RELOAD_EXPRESSION = "chrome.runtime.reload()";
 const NEW_CONTEXT_WAIT_MS = 100;
 const NEW_CONTEXT_ATTEMPTS = 25;
+// WXT builds each HTML entrypoint to its own name at the extension root, so these are our entrypoint
+// names rather than anything the browser fixes
+// https://wxt.dev/guide/essentials/entrypoints
 const POPUP_PATH = "popup.html";
 const OFFSCREEN_PATH = "offscreen.html";
 
@@ -62,6 +78,12 @@ async function waitForNewExtensionContext({ port, origin, previousIds }: {
   return false;
 }
 
+// Runtime.evaluate is the protocol's only way into a context's own globals, which is where the
+// extension API lives; nothing is read back, so returnByValue is left off. expression is its one
+// required parameter, and leaving the rest off relies on their documented defaults - returnByValue
+// false hands back a remote handle this never touches, awaitPromise false returns without waiting, and
+// the reload tears the context down anyway
+// https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-evaluate
 async function reloadThroughTarget({ socketUrl }: { socketUrl: string }) {
   const connection = await connectCdp(socketUrl);
   await connection.send({
@@ -74,7 +96,16 @@ async function reloadThroughTarget({ socketUrl }: { socketUrl: string }) {
 }
 
 // With no context of its own alive, the extension gets one: its popup, opened in the background
-// just long enough to reload from, then closed
+// just long enough to reload from, then closed. background is the documented parameter for opening a
+// target without bringing it forward, and flatten is what lets this one connection address it by
+// session id instead of a second socket. url is createTarget's one required parameter and targetId its
+// one return; attachToTarget takes that targetId and returns the sessionId; closeTarget takes the
+// targetId again and its success return is ignored, the popup being gone either way. createTarget's
+// remaining parameters are left at their documented defaults, newWindow false above all, so the popup
+// opens in the window that is already there
+// https://chromedevtools.github.io/devtools-protocol/tot/Target/#method-createTarget
+// https://chromedevtools.github.io/devtools-protocol/tot/Target/#method-attachToTarget
+// https://chromedevtools.github.io/devtools-protocol/tot/Target/#method-closeTarget
 async function reloadThroughNewPopup({ port, origin }: {
   port: number;
   origin: string;
@@ -125,7 +156,8 @@ function expandWildcards({ part, wildcard }: {
 
 // Reloading the extension re-registers its content scripts but does not re-run them where they are
 // already injected, so the pages they match are reloaded too. A match pattern says nothing about the
-// port, so any port on the matched host counts
+// port, so any port on the matched host counts. The first half is this repo's finding - watched
+// happen in the dev loop, no doc page states it; the port half is in the match pattern reference
 function toUrlPattern(matchPattern: string) {
   const match = MATCH_PATTERN.exec(matchPattern);
   if (!match) {
@@ -168,6 +200,9 @@ export async function reloadMatchingPages({ port, matchPatterns }: {
     }
 
     const connection = await connectCdp(page.webSocketDebuggerUrl);
+    // Sent without ignoreCache, so the reload keeps the browser cache the user's own F5 would keep -
+    // every parameter the method takes is optional and ignoreCache's documented default is false
+    // https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-reload
     await connection.send({ method: "Page.reload" });
     connection.close();
   }

@@ -45,6 +45,7 @@ const EXISTING_BLOCK = new RegExp(`\\n?${BLOCK_START}[\\s\\S]*?${BLOCK_END}`);
 const BITS_PER_BYTE = 8;
 const SLUG_LENGTH = 40;
 const NON_SLUG_CHARACTERS = /[^a-z0-9]+/g;
+const SURROUNDING_DASHES = /^-|-$/g;
 const rawTextPlugin: Plugin = {
   name: "raw-text",
   setup(pluginBuild) {
@@ -183,7 +184,7 @@ async function synthesizeClip({ script, voice, rate }: {
 }
 
 function toSlug(text: string) {
-  return text.toLowerCase().replace(NON_SLUG_CHARACTERS, "-").slice(0, SLUG_LENGTH).replace(/^-|-$/g, "");
+  return text.toLowerCase().replace(NON_SLUG_CHARACTERS, "-").slice(0, SLUG_LENGTH).replace(SURROUNDING_DASHES, "");
 }
 
 async function exportClips({ directory, clips }: {

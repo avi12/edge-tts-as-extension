@@ -35,8 +35,9 @@ async function renderPng({ source, size, destination }: {
 await mkdir(MANIFEST_ICON_DIRECTORY, { recursive: true });
 await mkdir(STORE_DIRECTORY, { recursive: true });
 for (const size of MANIFEST_ICON_SIZES) {
+  const isSmallIcon = size === SMALL_ICON_SIZE;
   await renderPng({
-    source: size === SMALL_ICON_SIZE ? SMALL_ICON_SOURCE : ICON_SOURCE,
+    source: isSmallIcon ? SMALL_ICON_SOURCE : ICON_SOURCE,
     size,
     destination: path.join(MANIFEST_ICON_DIRECTORY, `${size}.png`)
   });

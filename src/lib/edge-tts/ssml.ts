@@ -30,6 +30,7 @@ const XML_ENTITIES = new RegExp(Object.keys(XML_UNESCAPES).join("|"), "g");
 const TYPOGRAPHIC_QUOTES = new RegExp(`[${Object.keys(STRAIGHT_QUOTES).join("")}]`, "g");
 
 const SSML_NAMESPACE = "http://www.w3.org/2001/10/synthesis";
+const LOCALE_SEPARATOR = "-";
 const VOICE_LOCALE_PARTS = 2;
 const PERCENT = 100;
 
@@ -83,7 +84,7 @@ function formatRelativePercent(multiplier: number) {
 
 // A voice's short name starts with its locale, e.g. "en-US-AriaNeural"
 function getVoiceLocale(voice: string) {
-  return voice.split("-").slice(0, VOICE_LOCALE_PARTS).join("-");
+  return voice.split(LOCALE_SEPARATOR).slice(0, VOICE_LOCALE_PARTS).join(LOCALE_SEPARATOR);
 }
 
 export function buildSsml({ text, voice, prosody = DEFAULT_PROSODY }: {

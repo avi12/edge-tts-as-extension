@@ -3,6 +3,7 @@ import { z } from "@/lib/zod";
 
 const EXTENSION_SCHEME = "chrome-extension://";
 const PAGE_TYPE = "page";
+const SERVICE_WORKER_TYPE = "service_worker";
 const PATTERN_WILDCARD = "*";
 const HOST_WILDCARD = "[^/]*";
 const PATH_WILDCARD = ".*";
@@ -24,7 +25,7 @@ function findExtensionTarget({ targets, origin }: {
 }) {
   const ownTargets = targets.filter(target => target.url.startsWith(origin));
   return ownTargets.find(target => target.url.endsWith(OFFSCREEN_PATH))
-    ?? ownTargets.find(target => target.type === "service_worker")
+    ?? ownTargets.find(target => target.type === SERVICE_WORKER_TYPE)
     ?? ownTargets[0];
 }
 

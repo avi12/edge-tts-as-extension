@@ -1,3 +1,4 @@
+import { NARRATED_SITES } from "@/lib/narrated-sites";
 import {
   BridgeEvent,
   type BridgeMessage,
@@ -13,9 +14,9 @@ function isPageMessage(data: unknown): data is PageMessage {
   return typeof data === "object" && data !== null && "channel" in data && data.channel === NARRATION_CHANNEL;
 }
 
-// Claude's artifact frames, plus local previews of narrated pages
+// Every site a narrated page lives on - the list is in lib/narrated-sites.ts
 export default defineContentScript({
-  matches: ["https://*.claudeusercontent.com/*", "http://localhost/*", "http://127.0.0.1/*"],
+  matches: NARRATED_SITES,
   allFrames: true,
   main() {
     let port: Browser.runtime.Port | null = null;

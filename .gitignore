@@ -1,8 +1,14 @@
 node_modules/
 .output/
 .wxt/
-.claude/worktrees/
+.claude/
+.idea/
 .dev-profile/
+.dev-profile-*/
+
+# Release signing material and secrets - never commit these
+keys/
+.env
 *.webm
 *.log
 

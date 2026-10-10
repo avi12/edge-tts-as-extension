@@ -1,6 +1,9 @@
 import type { Voice } from "./voice-list";
 
-// Scripts that name their language outright - Latin is shared by too many languages to guess from
+// Unicode script properties (UTS #18) that name their language outright, each paired with that
+// language's ISO 639-1 code - the same code a voice's Locale starts with. Latin is shared by too
+// many languages to guess from
+// https://unicode.org/reports/tr18/#Script_Property
 const SCRIPT_LANGUAGES = [
   [/[\p{Script=Hiragana}\p{Script=Katakana}]/gu, "ja"],
   [/\p{Script=Hebrew}/gu, "he"],
@@ -14,6 +17,9 @@ const SCRIPT_LANGUAGES = [
   [/\p{Script=Armenian}/gu, "hy"],
   [/\p{Script=Georgian}/gu, "ka"]
 ] as const;
+
+type ScriptLanguage = (typeof SCRIPT_LANGUAGES)[number][1];
+
 const LATIN_LETTER = /\p{Script=Latin}/gu;
 const LOCALE_SEPARATOR = "-";
 const LANGUAGE_TAG = /^[a-z]{2,3}(?:-[a-z\d]{2,8})*$/i;
@@ -27,7 +33,7 @@ function countMatches({ text, pattern }: {
 
 // The language whose script most of the letters are written in, or null when Latin (or nothing) wins
 export function detectLanguage(text: string) {
-  let detectedLanguage: string | null = null;
+  let detectedLanguage: ScriptLanguage | null = null;
   let mostLetters = countMatches({
     text,
     pattern: LATIN_LETTER

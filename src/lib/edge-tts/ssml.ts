@@ -1,7 +1,12 @@
 // Mirrors Edge's ssml.js: strip control characters, straighten typographic quotes, escape XML,
 // wrap in <speak><voice><prosody>
 
-const XML_ESCAPES: Record<string, string> = {
+// The five predefined entities of XML 1.0 section 4.6, which is all the escaping an SSML body needs
+// https://www.w3.org/TR/xml/#sec-predefined-ent
+type XmlSpecialCharacter = "<" | ">" | "&" | "\"" | "'";
+type XmlEntity = "&lt;" | "&gt;" | "&amp;" | "&quot;" | "&apos;";
+
+const XML_ESCAPES: Record<XmlSpecialCharacter, XmlEntity> & Record<string, XmlEntity> = {
   "<": "&lt;",
   ">": "&gt;",
   "&": "&amp;",
@@ -9,7 +14,11 @@ const XML_ESCAPES: Record<string, string> = {
   "'": "&apos;"
 };
 
-const STRAIGHT_QUOTES: Record<string, string> = {
+// Edge's own ssml.js replaces each of these with the ASCII quote it stands for. Its list is a
+// judgement call rather than a closed set, so the table is read by any character
+type AsciiQuote = "'" | "\"";
+
+const STRAIGHT_QUOTES: Record<string, AsciiQuote> = {
   "‘": "'",
   "’": "'",
   "‛": "'",

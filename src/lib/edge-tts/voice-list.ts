@@ -1,6 +1,10 @@
 import { TRUSTED_CLIENT_TOKEN, VOICES_URL } from "./constants";
 import { z } from "@/lib/zod";
 
+// The fields are the service's own, documented under "Get a list of voices" - Gender is only ever
+// Female or Male in today's 322 voices, but the vocabulary is the service's to extend
+// https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#get-a-list-of-voices
+
 // The voice list spells its token parameter in lower case, unlike the synthesis socket
 const TRUSTED_CLIENT_TOKEN_PARAMETER = "trustedclienttoken";
 

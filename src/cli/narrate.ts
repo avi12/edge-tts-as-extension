@@ -12,13 +12,14 @@ import {
   MP3_MIME_TYPE,
   MP3_OUTPUT_FORMAT,
   pickVoice,
-  RATE,
+  RATE_RANGE,
   synthesize,
   type Voice,
   type WordBoundary
 } from "@/lib/edge-tts";
 import { openEdgeSocket } from "@/lib/edge-tts/node-socket";
 import { getErrorMessage } from "@/lib/errors";
+import { rateSchema } from "@/lib/message-schemas";
 import {
   NARRATION_DATA_ID,
   NarrationAttribute,
@@ -38,7 +39,8 @@ const RUNTIME_ENTRY = path.join(import.meta.dirname, "..", "narration-runtime", 
 const RAW_SUFFIX = /\?raw$/;
 const RAW_NAMESPACE = "raw";
 const USAGE = "Usage: pnpm narrate <page.html> [--out <file>] [--voice <name>] [--rate <n>] [--export <dir>]";
-const rateSchema = z.coerce.number().min(RATE.min).max(RATE.max);
+// A flag arrives as text, and out of range is a mistake worth stopping for
+const rateFlagSchema = z.coerce.number().pipe(rateSchema);
 const BLOCK_START = "<!-- narration:start -->";
 const BLOCK_END = "<!-- narration:end -->";
 const EXISTING_BLOCK = new RegExp(`\\n?${BLOCK_START}[\\s\\S]*?${BLOCK_END}`);
@@ -250,9 +252,9 @@ async function main() {
     throw new Error(USAGE);
   }
 
-  const parsedRate = rateSchema.safeParse(values.rate);
+  const parsedRate = rateFlagSchema.safeParse(values.rate);
   if (!parsedRate.success) {
-    throw new Error(`--rate takes a speed multiplier from ${RATE.min} to ${RATE.max}, got "${values.rate}"`);
+    throw new Error(`--rate takes a speed multiplier from ${RATE_RANGE.min} to ${RATE_RANGE.max}, got "${values.rate}"`);
   }
 
   const voices = await fetchVoices();

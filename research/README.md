@@ -55,6 +55,30 @@ The **voice list stayed on `speech.platform.bing.com`** and still answers a bare
    - text `Path:audio.metadata` - JSON with `WordBoundary` offsets (100 ns ticks)
    - text `Path:turn.end` - done
 
+## What the prosody values are worth
+
+Microsoft documents the range: ["The rate changes should be within `0.5` to `2` times the original
+audio"](https://learn.microsoft.com/azure/ai-services/speech-service/speech-synthesis-markup-voice#adjust-prosody),
+with `x-slow` = 0.5 and `x-fast` = 2. The service enforces it by clamping, so asking for anything
+outside gets the same audio back, byte for byte (same text, same voice, the default
+`webm-24khz-16bit-mono-opus`):
+
+| `rate` asked for | audio returned |
+| --- | --- |
+| 0.1, 0.25, 0.5 | 32,692 bytes - all identical |
+| 1 | 16,590 bytes |
+| 2, 2.5, 3, 4, 10 | 12,014 bytes - all identical |
+
+So `RATE_RANGE` in `lib/edge-tts/ssml.ts` is the documented range, confirmed against the live
+service - not a slider's taste. How finely the popup's slider cuts that range is the popup's own
+business and lives with the control.
+
+The [output formats](https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#audio-outputs)
+and the [voice list fields](https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#get-a-list-of-voices)
+are documented the same way, so `OutputFormat` and `Voice` spell them as the service does. The list
+is 322 voices, every one `Gender: "Female"` or `"Male"` - a two-value vocabulary today, but it is
+the service's to extend, so the client keeps that field a string.
+
 ## What the gateway checks (from `probe.mjs`)
 
 | Subscription key | Sec-MS-GEC | User-Agent | Origin | Result |

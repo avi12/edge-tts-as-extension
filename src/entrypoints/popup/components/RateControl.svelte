@@ -1,7 +1,9 @@
 <script lang="ts" module>
-  import { RATE } from "@/lib/edge-tts/ssml";
+  import { RATE_RANGE } from "@/lib/edge-tts/ssml";
 
   const RATE_FRACTION_DIGITS = 1;
+  // How finely the slider cuts the range the service honors - the service has no say in it
+  const RATE_STEP = 0.1;
 </script>
 
 <script lang="ts">
@@ -16,13 +18,13 @@
 <label class="field">
   <span class="label speed">Speed <output class="num">{liveRate.toFixed(RATE_FRACTION_DIGITS)}×</output></span>
   <input
-    max={RATE.max}
-    min={RATE.min}
+    max={RATE_RANGE.max}
+    min={RATE_RANGE.min}
     onchange={() => onchange(liveRate)}
     oninput={e => {
       liveRate = e.currentTarget.valueAsNumber;
     }}
-    step={RATE.step}
+    step={RATE_STEP}
     type="range"
     value={liveRate}
   />

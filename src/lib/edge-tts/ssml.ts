@@ -55,11 +55,13 @@ export const DEFAULT_PROSODY: Prosody = {
   pitchHz: 0
 };
 
-export const RATE = {
+// "The rate changes should be within 0.5 to 2 times the original audio" - the documented prosody
+// range, which the service enforces by clamping (research/README.md measures it)
+// https://learn.microsoft.com/azure/ai-services/speech-service/speech-synthesis-markup-voice#adjust-prosody
+export const RATE_RANGE = {
   min: 0.5,
-  max: 2,
-  step: 0.1
-};
+  max: 2
+} as const;
 
 export function sanitizeText(text: string) {
   return text

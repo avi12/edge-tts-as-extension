@@ -1,12 +1,13 @@
 import { DEFAULT_VOICE } from "@/lib/edge-tts/constants";
-import { DEFAULT_PROSODY, RATE } from "@/lib/edge-tts/ssml";
+import { DEFAULT_PROSODY } from "@/lib/edge-tts/ssml";
+import { rateSchema } from "@/lib/message-schemas";
 import { z } from "@/lib/zod";
 import { storage } from "wxt/utils/storage";
 
 // Each field falls back on its own, so settings stored before a field existed still load
 const settingsSchema = z.object({
   voice: z.string().catch(DEFAULT_VOICE),
-  rate: z.number().min(RATE.min).max(RATE.max).catch(DEFAULT_PROSODY.rate),
+  rate: rateSchema.catch(DEFAULT_PROSODY.rate),
   isMatchingLanguage: z.boolean().catch(false)
 });
 

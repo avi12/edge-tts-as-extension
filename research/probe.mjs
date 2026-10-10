@@ -1,57 +1,92 @@
-// Probes the live Read Aloud service with different header combinations
+// Probes the live Read Aloud service: which credentials the CETO gateway accepts, and one full
+// synthesis that writes the audio out
 // Usage: node research/probe.mjs
 import crypto from "node:crypto";
 import fs from "node:fs";
 
 const TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
-const SYNTHESIZE_URL = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1";
+const SYNTHESIZE_URL = "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1";
+// Retired in Edge 155: it answers 403 to every handshake now
+const BING_SYNTHESIZE_URL = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1";
 const WINDOWS_EPOCH_OFFSET_SECONDS = 11_644_473_600;
 const TOKEN_WINDOW_SECONDS = 300;
 const TICKS_PER_SECOND = 10_000_000n;
 const MILLISECONDS_PER_SECOND = 1000;
 const TIMEOUT_MS = 8000;
 const BINARY_HEADER_LENGTH_BYTES = 2;
-const DEFAULT_GEC_VERSION = "1-154.0.4258.53";
-const DEFAULT_OUTPUT_FORMAT = "webm-24khz-16bit-mono-opus";
+const GEC_VERSION = "1-155.0.4283.45";
+const OUTPUT_FORMAT = "webm-24khz-16bit-mono-opus";
 const SAMPLE_PROBE = "A";
 const DEFAULT_SAMPLE_PATH = "sample.webm";
 const SAMPLE_TEXT = "Hello from the reverse engineered read aloud service.";
+const ONE_WINDOW_MS = TOKEN_WINDOW_SECONDS * MILLISECONDS_PER_SECOND;
+
+const SUBSCRIPTION_KEY_HEADER = "Ocp-Apim-Subscription-Key";
+const GEC_HEADER = "Sec-MS-GEC";
+const GEC_VERSION_HEADER = "Sec-MS-GEC-Version";
+const USER_AGENT_HEADER = "User-Agent";
 
 const EDGE_ORIGIN = "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold";
-const EDGE_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0";
-const CHROME_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
+const OUR_ORIGIN = "chrome-extension://abcdefghijklmnopabcdefghijklmnop";
+const EDGE_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0";
+const CHROME_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36";
 
 const PROBES = {
   A: {
-    origin: EDGE_ORIGIN,
+    what: "key and token as headers, Edge User-Agent",
     userAgent: EDGE_USER_AGENT
   },
   B: {
-    origin: "chrome-extension://abcdefghijklmnopabcdefghijklmnop",
-    userAgent: CHROME_USER_AGENT
+    what: "no Origin, no User-Agent",
+    isUserAgentSent: false
   },
   C: {
-    userAgent: CHROME_USER_AGENT
+    what: "our own extension's Origin",
+    userAgent: EDGE_USER_AGENT,
+    origin: OUR_ORIGIN
   },
   D: {
-    isGecSent: false,
-    origin: EDGE_ORIGIN,
-    userAgent: EDGE_USER_AGENT
+    what: "Chrome User-Agent",
+    userAgent: CHROME_USER_AGENT,
+    origin: OUR_ORIGIN
   },
   E: {
-    origin: EDGE_ORIGIN,
+    what: "no token",
     userAgent: EDGE_USER_AGENT,
-    gecVersion: "1-130.0.2849.68"
+    isGecSent: false
   },
   F: {
-    origin: EDGE_ORIGIN,
+    what: "no subscription key",
     userAgent: EDGE_USER_AGENT,
-    outputFormat: "audio-24khz-48kbitrate-mono-mp3"
+    isKeySent: false
+  },
+  G: {
+    what: "key and token as query parameters, as the old endpoint took them",
+    userAgent: EDGE_USER_AGENT,
+    origin: EDGE_ORIGIN,
+    isSentInQuery: true
+  },
+  H: {
+    what: "token from two windows ago",
+    userAgent: EDGE_USER_AGENT,
+    tokenAgeMs: -2 * ONE_WINDOW_MS
+  },
+  I: {
+    what: "token from one window ago",
+    userAgent: EDGE_USER_AGENT,
+    tokenAgeMs: -ONE_WINDOW_MS
+  },
+  J: {
+    what: "the retired speech.platform.bing.com endpoint, the way it used to be called",
+    userAgent: EDGE_USER_AGENT,
+    origin: EDGE_ORIGIN,
+    isSentInQuery: true,
+    url: BING_SYNTHESIZE_URL
   }
 };
 
-function createGec() {
-  let seconds = Math.floor(Date.now() / MILLISECONDS_PER_SECOND) + WINDOWS_EPOCH_OFFSET_SECONDS;
+function createGec(nowMs) {
+  let seconds = Math.floor(nowMs / MILLISECONDS_PER_SECOND) + WINDOWS_EPOCH_OFFSET_SECONDS;
   seconds -= seconds % TOKEN_WINDOW_SECONDS;
   return crypto
     .createHash("sha256")
@@ -64,29 +99,48 @@ function createId() {
   return crypto.randomUUID().replaceAll("-", "");
 }
 
-function createUrl({ isGecSent, gecVersion }) {
-  const url = `${SYNTHESIZE_URL}?TrustedClientToken=${TOKEN}&ConnectionId=${createId()}`;
-  if (!isGecSent) {
-    return url;
+function createUrl({ url, isSentInQuery, isKeySent, isGecSent, gec }) {
+  const parameters = new URLSearchParams({ ConnectionId: createId() });
+  if (isSentInQuery && isKeySent) {
+    parameters.set("TrustedClientToken", TOKEN);
+    parameters.set(SUBSCRIPTION_KEY_HEADER, TOKEN);
   }
 
-  return `${url}&Sec-MS-GEC=${createGec()}&Sec-MS-GEC-Version=${gecVersion}`;
+  if (isSentInQuery && isGecSent) {
+    parameters.set(GEC_HEADER, gec);
+    parameters.set(GEC_VERSION_HEADER, GEC_VERSION);
+  }
+
+  return `${url}?${parameters}`;
 }
 
-function createHeaders({ origin, userAgent }) {
+function createHeaders({ isSentInQuery, isKeySent, isGecSent, isUserAgentSent, userAgent, origin, gec }) {
   const headers = {};
   if (origin) {
     headers.Origin = origin;
   }
 
-  if (userAgent) {
-    headers["User-Agent"] = userAgent;
+  if (isUserAgentSent) {
+    headers[USER_AGENT_HEADER] = userAgent;
+  }
+
+  if (isSentInQuery) {
+    return headers;
+  }
+
+  if (isKeySent) {
+    headers[SUBSCRIPTION_KEY_HEADER] = TOKEN;
+  }
+
+  if (isGecSent) {
+    headers[GEC_HEADER] = gec;
+    headers[GEC_VERSION_HEADER] = GEC_VERSION;
   }
 
   return headers;
 }
 
-function createConfigMessage(outputFormat) {
+function createConfigMessage() {
   const config = {
     context: {
       synthesis: {
@@ -95,7 +149,7 @@ function createConfigMessage(outputFormat) {
             sentenceBoundaryEnabled: "false",
             wordBoundaryEnabled: "true"
           },
-          outputFormat
+          outputFormat: OUTPUT_FORMAT
         }
       }
     }
@@ -110,34 +164,51 @@ function createSsmlMessage() {
 
 function probe({
   name,
+  what,
+  url = SYNTHESIZE_URL,
+  isSentInQuery = false,
+  isKeySent = true,
   isGecSent = true,
+  isUserAgentSent = true,
+  userAgent = EDGE_USER_AGENT,
   origin,
-  userAgent,
-  gecVersion = DEFAULT_GEC_VERSION,
-  outputFormat = DEFAULT_OUTPUT_FORMAT
+  tokenAgeMs = 0
 }) {
-  const url = createUrl({
+  const gec = createGec(Date.now() + tokenAgeMs);
+  const settings = {
+    isSentInQuery,
+    isKeySent,
     isGecSent,
-    gecVersion
-  });
-  const headers = createHeaders({
+    isUserAgentSent,
+    userAgent,
     origin,
-    userAgent
-  });
+    gec
+  };
+  const socket = new WebSocket(
+    createUrl({
+      url,
+      ...settings
+    }),
+    { headers: createHeaders(settings) }
+  );
+  socket.binaryType = "arraybuffer";
+
   return new Promise(resolve => {
-    const socket = new WebSocket(url, { headers });
-    socket.binaryType = "arraybuffer";
     let byteCount = 0;
     let wordMessageCount = 0;
     const audioChunks = [];
+    function report(result) {
+      resolve(`${name} ${result.padEnd(34)} ${what}`);
+    }
+
     const timeoutId = setTimeout(() => {
       socket.close();
-      resolve(`${name}: TIMEOUT bytes=${byteCount}`);
+      report(`TIMEOUT bytes=${byteCount}`);
     }, TIMEOUT_MS);
 
     function finish(result) {
       clearTimeout(timeoutId);
-      resolve(result);
+      report(result);
     }
 
     function handleTextMessage(data) {
@@ -156,7 +227,7 @@ function probe({
         fs.writeFileSync(process.env.OUT ?? DEFAULT_SAMPLE_PATH, Buffer.concat(audioChunks));
       }
 
-      resolve(`${name}: OK bytes=${byteCount} wordMsgs=${wordMessageCount}`);
+      report(`OK bytes=${byteCount} wordMsgs=${wordMessageCount}`);
     }
 
     function handleBinaryMessage(data) {
@@ -167,7 +238,7 @@ function probe({
     }
 
     socket.onopen = () => {
-      socket.send(createConfigMessage(outputFormat));
+      socket.send(createConfigMessage());
       socket.send(createSsmlMessage());
     };
     socket.onmessage = e => {
@@ -178,8 +249,8 @@ function probe({
 
       handleBinaryMessage(e.data);
     };
-    socket.onerror = e => finish(`${name}: ERROR ${e.message ?? e.type}`);
-    socket.onclose = e => finish(`${name}: CLOSED ${e.code} ${e.reason} bytes=${byteCount}`);
+    socket.onerror = () => finish("REFUSED (403 on the handshake)");
+    socket.onclose = e => finish(`CLOSED ${e.code} ${e.reason} bytes=${byteCount}`);
   });
 }
 

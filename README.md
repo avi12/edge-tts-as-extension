@@ -45,6 +45,11 @@ word is spoken it adds the cue to the card's `data-cued` list and sets `data-cue
 `data-cue` element, so the page's own CSS animates in step with the voice - two generic rules cover every
 cue. Both follow seeks and clear when the clip ends. It also fires a bubbling `narration:cue` event.
 
+The panel sits in the bottom right corner of the window. While a card plays the page reserves that strip, and the
+runtime scrolls the card to the top of the window, so the panel does not cover the card it is talking about - even
+when that card is the last one on the page. A card taller than the rest of the window is the one case it still
+overlaps, so keep a card's key parts out of that corner.
+
 Each card is voiced in its own language: a non-Latin script decides it (Hebrew text gets a Hebrew voice),
 otherwise the nearest `lang` attribute does (`lang="fr"` gets a French voice), and a card with neither keeps
 `--voice`. A switched voice matches `--voice`'s gender where it can, and `data-narrate-voice="en-GB-RyanNeural"`

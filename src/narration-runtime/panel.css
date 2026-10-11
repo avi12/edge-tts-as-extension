@@ -1,11 +1,9 @@
+/* The host places it: beside the narrated card, or back in its corner. It only has to keep its own
+   width, and sit at the foot of whatever band the host gives it */
 .panel {
-  position: sticky;
-  top: 16px;
-  bottom: 16px;
   display: grid;
   gap: 8px;
   width: min(360px, calc(100vw - 32px));
-  margin-top: auto;
   padding: 10px 12px;
   border: 2px solid var(--narrator-ink);
   background: var(--narrator-ground);

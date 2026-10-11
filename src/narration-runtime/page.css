@@ -1,4 +1,4 @@
-/* Styles the narrator's shadow hosts from the page, so the panel can anchor to the narrated card */
+/* Styles the narrator's shadow hosts from the page, so the panel can stay clear of the narrated card */
 [data-narration-host] {
   all: initial;
   color-scheme: light dark;
@@ -19,6 +19,8 @@
   pointer-events: none;
 }
 
+/* The panel rests in one corner and stays there - the same corner on every page, left to right or right
+   to left, so a page is authored against one known corner rather than against wherever a card pushes it */
 [data-narration-host="panel"] {
   position: fixed;
   right: 16px;
@@ -26,37 +28,15 @@
   z-index: 2147483001;
 }
 
-[data-narrating] {
-  anchor-name: --narration-card;
-}
-
-/* The column holding the narrated card - for a card in a row of cards that is the row, so the panel never covers a sibling */
-:has(> [data-narrating]) {
-  anchor-name: --narration-column;
-}
-
-/* While a card narrates, the panel rides along it: in the margin beside its column when there is room (else the other
-   margin, else over the card itself), sticking to the screen edge while the card scrolls through */
+/* The panel talks about the card, so it must not sit on top of it. The runtime scrolls the narrated card
+   to the top of the screen; this keeps the strip the panel rests in free underneath, deep enough for the
+   tallest the panel gets, so even the last card on the page can scroll clear of it.
+   A card taller than what is left over is the one case the panel still has to overlap - which is why a
+   narrated page is authored with that corner kept clear. */
 :root:has([data-narrating]) {
-  position: relative;
+  --narration-foot: 248px;
+
+  padding-block-end: var(--narration-foot);
+  scroll-padding-block-end: var(--narration-foot);
   scroll-padding-block-start: 16px;
-
-  [data-narration-host="panel"] {
-    position: absolute;
-    top: anchor(top);
-    right: auto;
-    bottom: anchor(bottom);
-    left: calc(anchor(--narration-column right) + 24px);
-    display: flex;
-    flex-direction: column;
-    width: min(360px, 100vw - 32px);
-    position-anchor: --narration-card;
-    position-try-fallbacks: flip-inline, --narration-over-card;
-  }
-}
-
-@position-try --narration-over-card {
-  right: anchor(right);
-  left: anchor(left);
-  width: auto;
 }

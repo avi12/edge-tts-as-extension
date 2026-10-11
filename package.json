@@ -1,6 +1,6 @@
 {
   "name": "edge-tts-as-extension",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Read any text aloud with Microsoft Edge's online neural voices, in Chrome",
   "repository": "https://github.com/avi12/edge-tts-as-extension",
   "author": "Avi <avi6106@gmail.com>",

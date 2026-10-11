@@ -65,6 +65,12 @@ header {
   color: var(--narrator-muted);
   font: 13px/1.5 var(--narrator-mono);
 
+  /* Short windows - an artifact's preview pane - give the panel little to spare, and every line it
+     takes there is a line of the card it hides */
+  @media (height <= 640px) {
+    max-height: 4.5em;
+  }
+
   &:empty {
     display: none;
   }

@@ -45,8 +45,25 @@ header {
   font: 12px/1.3 var(--narrator-mono);
 }
 
+/* Every voice the host can record, in the header's own type; the list itself is the browser's */
+.voice-picker {
+  min-width: 0;
+  max-width: 50%;
+  padding: 1px 4px;
+  border: 2px solid var(--narrator-ink);
+  background: var(--narrator-ground);
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  text-overflow: ellipsis;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--narrator-ink);
+    outline-offset: -4px;
+  }
+}
+
 /* The panel's chamfer clips anything outside it, so this tip drops inward, under the header */
-.voice:hover::after {
+.voice:not(.voice-picker):hover::after {
   content: attr(aria-label);
   position: absolute;
   top: calc(100% + 4px);

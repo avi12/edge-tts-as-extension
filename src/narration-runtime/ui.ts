@@ -74,10 +74,11 @@ export function createCardOverlay({ elCard, onPlay }: {
   };
 }
 
-export function createTourPanel({ cardCount, onAction, onSeek }: {
+export function createTourPanel({ cardCount, onAction, onSeek, onVoice }: {
   cardCount: number;
   onAction: (action: PanelAction) => Promise<void>;
   onSeek: (start: number) => Promise<void>;
+  onVoice: (voice: string) => Promise<void>;
 }) {
   const { elHost, shadowRoot } = createShadowHost({
     css: panelCss,
@@ -87,7 +88,8 @@ export function createTourPanel({ cardCount, onAction, onSeek }: {
     target: shadowRoot,
     props: {
       cardCount,
-      onaction: onAction
+      onaction: onAction,
+      onvoice: onVoice
     }
   });
 

@@ -3,7 +3,9 @@ import { createLiveEngine } from "./live-engine";
 import { PanelAction } from "./panel-action";
 import { createRecordedEngine } from "./recorded-engine";
 import { createCardOverlay, createTourPanel } from "./ui";
+import type { Voice } from "@/lib/edge-tts/voice-list";
 import { NARRATION_CUE_EVENT, NarrationAttribute, type NarrationClip, type NarrationData } from "@/lib/narration";
+import { findNarrationHost, type HostRecording } from "@/lib/narration-host";
 import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
 // Ours: the headings a card is likely to carry, plus the skin's own card header class
@@ -23,6 +25,12 @@ const SENTENCE_START = /(?:^|[.!?]\s+)(?=\S)/g;
 // Back from the first few characters of a sentence goes to the previous one, like a music player's back
 // button - the count is tuned by hand
 const BACK_GRACE_CHARACTERS = 12;
+// A locale is language-region (BCP 47), and a voice reads any text in its own language, whatever region
+// https://www.rfc-editor.org/rfc/rfc5646#section-2.1
+const LOCALE_SEPARATOR = "-";
+// The service's multilingual voices carry the word in their ShortName, and read text in any language
+// https://learn.microsoft.com/azure/ai-services/speech-service/language-support?tabs=tts#multilingual-voices
+const MULTILINGUAL_MARKER = "Multilingual";
 
 interface NarratedCard {
   elCard: HTMLElement;
@@ -110,6 +118,40 @@ function hasRecording(clip: NarrationClip) {
   return clip.audio !== "";
 }
 
+function getLanguage(locale: string) {
+  return locale.split(LOCALE_SEPARATOR)[0]?.toLowerCase() ?? "";
+}
+
+// A pinned voice is the author's call, and a voice can only take over a card it can read
+function canReadCard({ clip, voice }: {
+  clip: NarrationClip;
+  voice: Voice;
+}) {
+  if (clip.pinnedVoice) {
+    return false;
+  }
+
+  return voice.ShortName.includes(MULTILINGUAL_MARKER) || getLanguage(voice.Locale) === getLanguage(clip.locale);
+}
+
+// A cue's time follows the first word at or after it, as the narrate CLI times it
+function toHostClip({ clip, voice, recording }: {
+  clip: NarrationClip;
+  voice: Voice;
+  recording: HostRecording;
+}): NarrationClip {
+  return {
+    ...clip,
+    ...recording,
+    voice: voice.ShortName,
+    locale: voice.Locale,
+    cues: clip.cues.map(([name, , start]) => {
+      const firstWordAfterCue = recording.words.find(([, iWord]) => iWord >= start);
+      return [name, firstWordAfterCue?.[0] ?? recording.duration, start];
+    })
+  };
+}
+
 function releaseCard(card: NarratedCard) {
   card.elCard.removeAttribute(NarrationAttribute.Narrating);
   card.elCard.removeAttribute(NarrationAttribute.Cued);
@@ -129,6 +171,14 @@ export function startNarration(data: NarrationData) {
   const recordedEngine = createRecordedEngine(followEngine);
   const liveEngine = createLiveEngine(followEngine);
   let engine: NarrationEngine = recordedEngine;
+  const host = findNarrationHost();
+  let voices: Voice[] = [];
+  let pickedVoice: string | null = null;
+  // One recording per card and voice, shared by a play, a voice switch and the tour's look-ahead
+  const recordings = new Map<string, Promise<NarrationClip>>();
+  let activeClip: NarrationClip | null = null;
+  // Recording takes a moment, and only the newest request may start playing once it is back
+  let playRequest = 0;
 
   const elCards = [...document.querySelectorAll<HTMLElement>(`[${NarrationAttribute.Script}]`)];
   if (elCards.length !== data.clips.length) {
@@ -138,7 +188,8 @@ export function startNarration(data: NarrationData) {
   const panel = createTourPanel({
     cardCount: Math.min(elCards.length, data.clips.length),
     onAction: handlePanelAction,
-    onSeek: seek
+    onSeek: seek,
+    onVoice: changeVoice
   });
   const cards: NarratedCard[] = [];
   for (const [iCard, clip] of data.clips.entries()) {
@@ -165,6 +216,51 @@ export function startNarration(data: NarrationData) {
     return iActive === null ? undefined : cards[iActive];
   }
 
+  function getHostVoice(clip: NarrationClip) {
+    const voice = voices.find(candidate => candidate.ShortName === pickedVoice);
+    const isRecordedVoice = voice?.ShortName === clip.voice;
+    if (!host || !voice || isRecordedVoice) {
+      return null;
+    }
+
+    return canReadCard({
+      clip,
+      voice
+    }) ? voice : null;
+  }
+
+  // A recording that fails falls back to the embedded one, so the card still speaks
+  async function getClip(clip: NarrationClip) {
+    const voice = getHostVoice(clip);
+    if (!host || !voice) {
+      return clip;
+    }
+
+    const key = `${voice.ShortName}\n${clip.text}`;
+    let recording = recordings.get(key);
+    if (!recording) {
+      recording = host.record({
+        text: clip.text,
+        voice: voice.ShortName
+      }).then(hostRecording => toHostClip({
+        clip,
+        voice,
+        recording: hostRecording
+      }));
+      recordings.set(key, recording);
+    }
+
+    return recording.catch((recordError: unknown) => {
+      recordings.delete(key);
+      console.warn(`Narration: could not record in ${voice.ShortName}`, recordError);
+      return clip;
+    });
+  }
+
+  function getPanelVoice() {
+    return pickedVoice ?? activeClip?.voice ?? data.clips[0]?.voice ?? "";
+  }
+
   function getStatus() {
     return state?.status ?? PlayerStatus.Idle;
   }
@@ -183,7 +279,9 @@ export function startNarration(data: NarrationData) {
         },
         title: null,
         iCard: null,
-        locale: null
+        locale: null,
+        voices,
+        voice: getPanelVoice()
       });
       return;
     }
@@ -197,7 +295,9 @@ export function startNarration(data: NarrationData) {
       state,
       title: card.title,
       iCard: iActive,
-      locale: card.clip.locale
+      locale: (activeClip ?? card.clip).locale,
+      voices,
+      voice: getPanelVoice()
     });
   }
 
@@ -210,7 +310,9 @@ export function startNarration(data: NarrationData) {
     }
 
     iActive = null;
+    activeClip = null;
     state = null;
+    playRequest += 1;
     render();
     await engine.stop();
   }
@@ -244,7 +346,69 @@ export function startNarration(data: NarrationData) {
       engine = nextEngine;
     }
 
-    await engine.play(card.clip);
+    playRequest += 1;
+    const thisPlayRequest = playRequest;
+    const isRecording = !isLive && getHostVoice(card.clip) !== null;
+    if (isRecording) {
+      await engine.pause();
+      showLoading(card.clip);
+    }
+
+    const clip = isLive ? card.clip : await getClip(card.clip);
+    if (thisPlayRequest !== playRequest) {
+      return;
+    }
+
+    activeClip = clip;
+    await engine.play(clip);
+    const nextCard = cards[iCard + 1];
+    if (isTouring && nextCard && !isLive) {
+      void getClip(nextCard.clip);
+    }
+  }
+
+  function showLoading(clip: NarrationClip) {
+    state = {
+      status: PlayerStatus.Loading,
+      text: clip.text,
+      word: state?.word ?? null,
+      error: null,
+      voice: pickedVoice,
+      source: null
+    };
+    render();
+  }
+
+  // The new voice carries on from the word the old one was on, paused if it was paused
+  async function changeVoice(voice: string) {
+    pickedVoice = voice;
+    render();
+    void host?.setVoice(voice);
+    const card = getActiveCard();
+    if (!card || !state || engine !== recordedEngine) {
+      return;
+    }
+
+    const resumeAt = state.word?.start ?? 0;
+    const wasPaused = state.status === PlayerStatus.Paused;
+    playRequest += 1;
+    const thisPlayRequest = playRequest;
+    await recordedEngine.pause();
+    showLoading(card.clip);
+    const clip = await getClip(card.clip);
+    if (thisPlayRequest !== playRequest) {
+      return;
+    }
+
+    activeClip = clip;
+    await recordedEngine.playFrom({
+      nextClip: clip,
+      start: resumeAt
+    });
+
+    if (wasPaused) {
+      await recordedEngine.pause();
+    }
   }
 
   // Both engines report here; only the active card's own text counts
@@ -356,4 +520,12 @@ export function startNarration(data: NarrationData) {
   }
 
   render();
+
+  if (host) {
+    void Promise.all([host.listVoices(), host.getVoice()]).then(([hostVoices, savedVoice]) => {
+      voices = hostVoices;
+      pickedVoice = savedVoice;
+      render();
+    }).catch((hostError: unknown) => console.warn("Narration: the page's host has no voices", hostError));
+  }
 }

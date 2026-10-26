@@ -100,27 +100,45 @@ export function createRecordedEngine(reportState: ReportState) {
     report();
   });
 
+  function findWordTime(start: number) {
+    return clip?.words.find(([, wordStart]) => wordStart >= start)?.[0] ?? null;
+  }
+
+  // A clip in another voice says the same text, so a switch picks it up at the word the last one was on.
+  // A position set before the audio loads becomes where it starts playing
+  // https://html.spec.whatwg.org/multipage/media.html#default-playback-start-position
+  async function playFrom({ nextClip, start: startText }: {
+    nextClip: NarrationClip;
+    start: number;
+  }) {
+    cancelAnimationFrame(frameRequest);
+    clip = nextClip;
+    error = null;
+    status = PlayerStatus.Loading;
+    elAudio.src = nextClip.audio;
+    elAudio.currentTime = findWordTime(startText) ?? 0;
+    report();
+    await start();
+  }
+
   const engine: NarrationEngine = {
     async play(nextClip) {
-      cancelAnimationFrame(frameRequest);
-      clip = nextClip;
-      error = null;
-      status = PlayerStatus.Loading;
-      elAudio.src = nextClip.audio;
-      report();
-      await start();
+      await playFrom({
+        nextClip,
+        start: 0
+      });
     },
     async pause() {
       elAudio.pause();
     },
     resume: start,
-    async seek(start) {
-      const word = clip?.words.find(([, wordStart]) => wordStart >= start);
-      if (!word) {
+    async seek(startText) {
+      const wordTime = findWordTime(startText);
+      if (wordTime === null) {
         return;
       }
 
-      elAudio.currentTime = word[0];
+      elAudio.currentTime = wordTime;
     },
     async stop() {
       clip = null;
@@ -129,5 +147,8 @@ export function createRecordedEngine(reportState: ReportState) {
       elAudio.pause();
     }
   };
-  return engine;
+  return {
+    ...engine,
+    playFrom
+  };
 }

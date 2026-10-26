@@ -68,6 +68,17 @@ A page never run through the CLI - say, an artifact a Claude chat just wrote wit
 scripts and starts the runtime itself, live only. Such a page has no recording, so without the extension it
 stays a silent (complete) page.
 
+An app that embeds narrated pages can let the listener pick any voice, the way the popup does. Run
+`pnpm build:host <dir>`: it writes `narration-runtime.js` (the runtime, to embed in place of the one in a page's
+block) and `narration-service.mjs` (a Node module whose `listVoices()` and `recordVoice({ text, voice })` reach
+the speech service). Before the runtime starts, the page sets `globalThis.narrationHost` to
+`{ listVoices, getVoice, setVoice, record }` (`src/lib/narration-host.ts`), each a promise its app answers with
+the service. The panel's voice label then becomes a picker. Each card is recorded in the pick the first time it
+plays, the next card of a tour is recorded ahead of time, and a switch mid-card carries on from the word it
+was on. A pinned card, or a card the picked voice can't read (a Hebrew card with an English voice), keeps its
+recording, and a failed recording falls back to it. `getVoice` and `setVoice` are where the app remembers the
+pick.
+
 Cue names are letters, digits, `_` and `-`, scoped to their card. The CLI fails on an empty script and warns
 when a marker has no `data-cue` element or the reverse. Relative paths resolve from where you ran it, so
 `pnpm --dir <repo> narrate page.html` works from anywhere. Keep the authored page as `page.src.html` and
@@ -94,6 +105,8 @@ pnpm dev            # opens a Chrome with the extension and hot reload
 | `src/lib/narration.ts` | Narration contract, `[[cue]]` parser and timing |
 | `src/cli/narrate.ts` | The `narrate` CLI: pre-renders and embeds page narration |
 | `src/narration-runtime/` | The runtime embedded in narrated pages: buttons, tour panel, cue sync |
+| `src/lib/narration-host.ts` | The contract for an app that records pages' cards in the listener's voice |
+| `src/narration-host/service.ts` | That app's Node half, bundled by `src/cli/build-host.ts` |
 | `src/entrypoints/narration-live.content.ts` | Runs that runtime, live only, on pages the CLI never narrated |
 | `src/lib/messages.ts` | The extension's message bus: one `@webext-core/messaging` protocol map, keyed by an enum |
 | `src/lib/narration-bridge.ts` | The page's message bus: custom events between a narrated page and the bridge |

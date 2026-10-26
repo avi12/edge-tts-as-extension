@@ -1,6 +1,8 @@
 <script lang="ts">
   import { interest } from "./interest";
   import { PanelAction } from "./panel-action";
+  import VoiceOptions from "@/lib/components/VoiceOptions.svelte";
+  import type { Voice } from "@/lib/edge-tts/voice-list";
   import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
 
   const SUBTITLE_WORD = /\S+/g;
@@ -19,15 +21,18 @@
     start: number;
   }
 
-  const { cardCount, onaction }: {
+  const { cardCount, onaction, onvoice }: {
     cardCount: number;
     onaction: (action: PanelAction) => Promise<void>;
+    onvoice: (voice: string) => Promise<void>;
   } = $props();
 
   let reading = $state<SpeakingState | null>(null);
   let title = $state<string | null>(null);
   let iCard = $state<number | null>(null);
   let locale = $state<string | null>(null);
+  let voices = $state<Voice[]>([]);
+  let voice = $state("");
   let elSubtitle = $state<HTMLElement>();
 
   // Everything the panel shows arrives in one call, the way its imperative version worked
@@ -36,20 +41,24 @@
     title: string | null;
     iCard: number | null;
     locale: string | null;
+    voices: Voice[];
+    voice: string;
   }) {
     reading = next.state;
     title = next.title;
     iCard = next.iCard;
     locale = next.locale;
+    voices = next.voices;
+    voice = next.voice;
   }
 
-  function getVoiceName(voice: string) {
-    return voice.split(VOICE_NAME_SEPARATOR).at(-1)?.replace(VOICE_NAME_SUFFIX, "") ?? voice;
+  function getShortVoiceName(shortName: string) {
+    return shortName.split(VOICE_NAME_SEPARATOR).at(-1)?.replace(VOICE_NAME_SUFFIX, "") ?? shortName;
   }
 
   const status = $derived(reading?.status ?? PlayerStatus.Idle);
   const heading = $derived(title === null || iCard === null ? "" : `${iCard + 1}/${cardCount} ${title}`);
-  const voiceName = $derived(reading?.voice ? getVoiceName(reading.voice) : "");
+  const voiceName = $derived(reading?.voice ? getShortVoiceName(reading.voice) : "");
   const tourLabel = $derived(`Play tour · ${cardCount} ${cardCount === 1 ? "card" : "cards"}`);
   // An error has no words to follow, so the subtitle empties rather than freezing mid-sentence
   const subtitleText = $derived(!reading || reading.status === PlayerStatus.Error ? "" : reading.text);
@@ -93,7 +102,18 @@
   <header>
     <span class="label">Narration</span>
     <output class="title" dir="auto">{heading}</output>
-    <output class="voice" aria-label="Voice">{voiceName}</output>
+    {#if voices.length > 0}
+      <select
+        class="voice voice-picker"
+        aria-label="Voice"
+        onchange={e => onvoice(e.currentTarget.value)}
+        value={voice}
+      >
+        <VoiceOptions {voices} />
+      </select>
+    {:else}
+      <output class="voice" aria-label="Voice">{voiceName}</output>
+    {/if}
   </header>
   <!-- A click on a word seeks, and the runtime that mounts this panel listens for it on the shadow root -->
   <p bind:this={elSubtitle} class="subtitle" dir="auto" lang={locale ?? ""}

@@ -1,7 +1,8 @@
 <script lang="ts">
+  import VoiceOptions from "@/lib/components/VoiceOptions.svelte";
   import type { Voice } from "@/lib/edge-tts/voice-list";
   import type { Settings } from "@/lib/settings";
-  import { getVoiceName, groupVoicesByLocale } from "@/lib/voices";
+  import { getVoiceName } from "@/lib/voice-names";
 
   const { voices, voice, isMatchingLanguage, readingVoice, onchange }: {
     voices: Voice[];
@@ -10,22 +11,16 @@
     readingVoice: Voice | undefined;
     onchange: (patch: Partial<Pick<Settings, "voice" | "isMatchingLanguage">>) => void;
   } = $props();
-
-  const voiceGroups = $derived(groupVoicesByLocale(voices));
 </script>
 
 <label class="field">
   <span class="label">Voice</span>
   <select class="control chamfer-s" onchange={e => onchange({ voice: e.currentTarget.value })} value={voice}>
-    {#each voiceGroups as group (group.locale)}
-      <optgroup label={group.label}>
-        {#each group.voices as option (option.ShortName)}
-          <option value={option.ShortName}>{getVoiceName(option)} · {option.Gender}</option>
-        {/each}
-      </optgroup>
+    {#if voices.length > 0}
+      <VoiceOptions {voices} />
     {:else}
       <option value={voice}>Loading voices…</option>
-    {/each}
+    {/if}
   </select>
 </label>
 

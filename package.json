@@ -22,6 +22,7 @@
     "check": "pnpm compile && pnpm svelte:check && pnpm lint && pnpm stylelint && pnpm fallow && pnpm test",
     "postinstall": "wxt prepare",
     "narrate": "tsx src/cli/narrate.ts",
+    "build:host": "tsx src/cli/build-host.ts",
     "icons": "tsx src/cli/render-icons.ts"
   },
   "devDependencies": {

@@ -4,7 +4,9 @@
     "research/*.mjs",
     "src/narration-runtime/runtime.ts",
     "src/cli/narrate.ts",
-    "src/cli/render-icons.ts"
+    "src/cli/render-icons.ts",
+    "src/cli/build-host.ts",
+    "src/narration-host/service.ts"
   ],
   "ignorePatterns": [
     "research/edge-microsoft-voices/**",

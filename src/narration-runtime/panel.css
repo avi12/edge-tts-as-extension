@@ -146,12 +146,12 @@ header {
   }
 }
 
-/* Inside VS Code the button carries a title and the browser's own tooltip shows, so this one is for
-   every other page.
-
-   Fixed, with no insets, a tip sits where it would have flowed: on the line under its label, and
+/* Fixed, with no insets, a tip sits where it would have flowed: on the line under its label, and
    an overflow does not clip it. A container cannot style itself, so the container's scrollability is
    handed to the tip as a property and its hover is read outside the query */
+
+/* VS Code names its own colours in camel case, and a webview hands them to the page */
+/* stylelint-disable custom-property-pattern */
 .tip {
   --tip-display: none;
 
@@ -160,11 +160,15 @@ header {
   width: max-content;
   max-width: 13em;
   padding: 2px 6px;
-  border: 2px solid var(--narrator-ink);
-  background: var(--narrator-ground);
-  color: var(--narrator-ink);
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--narrator-ink));
+  background: var(--vscode-editorHoverWidget-background, var(--narrator-ground));
+  color: var(--vscode-editorHoverWidget-foreground, var(--narrator-ink));
+  font: 12px/1.4 var(--vscode-font-family, var(--narrator-mono));
+  letter-spacing: normal;
+  text-transform: none;
   white-space: normal;
 }
+/* stylelint-enable custom-property-pattern */
 
 @container scroll-state(scrollable: inline) {
   .tip {
@@ -172,7 +176,7 @@ header {
   }
 }
 
-:is(.voice-picker, .option > *):not([title]):hover > .tip {
+:is(.voice-picker, .option > *):hover > .tip {
   display: var(--tip-display);
 }
 

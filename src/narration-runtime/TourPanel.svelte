@@ -5,8 +5,6 @@
   import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
   import { getVoiceLabel } from "@/lib/voice-names";
 
-  // VS Code marks the body of its webviews, and there its own tooltip is the one to show
-  const VSCODE_THEME_ATTRIBUTE = "data-vscode-theme-id";
   const SUBTITLE_WORD = /\S+/g;
   // A voice id is the service's ShortName, spelled language-region-NameNeural, with Multilingual
   // before Neural on the multilingual voices
@@ -89,14 +87,6 @@
     elVoiceList?.querySelector("[aria-selected='true']")?.scrollIntoView({ block: "center" });
   }
 
-  const voiceTitle = $derived.by(() => {
-    if (voices.length === 0 || !document.body.hasAttribute(VSCODE_THEME_ATTRIBUTE)) {
-      return undefined;
-    }
-
-    return pickedVoiceLabel;
-  });
-
   const status = $derived(reading?.status ?? PlayerStatus.Idle);
   const heading = $derived(title === null || iCard === null ? "" : `${iCard + 1}/${cardCount} ${title}`);
   const voiceName = $derived(reading?.voice ? getShortVoiceName(reading.voice) : "");
@@ -148,7 +138,6 @@
         class="voice voice-picker"
         aria-label="Voice"
         popovertarget="voice-list"
-        title={voiceTitle}
         type="button"
       >{pickedVoiceLabel}<span class="tip" aria-hidden="true">{pickedVoiceLabel}</span></button>
       <div bind:this={elVoiceList} id="voice-list" class="voice-list" ontoggle={onVoiceListToggle} popover="auto">
@@ -163,7 +152,7 @@
         <ul aria-label="Voices" role="listbox">
           {#each shownVoiceLabels as option (option.shortName)}
             <li class="option" aria-selected={option.shortName === voice} role="option">
-              <button onclick={() => pickVoice(option.shortName)} title={voiceTitle && option.label} type="button"
+              <button onclick={() => pickVoice(option.shortName)} type="button"
               >{option.label}<span class="tip" aria-hidden="true">{option.label}</span></button>
             </li>
           {/each}

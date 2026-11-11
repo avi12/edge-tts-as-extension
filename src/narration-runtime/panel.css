@@ -80,6 +80,8 @@ header {
   max-height: 7.5em;
   margin: 0;
   color: var(--narrator-muted);
+  scrollbar-color: var(--narrator-frame) transparent;
+  scrollbar-width: thin;
   font: 13px/1.5 var(--narrator-mono);
 
   /* Short windows - an artifact's preview pane - give the panel little to spare, and every line it

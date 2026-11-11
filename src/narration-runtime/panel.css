@@ -67,8 +67,7 @@ header {
   white-space: nowrap;
   cursor: pointer;
   transition: none;
-  anchor-name: --voice-picker, --tip-anchor;
-  anchor-scope: --tip-anchor;
+  anchor-name: --voice-picker;
 
   &:focus-visible {
     outline: 2px solid var(--narrator-ink);
@@ -135,8 +134,6 @@ header {
     white-space: nowrap;
     cursor: pointer;
     transition: none;
-    anchor-name: --tip-anchor;
-    anchor-scope: --tip-anchor;
 
     &:hover,
     &:focus-visible {
@@ -151,17 +148,16 @@ header {
   }
 }
 
-/* Fixed, with no insets, a tip sits where it would have flowed: on the line under its label, and
-   an overflow does not clip it. A container cannot style itself, so the container's scrollability is
-   handed to the tip as a property and its hover is read outside the query */
+/* The tip is a hint popover, so the top layer lifts it out of the panel's chamfer and the label's own
+   overflow, and the label is its anchor. A container cannot style itself, so the label's scrollability
+   reaches the tip as a property: the tip opens on hover and stays hidden unless the label is cut */
 
 /* VS Code names its own colours in camel case, and a webview hands them to the page */
 /* stylelint-disable custom-property-pattern */
 .tip {
   --tip-display: none;
 
-  position: fixed;
-  display: none;
+  inset: auto;
   width: max-content;
   max-width: 22em;
   margin: 2px 0;
@@ -173,24 +169,23 @@ header {
   letter-spacing: normal;
   text-transform: none;
   white-space: normal;
-  position-anchor: --tip-anchor;
   position-area: bottom span-right;
   position-try-fallbacks: flip-block;
+
+  &:popover-open {
+    display: var(--tip-display);
+  }
 }
 /* stylelint-enable custom-property-pattern */
 
 .voice-picker > .tip {
-  position-area: bottom span-left;
+  position-area: top span-left;
 }
 
 @container scroll-state(scrollable: inline) {
   .tip {
     --tip-display: block;
   }
-}
-
-:is(.voice-picker, .option > *):hover > .tip {
-  display: var(--tip-display);
 }
 
 /* The panel's chamfer clips anything outside it, so this tip drops inward, under the header */

@@ -136,10 +136,11 @@
     {#if voices.length > 0}
       <button
         class="voice voice-picker"
+        {@attach interest("voice-tip")}
         aria-label="Voice"
         popovertarget="voice-list"
         type="button"
-      >{pickedVoiceLabel}<span class="tip" aria-hidden="true">{pickedVoiceLabel}</span></button>
+      >{pickedVoiceLabel}<span id="voice-tip" class="tip" aria-hidden="true" popover="hint">{pickedVoiceLabel}</span></button>
       <div bind:this={elVoiceList} id="voice-list" class="voice-list" ontoggle={onVoiceListToggle} popover="auto">
         <input
           bind:this={elVoiceSearch}
@@ -152,8 +153,15 @@
         <ul aria-label="Voices" role="listbox">
           {#each shownVoiceLabels as option (option.shortName)}
             <li class="option" aria-selected={option.shortName === voice} role="option">
-              <button onclick={() => pickVoice(option.shortName)} type="button"
-              >{option.label}<span class="tip" aria-hidden="true">{option.label}</span></button>
+              <button
+                {@attach interest(`voice-tip-${option.shortName}`)}
+                onclick={() => pickVoice(option.shortName)}
+                type="button"
+              >{option.label}<span
+                id="voice-tip-{option.shortName}"
+                class="tip"
+                aria-hidden="true"
+                popover="hint">{option.label}</span></button>
             </li>
           {/each}
         </ul>

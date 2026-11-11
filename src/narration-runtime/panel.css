@@ -170,6 +170,7 @@ header {
   letter-spacing: normal;
   text-transform: none;
   white-space: normal;
+  pointer-events: none;
   position-area: bottom span-right;
   position-try-fallbacks: flip-block;
 

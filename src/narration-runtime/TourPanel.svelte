@@ -1,9 +1,9 @@
 <script lang="ts">
   import { interest } from "./interest";
   import { PanelAction } from "./panel-action";
-  import VoiceOptions from "@/lib/components/VoiceOptions.svelte";
   import type { Voice } from "@/lib/edge-tts/voice-list";
   import { PlayerStatus, type SpeakingState } from "@/lib/player-status";
+  import { getVoiceLabel } from "@/lib/voice-names";
 
   const SUBTITLE_WORD = /\S+/g;
   // A voice id is the service's ShortName, spelled language-region-NameNeural, with Multilingual
@@ -34,6 +34,7 @@
   let voices = $state<Voice[]>([]);
   let voice = $state("");
   let elSubtitle = $state<HTMLElement>();
+  let voiceQuery = $state<string | null>(null);
 
   // Everything the panel shows arrives in one call, the way its imperative version worked
   export function render(next: {
@@ -54,6 +55,24 @@
 
   function getShortVoiceName(shortName: string) {
     return shortName.split(VOICE_NAME_SEPARATOR).at(-1)?.replace(VOICE_NAME_SUFFIX, "") ?? shortName;
+  }
+
+  const voiceLabels = $derived(
+    voices.map(candidate => ({
+      label: getVoiceLabel(candidate),
+      shortName: candidate.ShortName
+    }))
+  );
+  const pickedVoiceLabel = $derived(voiceLabels.find(candidate => candidate.shortName === voice)?.label ?? voice);
+
+  async function pickVoice(label: string) {
+    const picked = voiceLabels.find(candidate => candidate.label === label);
+    if (!picked) {
+      return;
+    }
+
+    voiceQuery = null;
+    await onvoice(picked.shortName);
   }
 
   const status = $derived(reading?.status ?? PlayerStatus.Idle);
@@ -103,14 +122,23 @@
     <span class="label">Narration</span>
     <output class="title" dir="auto">{heading}</output>
     {#if voices.length > 0}
-      <select
+      <input
         class="voice voice-picker"
         aria-label="Voice"
-        onchange={e => onvoice(e.currentTarget.value)}
-        value={voice}
-      >
-        <VoiceOptions {voices} />
-      </select>
+        autocomplete="off"
+        list="voice-options"
+        onblur={() => (voiceQuery = null)}
+        onfocus={() => (voiceQuery = "")}
+        oninput={e => pickVoice(e.currentTarget.value)}
+        placeholder={pickedVoiceLabel}
+        type="search"
+        value={voiceQuery ?? pickedVoiceLabel}
+      />
+      <datalist id="voice-options">
+        {#each voiceLabels as option (option.shortName)}
+          <option value={option.label}></option>
+        {/each}
+      </datalist>
     {:else}
       <output class="voice" aria-label="Voice">{voiceName}</output>
     {/if}

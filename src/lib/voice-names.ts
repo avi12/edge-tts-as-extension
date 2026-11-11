@@ -10,6 +10,10 @@ export function getVoiceName(voice: Voice) {
   return voice.FriendlyName.replace(VOICE_NAME_PREFIX, "").replace(VOICE_NAME_SUFFIX, "");
 }
 
+export function getVoiceLabel(voice: Voice) {
+  return `${voice.LocaleName} · ${getVoiceName(voice)} · ${voice.Gender}`;
+}
+
 export function groupVoicesByLocale(voices: Voice[]) {
   const sortedVoices = voices.toSorted((left, right) => left.LocaleName.localeCompare(right.LocaleName));
   return Map.groupBy(sortedVoices, voice => voice.Locale)

@@ -7,6 +7,9 @@
 // - the maths study pad: its סדרות chapter is six narrated scenes, built from the same
 //   contract by that project's workbook/build/seqreel.py
 //
+// - the interview prep trainer: its lessons render in nested frames of VS Code in the browser, each card
+//   carrying a data-narrate script and no audio, so the extension speaks them live
+//
 // Each entry is a Chrome match pattern, <scheme>://<host>/<path>: the leading `*.` matches
 // subdomains, the path is required and `/*` is the convention, and "match patterns match all
 // ports unless an explicit port is specified" - so the loopback entries cover any dev server port
@@ -16,5 +19,6 @@ export const NARRATED_SITES = [
   "https://*.claudeusercontent.com/*",
   "http://localhost/*",
   "http://127.0.0.1/*",
-  "https://avi-math-study.web.app/*"
+  "https://avi-math-study.web.app/*",
+  "https://avi-interview-prep.web.app/*"
 ];

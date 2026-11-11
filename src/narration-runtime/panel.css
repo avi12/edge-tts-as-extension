@@ -153,7 +153,7 @@ header {
   --tip-display: none;
 
   position: fixed;
-  display: var(--tip-display);
+  display: none;
   width: max-content;
   max-width: 13em;
   padding: 2px 6px;
@@ -169,7 +169,7 @@ header {
   }
 }
 
-:is(.voice-picker, .option button):is(:hover, :focus-visible) > .tip {
+:is(.voice-picker, .option button):hover > .tip {
   display: var(--tip-display);
 }
 

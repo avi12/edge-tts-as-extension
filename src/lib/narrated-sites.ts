@@ -15,10 +15,4 @@
 // ports unless an explicit port is specified" - so the loopback entries cover any dev server port
 // https://developer.chrome.com/docs/extensions/develop/concepts/match-patterns
 
-export const NARRATED_SITES = [
-  "https://*.claudeusercontent.com/*",
-  "http://localhost/*",
-  "http://127.0.0.1/*",
-  "https://avi-math-study.web.app/*",
-  "https://avi-interview-prep.web.app/*"
-];
+export const NARRATED_SITES = ["<all_urls>"];

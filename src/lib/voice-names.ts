@@ -5,9 +5,14 @@ import type { Voice } from "@/lib/edge-tts/voice-list";
 // "Microsoft Aria Online (Natural) - English (United States)" -> "Aria"
 const VOICE_NAME_PREFIX = /^Microsoft /;
 const VOICE_NAME_SUFFIX = / Online.*$/;
+// The service glues the word onto the name: "EmmaMultilingual"
+const MULTILINGUAL_SUFFIX = /(?<=\p{Ll})Multilingual$/u;
 
 export function getVoiceName(voice: Voice) {
-  return voice.FriendlyName.replace(VOICE_NAME_PREFIX, "").replace(VOICE_NAME_SUFFIX, "");
+  return voice.FriendlyName
+    .replace(VOICE_NAME_PREFIX, "")
+    .replace(VOICE_NAME_SUFFIX, "")
+    .replace(MULTILINGUAL_SUFFIX, " (Multilingual)");
 }
 
 export function getVoiceLabel(voice: Voice) {

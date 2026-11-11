@@ -105,6 +105,7 @@ header {
   }
 
   ul {
+    position: relative;
     overflow-y: auto;
     margin: 0;
     padding: 0;

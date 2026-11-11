@@ -83,8 +83,14 @@
       return;
     }
 
-    elVoiceSearch?.focus();
-    elVoiceList?.querySelector("[aria-selected='true']")?.scrollIntoView({ block: "center" });
+    elVoiceSearch?.focus({ preventScroll: true });
+    const elOptions = elVoiceList?.querySelector("ul");
+    const elSelected = elVoiceList?.querySelector<HTMLElement>("[aria-selected='true']");
+    if (!elOptions || !elSelected) {
+      return;
+    }
+
+    elOptions.scrollTop = elSelected.offsetTop - (elOptions.clientHeight - elSelected.offsetHeight) / HALVED;
   }
 
   const status = $derived(reading?.status ?? PlayerStatus.Idle);

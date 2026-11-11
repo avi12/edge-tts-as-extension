@@ -20,6 +20,12 @@ export default defineContentScript({
     narrationMessenger.onMessage(NarrationMessage.Control, async ({ data }) => {
       await speechMessenger.sendMessage(SpeechMessage.Control, data);
     });
+    narrationMessenger.onMessage(NarrationMessage.ListVoices, () =>
+      speechMessenger.sendMessage(SpeechMessage.ListVoices));
+    narrationMessenger.onMessage(NarrationMessage.GetVoice, () =>
+      speechMessenger.sendMessage(SpeechMessage.GetVoice));
+    narrationMessenger.onMessage(NarrationMessage.SetVoice, ({ data }) =>
+      speechMessenger.sendMessage(SpeechMessage.SetVoice, data));
     // The page answers only while its runtime listens, and a page without one never answers at all -
     // waiting here would stall the background behind a frame that can never reply
     speechMessenger.onMessage(SpeechMessage.PlayerState, ({ data }) => {

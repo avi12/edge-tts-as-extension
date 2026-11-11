@@ -1,4 +1,5 @@
 import type { Prosody } from "@/lib/edge-tts/ssml";
+import type { Voice } from "@/lib/edge-tts/voice-list";
 import type { ControlCommand, SpeakRequest } from "@/lib/message-schemas";
 import type { ReadingSource, SpeakingState } from "@/lib/player-status";
 import { defineExtensionMessaging } from "@webext-core/messaging";
@@ -32,7 +33,10 @@ export enum SpeechMessage {
   PlayerControl = "player-control",
   // The player's own state, broadcast to the background and the popup, and relayed to the frame
   // that asked for the reading
-  PlayerState = "player-state"
+  PlayerState = "player-state",
+  ListVoices = "list-voices",
+  GetVoice = "get-voice",
+  SetVoice = "set-voice"
 }
 
 // Every request is answered with the player's state
@@ -43,6 +47,9 @@ interface SpeechProtocolMap {
   [SpeechMessage.PlayerRespeak](change: PlayerVoiceChange): SpeakingState;
   [SpeechMessage.PlayerControl](command: ControlCommand): SpeakingState;
   [SpeechMessage.PlayerState](state: SpeakingState): void;
+  [SpeechMessage.ListVoices](): Voice[];
+  [SpeechMessage.GetVoice](): string;
+  [SpeechMessage.SetVoice](voice: string): void;
 }
 
 export const speechMessenger = defineExtensionMessaging<SpeechProtocolMap>();

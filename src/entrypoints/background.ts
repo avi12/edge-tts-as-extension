@@ -10,9 +10,11 @@ import {
 } from "@/lib/message-schemas";
 import { SpeechMessage, speechMessenger } from "@/lib/messages";
 import { IDLE_STATE, isReadingStatus, ReadingSource, type SpeakingState } from "@/lib/player-status";
-import { readSettings, watchSettings } from "@/lib/settings";
+import { readSettings, saveSettings, watchSettings } from "@/lib/settings";
 import { loadVoices } from "@/lib/voices";
 import { z } from "@/lib/zod";
+
+const voiceNameSchema = z.string().min(1);
 
 // The one header the gateway checks, spelled as HTTP defines it - the probe table in research/README.md
 // has every combination that passes and fails
@@ -263,6 +265,18 @@ export default defineBackground(async () => {
     return controlValidated(data);
   });
   speechMessenger.onMessage(SpeechMessage.PlayerState, ({ data }) => relayStateToFrame(data));
+  speechMessenger.onMessage(SpeechMessage.ListVoices, () => loadVoices());
+  speechMessenger.onMessage(SpeechMessage.GetVoice, async () => (await readSettings()).voice);
+  speechMessenger.onMessage(SpeechMessage.SetVoice, async ({ data }) => {
+    const voice = voiceNameSchema.parse(data);
+    const isKnown = (await loadVoices()).some(candidate => candidate.ShortName === voice);
+    if (isKnown) {
+      await saveSettings({
+        ...(await readSettings()),
+        voice
+      });
+    }
+  });
 
   browser.runtime.onMessageExternal.addListener((message, _sender, sendResponse) => {
     const parsed = externalRequestSchema.safeParse(message);

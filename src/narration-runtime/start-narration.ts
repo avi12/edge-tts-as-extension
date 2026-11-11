@@ -1,4 +1,5 @@
 import type { NarrationEngine } from "./engine";
+import { extensionVoices } from "./extension-voices";
 import { createLiveEngine } from "./live-engine";
 import { PanelAction } from "./panel-action";
 import { createRecordedEngine } from "./recorded-engine";
@@ -172,6 +173,7 @@ export function startNarration(data: NarrationData) {
   const liveEngine = createLiveEngine(followEngine);
   let engine: NarrationEngine = recordedEngine;
   const host = findNarrationHost();
+  const voiceSource = host ?? extensionVoices;
   let voices: Voice[] = [];
   let pickedVoice: string | null = null;
   // One recording per card and voice, shared by a play, a voice switch and the tour's look-ahead
@@ -383,7 +385,7 @@ export function startNarration(data: NarrationData) {
   async function changeVoice(voice: string) {
     pickedVoice = voice;
     render();
-    void host?.setVoice(voice);
+    void voiceSource.setVoice(voice);
     const card = getActiveCard();
     if (!card || !state || engine !== recordedEngine) {
       return;
@@ -521,11 +523,9 @@ export function startNarration(data: NarrationData) {
 
   render();
 
-  if (host) {
-    void Promise.all([host.listVoices(), host.getVoice()]).then(([hostVoices, savedVoice]) => {
-      voices = hostVoices;
-      pickedVoice = savedVoice;
-      render();
-    }).catch((hostError: unknown) => console.warn("Narration: the page's host has no voices", hostError));
-  }
+  void Promise.all([voiceSource.listVoices(), voiceSource.getVoice()]).then(([sourceVoices, savedVoice]) => {
+    voices = sourceVoices;
+    pickedVoice = savedVoice;
+    render();
+  }).catch((sourceError: unknown) => console.warn("Narration: no voices to offer", sourceError));
 }

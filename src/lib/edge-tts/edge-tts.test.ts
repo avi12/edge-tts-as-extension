@@ -178,3 +178,45 @@ describe.runIf(process.env.LIVE)("live service", () => {
     expect(words.map(word => word.text)).toEqual(["Hello", "from", "Chrome"]);
   });
 });
+
+describe("synthesize retries", () => {
+  const CLOSED_PORT_URL = "ws://127.0.0.1:1";
+  const PROSODY = {
+    rate: 1,
+    volume: 1,
+    pitchHz: 0
+  };
+
+  function requestWithRefusals({ signal }: { signal?: AbortSignal } = {}) {
+    const state = { opened: 0 };
+    const result = synthesize({
+      text: "Hi",
+      voice: LIVE_VOICE,
+      prosody: PROSODY,
+      signal,
+      onAudio() {},
+      openSocket() {
+        state.opened++;
+        return new WebSocket(CLOSED_PORT_URL);
+      }
+    });
+    return {
+      state,
+      result
+    };
+  }
+
+  it("tries a refused connection four times before giving up", async () => {
+    const { state, result } = requestWithRefusals();
+    await expect(result).rejects.toThrow();
+    expect(state.opened).toBe(4);
+  });
+
+  it("does not try again once the request was aborted", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const { state, result } = requestWithRefusals({ signal: controller.signal });
+    await expect(result).rejects.toThrow();
+    expect(state.opened).toBe(0);
+  });
+});

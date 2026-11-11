@@ -42,6 +42,8 @@ const SOCKET_BINARY_TYPE = "arraybuffer";
 // https://developer.mozilla.org/docs/Web/API/CloseEvent/code
 const NORMAL_CLOSURE_CODE = 1000;
 const ABORT_EVENT = "abort";
+const CONNECT_ATTEMPTS = 4;
+const CONNECT_RETRY_DELAY_MS = 250;
 
 interface SynthesizeOptions {
   text: string;
@@ -67,7 +69,7 @@ async function createSynthesizeUrl() {
 // Streams one request and resolves on turn.end. The gateway turns down anything whose User-Agent does
 // not say Edge, which the browser sets itself - the extension rewrites it with declarativeNetRequest,
 // Node passes openEdgeSocket
-export async function synthesize({
+async function synthesizeOnce({
   text,
   voice,
   prosody,
@@ -159,4 +161,30 @@ export async function synthesize({
     socket.onerror = () => finish(new Error("The Read Aloud service refused the connection"));
     socket.onclose = e => finish(new Error(`Connection dropped before the audio finished (${e.code})`));
   });
+}
+
+// The gateway turns down roughly one handshake in three at random, so a request that fails before any
+// audio arrived is simply tried again. Once audio has started it is never repeated, or the listener
+// would hear the same words twice
+export async function synthesize(options: SynthesizeOptions) {
+  for (let attempt = 1; ; attempt++) {
+    let isAudioDelivered = false;
+    try {
+      await synthesizeOnce({
+        ...options,
+        onAudio(bytes) {
+          isAudioDelivered = true;
+          options.onAudio(bytes);
+        }
+      });
+      return;
+    } catch (error) {
+      const isRetryable = !isAudioDelivered && !options.signal?.aborted && attempt < CONNECT_ATTEMPTS;
+      if (!isRetryable) {
+        throw error;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, CONNECT_RETRY_DELAY_MS * attempt));
+    }
+  }
 }

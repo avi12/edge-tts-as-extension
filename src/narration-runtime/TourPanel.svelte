@@ -34,7 +34,9 @@
   let voices = $state<Voice[]>([]);
   let voice = $state("");
   let elSubtitle = $state<HTMLElement>();
-  let voiceQuery = $state<string | null>(null);
+  let voiceQuery = $state("");
+  let elVoiceList = $state<HTMLElement>();
+  let elVoiceSearch = $state<HTMLInputElement>();
 
   // Everything the panel shows arrives in one call, the way its imperative version worked
   export function render(next: {
@@ -65,14 +67,24 @@
   );
   const pickedVoiceLabel = $derived(voiceLabels.find(candidate => candidate.shortName === voice)?.label ?? voice);
 
-  async function pickVoice(label: string) {
-    const picked = voiceLabels.find(candidate => candidate.label === label);
-    if (!picked) {
+  const shownVoiceLabels = $derived(
+    voiceLabels.filter(candidate => candidate.label.toLowerCase().includes(voiceQuery.trim().toLowerCase()))
+  );
+
+  async function pickVoice(shortName: string) {
+    elVoiceList?.hidePopover();
+    await onvoice(shortName);
+  }
+
+  function onVoiceListToggle(e: ToggleEvent) {
+    voiceQuery = "";
+
+    if (e.newState !== "open") {
       return;
     }
 
-    voiceQuery = null;
-    await onvoice(picked.shortName);
+    elVoiceSearch?.focus();
+    elVoiceList?.querySelector("[aria-selected='true']")?.scrollIntoView({ block: "center" });
   }
 
   const status = $derived(reading?.status ?? PlayerStatus.Idle);
@@ -122,23 +134,30 @@
     <span class="label">Narration</span>
     <output class="title" dir="auto">{heading}</output>
     {#if voices.length > 0}
-      <input
+      <button
         class="voice voice-picker"
         aria-label="Voice"
-        autocomplete="off"
-        list="voice-options"
-        onblur={() => (voiceQuery = null)}
-        onfocus={() => (voiceQuery = "")}
-        oninput={e => pickVoice(e.currentTarget.value)}
-        placeholder={pickedVoiceLabel}
-        type="search"
-        value={voiceQuery ?? pickedVoiceLabel}
-      />
-      <datalist id="voice-options">
-        {#each voiceLabels as option (option.shortName)}
-          <option value={option.label}></option>
-        {/each}
-      </datalist>
+        popovertarget="voice-list"
+        type="button"
+      >{pickedVoiceLabel}<span class="tip" aria-hidden="true">{pickedVoiceLabel}</span></button>
+      <div bind:this={elVoiceList} id="voice-list" class="voice-list" ontoggle={onVoiceListToggle} popover="auto">
+        <input
+          bind:this={elVoiceSearch}
+          aria-label="Search voices"
+          autocomplete="off"
+          placeholder="Search voices"
+          type="search"
+          bind:value={voiceQuery}
+        />
+        <ul aria-label="Voices" role="listbox">
+          {#each shownVoiceLabels as option (option.shortName)}
+            <li class="option" aria-selected={option.shortName === voice} role="option">
+              <button onclick={() => pickVoice(option.shortName)} type="button"
+              >{option.label}<span class="tip" aria-hidden="true">{option.label}</span></button>
+            </li>
+          {/each}
+        </ul>
+      </div>
     {:else}
       <output class="voice" aria-label="Voice">{voiceName}</output>
     {/if}

@@ -47,12 +47,12 @@
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^5.0.3",
     "wxt": "^0.21.4",
-    "avi12-lint": "github:avi12/lint-config#v0.4.12&path:/packages/avi12-lint",
-    "eslint-config-avi12": "github:avi12/lint-config#v0.4.12&path:/packages/eslint-config",
-    "fallow-config-avi12": "github:avi12/lint-config#v0.4.12&path:/packages/fallow-config",
-    "oxlint-config-avi12": "github:avi12/lint-config#v0.4.12&path:/packages/oxlint-config",
-    "oxlint-plugin-naming": "github:avi12/lint-config#v0.4.12&path:/packages/oxlint-plugin-naming",
-    "stylelint-config-avi12": "github:avi12/lint-config#v0.4.12&path:/packages/stylelint-config"
+    "avi12-lint": "github:avi12/lint-config#v0.4.14&path:/packages/avi12-lint",
+    "eslint-config-avi12": "github:avi12/lint-config#v0.4.14&path:/packages/eslint-config",
+    "fallow-config-avi12": "github:avi12/lint-config#v0.4.14&path:/packages/fallow-config",
+    "oxlint-config-avi12": "github:avi12/lint-config#v0.4.14&path:/packages/oxlint-config",
+    "oxlint-plugin-naming": "github:avi12/lint-config#v0.4.14&path:/packages/oxlint-plugin-naming",
+    "stylelint-config-avi12": "github:avi12/lint-config#v0.4.14&path:/packages/stylelint-config"
   },
   "dependencies": {
     "@fontsource/chakra-petch": "^5.3.0",

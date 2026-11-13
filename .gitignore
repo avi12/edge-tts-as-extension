@@ -16,3 +16,6 @@ keys/
 .venv/
 media/
 __pycache__/
+
+.verify/
+.eslintcache

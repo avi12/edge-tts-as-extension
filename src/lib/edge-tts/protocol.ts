@@ -9,11 +9,11 @@ import { z } from "@/lib/zod";
 
 // The paths audioStreamer.js sends (speech.config, ssml) and the ones it looks for in what comes back
 export enum FramePath {
-  SpeechConfig = "speech.config",
-  Ssml = "ssml",
-  AudioMetadata = "audio.metadata",
-  TurnEnd = "turn.end",
-  Audio = "audio"
+  SPEECH_CONFIG = "speech.config",
+  SSML = "ssml",
+  AUDIO_METADATA = "audio.metadata",
+  TURN_END = "turn.end",
+  AUDIO = "audio"
 }
 
 // The header names audioStreamer.js writes into its frames, spelling and case included
@@ -21,10 +21,10 @@ export enum FramePath {
 // Content-Type is the HTTP header of that name, reused inside a text frame
 // https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Content-Type
 enum Header {
-  RequestId = "X-RequestId",
-  Timestamp = "X-Timestamp",
-  ContentType = "Content-Type",
-  Path = "Path"
+  REQUEST_ID = "X-RequestId",
+  TIMESTAMP = "X-Timestamp",
+  CONTENT_TYPE = "Content-Type",
+  PATH = "Path"
 }
 
 // The frame grammar audioStreamer.js writes and reads: CRLF between headers, a blank line before the
@@ -114,9 +114,9 @@ export function configMessage(outputFormat = DEFAULT_OUTPUT_FORMAT) {
   };
   return formatTextFrame({
     headers: {
-      [Header.Timestamp]: createTimestamp(),
-      [Header.ContentType]: JSON_CONTENT_TYPE,
-      [Header.Path]: FramePath.SpeechConfig
+      [Header.TIMESTAMP]: createTimestamp(),
+      [Header.CONTENT_TYPE]: JSON_CONTENT_TYPE,
+      [Header.PATH]: FramePath.SPEECH_CONFIG
     },
     body: JSON.stringify(config)
   });
@@ -128,10 +128,10 @@ export function ssmlMessage({ requestId, ssml }: {
 }) {
   return formatTextFrame({
     headers: {
-      [Header.RequestId]: requestId,
-      [Header.ContentType]: SSML_CONTENT_TYPE,
-      [Header.Timestamp]: createTimestamp(),
-      [Header.Path]: FramePath.Ssml
+      [Header.REQUEST_ID]: requestId,
+      [Header.CONTENT_TYPE]: SSML_CONTENT_TYPE,
+      [Header.TIMESTAMP]: createTimestamp(),
+      [Header.PATH]: FramePath.SSML
     },
     body: ssml
   });
@@ -154,7 +154,7 @@ export function parseTextFrame(data: string) {
   const hasBody = iSeparator >= 0;
   const headers = parseHeaders(hasBody ? data.slice(0, iSeparator) : data);
   return {
-    path: headers[Header.Path] ?? "",
+    path: headers[Header.PATH] ?? "",
     headers,
     body: hasBody ? data.slice(iSeparator + HEADER_BODY_SEPARATOR.length) : ""
   };
@@ -164,7 +164,7 @@ export function parseBinaryFrame(buffer: ArrayBuffer) {
   const headerLength = new DataView(buffer).getUint16(0);
   const header = new TextDecoder().decode(new Uint8Array(buffer, BINARY_HEADER_LENGTH_BYTES, headerLength));
   return {
-    path: parseHeaders(header)[Header.Path] ?? "",
+    path: parseHeaders(header)[Header.PATH] ?? "",
     audio: new Uint8Array(buffer, BINARY_HEADER_LENGTH_BYTES + headerLength)
   };
 }
@@ -173,7 +173,8 @@ export function parseWordBoundaries(body: string) {
   const { Metadata: metadata } = metadataSchema.parse(JSON.parse(body));
   const boundaries: WordBoundary[] = [];
   for (const { Type: type, Data: data } of metadata) {
-    if (type !== WORD_BOUNDARY_TYPE) {
+    const isWordBoundary = type === WORD_BOUNDARY_TYPE;
+    if (!isWordBoundary) {
       continue;
     }
 

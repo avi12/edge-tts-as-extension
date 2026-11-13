@@ -35,7 +35,7 @@ const HEADER_RULE_PRIORITY = 1;
 
 // Another extension asks in the shape the README documents, not in the messenger's envelope
 const externalRequestSchema = z.discriminatedUnion("type", [
-  speakRequestSchema.extend({ type: z.literal(Command.Speak) }),
+  speakRequestSchema.extend({ type: z.literal(Command.SPEAK) }),
   z.object({ type: controlCommandSchema })
 ]);
 
@@ -59,7 +59,7 @@ let readingLocale: string | undefined;
 // initiatorDomains narrows the rule to this extension's own origin and resourceTypes to the handshake
 // https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#dynamic-and-session-rules
 async function installHeaderRule() {
-  const { HeaderOperation, ResourceType, RuleActionType } = browser.declarativeNetRequest;
+  const { HeaderOperation: headerOperation, ResourceType: resourceType, RuleActionType: ruleActionType } = browser.declarativeNetRequest;
   await browser.declarativeNetRequest.updateSessionRules({
     removeRuleIds: [HEADER_RULE_ID],
     addRules: [
@@ -67,11 +67,11 @@ async function installHeaderRule() {
         id: HEADER_RULE_ID,
         priority: HEADER_RULE_PRIORITY,
         action: {
-          type: RuleActionType.MODIFY_HEADERS,
+          type: ruleActionType.MODIFY_HEADERS,
           requestHeaders: [
             {
               header: USER_AGENT_HEADER,
-              operation: HeaderOperation.SET,
+              operation: headerOperation.SET,
               value: EDGE_USER_AGENT
             }
           ]
@@ -79,7 +79,7 @@ async function installHeaderRule() {
         condition: {
           requestDomains: [SYNTHESIZE_HOST],
           initiatorDomains: [browser.runtime.id],
-          resourceTypes: [ResourceType.WEBSOCKET]
+          resourceTypes: [resourceType.WEBSOCKET]
         }
       }
     ]
@@ -160,7 +160,7 @@ async function speak({ request, source }: {
     }),
     ensureOffscreen()
   ]);
-  return speechMessenger.sendMessage(SpeechMessage.PlayerSpeak, {
+  return speechMessenger.sendMessage(SpeechMessage.PLAYER_SPEAK, {
     text,
     voice,
     prosody: {
@@ -179,13 +179,13 @@ async function applySettingsToReading() {
     return;
   }
 
-  const reading = await speechMessenger.sendMessage(SpeechMessage.PlayerControl, Command.GetState);
+  const reading = await speechMessenger.sendMessage(SpeechMessage.PLAYER_CONTROL, Command.GET_STATE);
   if (!isReadingStatus(reading.status)) {
     return;
   }
 
   const settings = await readSettings();
-  await speechMessenger.sendMessage(SpeechMessage.PlayerRespeak, {
+  await speechMessenger.sendMessage(SpeechMessage.PLAYER_RESPEAK, {
     voice: await chooseVoice({
       text: reading.text,
       voice: settings.voice,
@@ -206,7 +206,7 @@ async function control(command: ControlCommand) {
     return IDLE_STATE;
   }
 
-  return speechMessenger.sendMessage(SpeechMessage.PlayerControl, command);
+  return speechMessenger.sendMessage(SpeechMessage.PLAYER_CONTROL, command);
 }
 
 // A narrated page reaches this through the bridge content script, so what it asks for is page data
@@ -248,26 +248,26 @@ async function relayStateToFrame(state: SpeakingState) {
     return;
   }
 
-  await speechMessenger.sendMessage(SpeechMessage.PlayerState, state, readingFrame);
+  await speechMessenger.sendMessage(SpeechMessage.PLAYER_STATE, state, readingFrame);
 }
 
 export default defineBackground(async () => {
-  speechMessenger.onMessage(SpeechMessage.Speak, ({ data, sender }) => {
+  speechMessenger.onMessage(SpeechMessage.SPEAK, ({ data, sender }) => {
     rememberFrame(sender);
     // Only a page's request comes from a tab - the popup has none of its own
     return speakValidated({
       request: data,
-      source: sender.tab === undefined ? ReadingSource.Popup : ReadingSource.Page
+      source: sender.tab === undefined ? ReadingSource.POPUP : ReadingSource.PAGE
     });
   });
-  speechMessenger.onMessage(SpeechMessage.Control, ({ data, sender }) => {
+  speechMessenger.onMessage(SpeechMessage.CONTROL, ({ data, sender }) => {
     rememberFrame(sender);
     return controlValidated(data);
   });
-  speechMessenger.onMessage(SpeechMessage.PlayerState, ({ data }) => relayStateToFrame(data));
-  speechMessenger.onMessage(SpeechMessage.ListVoices, () => loadVoices());
-  speechMessenger.onMessage(SpeechMessage.GetVoice, async () => (await readSettings()).voice);
-  speechMessenger.onMessage(SpeechMessage.SetVoice, async ({ data }) => {
+  speechMessenger.onMessage(SpeechMessage.PLAYER_STATE, ({ data }) => relayStateToFrame(data));
+  speechMessenger.onMessage(SpeechMessage.LIST_VOICES, () => loadVoices());
+  speechMessenger.onMessage(SpeechMessage.GET_VOICE, async () => (await readSettings()).voice);
+  speechMessenger.onMessage(SpeechMessage.SET_VOICE, async ({ data }) => {
     const voice = voiceNameSchema.parse(data);
     const isKnown = (await loadVoices()).some(candidate => candidate.ShortName === voice);
     if (isKnown) {
@@ -285,10 +285,10 @@ export default defineBackground(async () => {
     }
 
     const { type } = parsed.data;
-    const answer = type === Command.Speak
+    const answer = type === Command.SPEAK
       ? speak({
         request: parsed.data,
-        source: ReadingSource.Extension
+        source: ReadingSource.EXTENSION
       })
       : control(type);
     // Chrome keeps sendResponse alive only for a listener that returned true synchronously, so the

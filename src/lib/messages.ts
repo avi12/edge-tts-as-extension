@@ -25,31 +25,31 @@ export interface PlayerVoiceChange {
 // ours - @webext-core/messaging keys its protocol map by them, so they only have to stay distinct
 // https://webext-core.aklinker1.io/messaging/installation
 export enum SpeechMessage {
-  Speak = "speak",
-  Control = "control",
-  PlayerSpeak = "player-speak",
+  SPEAK = "speak",
+  CONTROL = "control",
+  PLAYER_SPEAK = "player-speak",
   // Same reading, new voice or speed, carried on from where it has got to
-  PlayerRespeak = "player-respeak",
-  PlayerControl = "player-control",
+  PLAYER_RESPEAK = "player-respeak",
+  PLAYER_CONTROL = "player-control",
   // The player's own state, broadcast to the background and the popup, and relayed to the frame
   // that asked for the reading
-  PlayerState = "player-state",
-  ListVoices = "list-voices",
-  GetVoice = "get-voice",
-  SetVoice = "set-voice"
+  PLAYER_STATE = "player-state",
+  LIST_VOICES = "list-voices",
+  GET_VOICE = "get-voice",
+  SET_VOICE = "set-voice"
 }
 
 // Every request is answered with the player's state
 interface SpeechProtocolMap {
-  [SpeechMessage.Speak](request: SpeakRequest): SpeakingState;
-  [SpeechMessage.Control](command: ControlCommand): SpeakingState;
-  [SpeechMessage.PlayerSpeak](request: PlayerSpeakRequest): SpeakingState;
-  [SpeechMessage.PlayerRespeak](change: PlayerVoiceChange): SpeakingState;
-  [SpeechMessage.PlayerControl](command: ControlCommand): SpeakingState;
-  [SpeechMessage.PlayerState](state: SpeakingState): void;
-  [SpeechMessage.ListVoices](): Voice[];
-  [SpeechMessage.GetVoice](): string;
-  [SpeechMessage.SetVoice](voice: string): void;
+  [SpeechMessage.SPEAK](request: SpeakRequest): SpeakingState;
+  [SpeechMessage.CONTROL](command: ControlCommand): SpeakingState;
+  [SpeechMessage.PLAYER_SPEAK](request: PlayerSpeakRequest): SpeakingState;
+  [SpeechMessage.PLAYER_RESPEAK](change: PlayerVoiceChange): SpeakingState;
+  [SpeechMessage.PLAYER_CONTROL](command: ControlCommand): SpeakingState;
+  [SpeechMessage.PLAYER_STATE](state: SpeakingState): void;
+  [SpeechMessage.LIST_VOICES](): Voice[];
+  [SpeechMessage.GET_VOICE](): string;
+  [SpeechMessage.SET_VOICE](voice: string): void;
 }
 
 export const speechMessenger = defineExtensionMessaging<SpeechProtocolMap>();

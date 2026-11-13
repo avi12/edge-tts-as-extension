@@ -33,7 +33,13 @@ const STRAIGHT_QUOTES: Record<string, AsciiQuote> = {
 
 // Control characters other than tab/newline/carriage return break the service - Edge's ssml.js draws
 // the same line, everything below tab plus everything between carriage return and space
-const NON_WHITESPACE_CONTROL = /[\u0000-\u0008\u000E-\u001F]/g;
+const LAST_CONTROL_BELOW_TAB = 8;
+const FIRST_CONTROL_ABOVE_CARRIAGE_RETURN = 14;
+const LAST_CONTROL = 31;
+const NON_WHITESPACE_CONTROL = new RegExp(
+  `[${String.fromCharCode(0)}-${String.fromCharCode(LAST_CONTROL_BELOW_TAB)}${String.fromCharCode(FIRST_CONTROL_ABOVE_CARRIAGE_RETURN)}-${String.fromCharCode(LAST_CONTROL)}]`,
+  "g"
+);
 const XML_SPECIAL_CHARACTERS = new RegExp(`[${Object.keys(XML_ESCAPES).join("")}]`, "g");
 const XML_UNESCAPES = Object.fromEntries(Object.entries(XML_ESCAPES).map(([character, entity]) => [entity, character]));
 const XML_ENTITIES = new RegExp(Object.keys(XML_UNESCAPES).join("|"), "g");
@@ -68,8 +74,8 @@ export const DEFAULT_PROSODY: Prosody = {
 // range, which the service enforces by clamping (research/README.md measures it)
 // https://learn.microsoft.com/azure/ai-services/speech-service/speech-synthesis-markup-voice#adjust-prosody
 export const RATE_RANGE = {
-  min: 0.5,
-  max: 2
+  MIN: 0.5,
+  MAX: 2
 } as const;
 
 export function sanitizeText(text: string) {

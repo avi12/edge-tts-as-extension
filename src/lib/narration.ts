@@ -7,13 +7,13 @@ import { sanitizeText } from "@/lib/edge-tts/ssml";
 import { createWordLocator } from "@/lib/edge-tts/words";
 
 export enum NarrationAttribute {
-  Script = "data-narrate",
-  Title = "data-narrate-title",
-  Voice = "data-narrate-voice",
-  Narrating = "data-narrating",
-  Cued = "data-cued",
-  Cue = "data-cue",
-  CueReached = "data-cue-reached"
+  SCRIPT = "data-narrate",
+  TITLE = "data-narrate-title",
+  VOICE = "data-narrate-voice",
+  NARRATING = "data-narrating",
+  CUED = "data-cued",
+  CUE = "data-cue",
+  CUE_REACHED = "data-cue-reached"
 }
 
 // A card declares a language only where it says so itself: the writing system of its script, or a lang
@@ -79,7 +79,8 @@ function appendSpokenPart({ spoken, part }: {
   const normalized = part.replace(WHITESPACE_RUN, SPACE);
   const isDoubleSpace = spoken.endsWith(SPACE) && normalized.startsWith(SPACE);
   const isLeadingSpace = spoken === "" && normalized.startsWith(SPACE);
-  return spoken + (isDoubleSpace || isLeadingSpace ? normalized.slice(1) : normalized);
+  const isRedundantSpace = isDoubleSpace || isLeadingSpace;
+  return spoken + (isRedundantSpace ? normalized.slice(1) : normalized);
 }
 
 export function parseNarrationScript(script: string) {

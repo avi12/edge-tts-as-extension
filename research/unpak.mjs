@@ -1,7 +1,7 @@
 // Dumps every resource from a Chromium resources.pak (Edge: u32 version, u32 encoding, u32 count,
 // u32 alias count, then { u32 id, u32 offset } entries)
 // Usage: node research/unpak.mjs <resources.pak> <output dir>
-import fs from "node:fs";
+import fileSystem from "node:fs";
 import zlib from "node:zlib";
 
 const COUNT_OFFSET = 8;
@@ -14,7 +14,7 @@ const BROTLI_MAGIC = [0x1e, 0x9b];
 const BROTLI_HEADER_SIZE = 8;
 
 const [, , inputPath, outputDir] = process.argv;
-const pak = fs.readFileSync(inputPath);
+const pak = fileSystem.readFileSync(inputPath);
 const count = pak.readUInt32LE(COUNT_OFFSET);
 
 function hasMagic({ data, magic }) {
@@ -51,16 +51,17 @@ function readEntryOffset(i) {
   return pak.readUInt32LE(ENTRIES_OFFSET + i * ENTRY_SIZE + ID_SIZE);
 }
 
-fs.mkdirSync(outputDir, { recursive: true });
+fileSystem.mkdirSync(outputDir, { recursive: true });
 let writtenCount = 0;
 for (let i = 0; i < count; i++) {
   const id = pak.readUInt32LE(ENTRIES_OFFSET + i * ENTRY_SIZE);
   const offset = readEntryOffset(i);
   const nextOffset = readEntryOffset(i + 1);
-  fs.writeFileSync(`${outputDir}/${id}`, decompressOrKeep(pak.subarray(offset, nextOffset)));
+  fileSystem.writeFileSync(`${outputDir}/${id}`, decompressOrKeep(pak.subarray(offset, nextOffset)));
   writtenCount++;
 
-  if (i < LOGGED_ENTRIES) {
+  const isLogged = i < LOGGED_ENTRIES;
+  if (isLogged) {
     console.log(id, offset, nextOffset);
   }
 }

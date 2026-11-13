@@ -1,20 +1,20 @@
 // Our own vocabulary for what a reading is doing, not the media element's readyState or network state:
 // only the offscreen player sees those, and Loading covers waiting for the first bytes off the socket
 export enum PlayerStatus {
-  Idle = "idle",
-  Loading = "loading",
-  Playing = "playing",
-  Paused = "paused",
-  Finished = "finished",
-  Error = "error"
+  IDLE = "idle",
+  LOADING = "loading",
+  PLAYING = "playing",
+  PAUSED = "paused",
+  FINISHED = "finished",
+  ERROR = "error"
 }
 
 // Who asked for the reading, so a listener only ever sees their own: the popup keeps showing the text
 // you typed while a page reads, and the background knows whose reading a settings change belongs to
 export enum ReadingSource {
-  Popup = "popup",
-  Page = "page",
-  Extension = "extension"
+  POPUP = "popup",
+  PAGE = "page",
+  EXTENSION = "extension"
 }
 
 export interface SpokenWord {
@@ -39,7 +39,7 @@ export interface SpeakingState extends PlayerState {
 // Ours: the state a player starts in and returns to, and the answer every caller gets when there is
 // nothing to say - so no reader has to handle a missing state
 export const IDLE_STATE: SpeakingState = {
-  status: PlayerStatus.Idle,
+  status: PlayerStatus.IDLE,
   text: "",
   word: null,
   error: null,
@@ -50,9 +50,9 @@ export const IDLE_STATE: SpeakingState = {
 // Ours: the three statuses that mean a reading is in flight, so the popup and the narration runtime
 // treat them alike instead of each listing them
 const READING_STATUSES: ReadonlySet<PlayerStatus> = new Set([
-  PlayerStatus.Loading,
-  PlayerStatus.Playing,
-  PlayerStatus.Paused
+  PlayerStatus.LOADING,
+  PlayerStatus.PLAYING,
+  PlayerStatus.PAUSED
 ]);
 
 export function isReadingStatus(status: PlayerStatus) {

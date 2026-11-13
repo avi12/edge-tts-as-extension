@@ -9,7 +9,7 @@ import { z } from "@/lib/zod";
 // The one bounded rate: a request's, the stored setting's and the CLI's all read it, so none of them
 // can ask for a speed the service would only clamp. The bounds themselves are RATE_RANGE in
 // lib/edge-tts/ssml.ts - Microsoft's documented prosody range, confirmed against the live service
-export const rateSchema = z.number().min(RATE_RANGE.min).max(RATE_RANGE.max);
+export const rateSchema = z.number().min(RATE_RANGE.MIN).max(RATE_RANGE.MAX);
 
 // Everything beyond the text is optional - the background fills the rest in from the stored settings.
 // Empty text is our own default, so a malformed request reads nothing rather than being refused
@@ -25,10 +25,10 @@ export const speakRequestSchema = z.object({
 
 // Every command that is not Speak carries no payload of its own
 export const controlCommandSchema = z.enum([
-  Command.Stop,
-  Command.Pause,
-  Command.Resume,
-  Command.GetState
+  Command.STOP,
+  Command.PAUSE,
+  Command.RESUME,
+  Command.GET_STATE
 ]);
 
 export type SpeakRequest = z.infer<typeof speakRequestSchema>;

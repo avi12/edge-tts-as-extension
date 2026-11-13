@@ -46,12 +46,12 @@ const SURROUNDING_DASHES = /^-|-$/g;
 function readCards(html: string) {
   const { document } = parseHTML(html);
   const rootLanguage = document.documentElement?.getAttribute("lang") ?? null;
-  return [...document.querySelectorAll(`[${NarrationAttribute.Script}]`)].map(elCard => ({
-    script: elCard.getAttribute(NarrationAttribute.Script) ?? "",
-    pinnedVoice: elCard.getAttribute(NarrationAttribute.Voice),
+  return [...document.querySelectorAll(`[${NarrationAttribute.SCRIPT}]`)].map(elCard => ({
+    script: elCard.getAttribute(NarrationAttribute.SCRIPT) ?? "",
+    pinnedVoice: elCard.getAttribute(NarrationAttribute.VOICE),
     cardLanguage: elCard.closest("[lang]")?.getAttribute("lang") ?? null,
     rootLanguage,
-    cueNames: new Set([...elCard.querySelectorAll(`[${NarrationAttribute.Cue}]`)].map(elCue => elCue.getAttribute(NarrationAttribute.Cue) ?? ""))
+    cueNames: new Set([...elCard.querySelectorAll(`[${NarrationAttribute.CUE}]`)].map(elCue => elCue.getAttribute(NarrationAttribute.CUE) ?? ""))
   }));
 }
 
@@ -199,7 +199,7 @@ async function main() {
 
   const parsedRate = rateFlagSchema.safeParse(values.rate);
   if (!parsedRate.success) {
-    throw new Error(`--rate takes a speed multiplier from ${RATE_RANGE.min} to ${RATE_RANGE.max}, got "${values.rate}"`);
+    throw new Error(`--rate takes a speed multiplier from ${RATE_RANGE.MIN} to ${RATE_RANGE.MAX}, got "${values.rate}"`);
   }
 
   const voices = await fetchVoices();

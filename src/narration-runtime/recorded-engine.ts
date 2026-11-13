@@ -13,7 +13,8 @@ function getSpokenWord({ clip, seconds }: {
 }) {
   let spokenWord: SpokenWord | null = null;
   for (const [time, start, length] of clip.words) {
-    if (time > seconds) {
+    const isAhead = time > seconds;
+    if (isAhead) {
       break;
     }
 
@@ -34,7 +35,7 @@ export function createRecordedEngine(reportState: ReportState) {
   // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/preload
   elAudio.preload = "auto";
   let clip: NarrationClip | null = null;
-  let status = PlayerStatus.Idle;
+  let status = PlayerStatus.IDLE;
   let error: string | null = null;
   let frameRequest = 0;
   let playRequest = 0;
@@ -60,7 +61,7 @@ export function createRecordedEngine(reportState: ReportState) {
   function followAudio() {
     report();
 
-    if (status === PlayerStatus.Playing) {
+    if (status === PlayerStatus.PLAYING) {
       frameRequest = requestAnimationFrame(followAudio);
     }
   }
@@ -71,32 +72,37 @@ export function createRecordedEngine(reportState: ReportState) {
     await elAudio.play().catch((playError: unknown) => {
       const isReplacedByNewerPlay = thisPlayRequest !== playRequest;
       const isInterrupted = playError instanceof DOMException && playError.name === ABORT_ERROR;
-      if (isReplacedByNewerPlay || isInterrupted) {
+      const isStale = isReplacedByNewerPlay || isInterrupted;
+      if (isStale) {
         return;
       }
 
       error = playError instanceof Error ? playError.message : String(playError);
-      status = PlayerStatus.Error;
+      status = PlayerStatus.ERROR;
       report();
     });
   }
 
   elAudio.addEventListener("playing", () => {
-    status = PlayerStatus.Playing;
+    status = PlayerStatus.PLAYING;
     cancelAnimationFrame(frameRequest);
     followAudio();
   });
   elAudio.addEventListener("pause", () => {
-    if (elAudio.ended || !clip) {
+    if (elAudio.ended) {
       return;
     }
 
-    status = PlayerStatus.Paused;
+    if (!clip) {
+      return;
+    }
+
+    status = PlayerStatus.PAUSED;
     report();
   });
   elAudio.addEventListener("seeked", report);
   elAudio.addEventListener("ended", () => {
-    status = PlayerStatus.Finished;
+    status = PlayerStatus.FINISHED;
     report();
   });
 
@@ -114,7 +120,7 @@ export function createRecordedEngine(reportState: ReportState) {
     cancelAnimationFrame(frameRequest);
     clip = nextClip;
     error = null;
-    status = PlayerStatus.Loading;
+    status = PlayerStatus.LOADING;
     elAudio.src = nextClip.audio;
     elAudio.currentTime = findWordTime(startText) ?? 0;
     report();
@@ -142,7 +148,7 @@ export function createRecordedEngine(reportState: ReportState) {
     },
     async stop() {
       clip = null;
-      status = PlayerStatus.Idle;
+      status = PlayerStatus.IDLE;
       cancelAnimationFrame(frameRequest);
       elAudio.pause();
     }

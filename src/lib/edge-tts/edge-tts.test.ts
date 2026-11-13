@@ -180,8 +180,8 @@ describe.runIf(process.env.LIVE)("live service", () => {
 });
 
 describe("synthesize retries", () => {
-  const CLOSED_PORT_URL = "ws://127.0.0.1:1";
-  const PROSODY = {
+  const closedPortUrl = "ws://127.0.0.1:1";
+  const prosody = {
     rate: 1,
     volume: 1,
     pitchHz: 0
@@ -192,12 +192,12 @@ describe("synthesize retries", () => {
     const result = synthesize({
       text: "Hi",
       voice: LIVE_VOICE,
-      prosody: PROSODY,
+      prosody,
       signal,
       onAudio() {},
       openSocket() {
         state.opened++;
-        return new WebSocket(CLOSED_PORT_URL);
+        return new WebSocket(closedPortUrl);
       }
     });
     return {

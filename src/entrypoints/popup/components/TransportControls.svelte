@@ -13,11 +13,11 @@
 </script>
 
 <menu class="actions">
-  {#if status === PlayerStatus.Paused}
-    <li><button class="btn" data-variant="primary" onclick={() => oncontrol(Command.Resume)}>Resume</button></li>
+  {#if status === PlayerStatus.PAUSED}
+    <li><button class="btn" data-variant="primary" onclick={() => oncontrol(Command.RESUME)}>Resume</button></li>
   {:else if isReading}
     <li>
-      <button class="btn" disabled={status === PlayerStatus.Loading} onclick={() => oncontrol(Command.Pause)}>
+      <button class="btn" disabled={status === PlayerStatus.LOADING} onclick={() => oncontrol(Command.PAUSE)}>
         Pause
       </button>
     </li>
@@ -25,7 +25,7 @@
     <li><button class="btn" data-variant="primary" onclick={onspeak}>Read aloud</button></li>
   {/if}
   {#if isReading}
-    <li><button class="btn" data-variant="danger" onclick={() => oncontrol(Command.Stop)}>Stop</button></li>
+    <li><button class="btn" data-variant="danger" onclick={() => oncontrol(Command.STOP)}>Stop</button></li>
   {/if}
 </menu>
 
@@ -54,7 +54,7 @@
       box-shadow var(--dur-theme) var(--ease-emph);
 
     &:disabled {
-      opacity: 45%;
+      opacity: 0.45;
       cursor: default;
     }
 

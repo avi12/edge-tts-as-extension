@@ -85,8 +85,8 @@ export async function connectCdp(socketUrl: string) {
   const pendingCommands = new Map<number, (response: z.infer<typeof responseSchema>) => void>();
   let lastCommandId = 0;
 
-  socket.onmessage = e => {
-    const parsed = responseSchema.safeParse(JSON.parse(String(e.data)));
+  socket.onmessage = event => {
+    const parsed = responseSchema.safeParse(JSON.parse(String(event.data)));
     if (!parsed.success) {
       return;
     }

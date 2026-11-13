@@ -5,7 +5,7 @@ import type { PanelAction } from "./panel-action";
 import panelCss from "./panel.css?raw";
 import themeCss from "./theme.css?raw";
 import TourPanel from "./TourPanel.svelte";
-import { PlayerStatus } from "@/lib/player-status";
+import type { PlayerStatus } from "@/lib/player-status";
 import { mount } from "svelte";
 
 // An open root stays reachable through Element.shadowRoot, so a page's own script can find the panel;
@@ -23,8 +23,8 @@ const HOST_ATTRIBUTE = "data-narration-host";
 const WORD_START_ATTRIBUTE = "data-start";
 
 enum HostKind {
-  Overlay = "overlay",
-  Panel = "panel"
+  OVERLAY = "overlay",
+  PANEL = "panel"
 }
 
 // The components carry no styles of their own: Svelte would put them in the document's head, which no
@@ -52,7 +52,7 @@ export function createCardOverlay({ elCard, onPlay }: {
 }) {
   const { elHost, shadowRoot } = createShadowHost({
     css: overlayCss,
-    kind: HostKind.Overlay
+    kind: HostKind.OVERLAY
   });
   const isStaticallyPositioned = getComputedStyle(elCard).position === STATIC_POSITION;
   if (isStaticallyPositioned) {
@@ -82,7 +82,7 @@ export function createTourPanel({ cardCount, onAction, onSeek, onVoice }: {
 }) {
   const { elHost, shadowRoot } = createShadowHost({
     css: panelCss,
-    kind: HostKind.Panel
+    kind: HostKind.PANEL
   });
   const panel = mount(TourPanel, {
     target: shadowRoot,
@@ -94,8 +94,8 @@ export function createTourPanel({ cardCount, onAction, onSeek, onVoice }: {
   });
 
   // One listener on the root rather than one per word: the subtitle is rewritten on every spoken word
-  shadowRoot.addEventListener("click", async e => {
-    const elWord = e.target instanceof Element ? e.target.closest(`[${WORD_START_ATTRIBUTE}]`) : null;
+  shadowRoot.addEventListener("click", async event => {
+    const elWord = event.target instanceof Element ? event.target.closest(`[${WORD_START_ATTRIBUTE}]`) : null;
     if (!elWord) {
       return;
     }

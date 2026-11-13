@@ -31,21 +31,21 @@ export const EDGE_USER_AGENT = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleW
 // Two of the output formats the service documents, named as it spells them
 // https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#audio-outputs
 export enum OutputFormat {
-  WebmOpus = "webm-24khz-16bit-mono-opus",
-  Mp3 = "audio-24khz-48kbitrate-mono-mp3"
+  WEBM_OPUS = "webm-24khz-16bit-mono-opus",
+  MP3 = "audio-24khz-48kbitrate-mono-mp3"
 }
 
 // What the bytes of each format are, so whoever reads the stream never has to guess: audio/mpeg is
 // RFC 3003, and the WebM Opus mapping is MDN's
 // https://developer.mozilla.org/docs/Web/Media/Guides/Formats/WebM
 export const OUTPUT_MIME_TYPES: Record<OutputFormat, string> = {
-  [OutputFormat.WebmOpus]: "audio/webm; codecs=opus",
-  [OutputFormat.Mp3]: "audio/mpeg"
+  [OutputFormat.WEBM_OPUS]: "audio/webm; codecs=opus",
+  [OutputFormat.MP3]: "audio/mpeg"
 };
 
 // The format Edge requests - streamable through MediaSource. MP3 plays everywhere instead, which is
 // what audio embedded in a page needs
-export const DEFAULT_OUTPUT_FORMAT = OutputFormat.WebmOpus;
+export const DEFAULT_OUTPUT_FORMAT = OutputFormat.WEBM_OPUS;
 
 // The 48 kbit/s the Mp3 format's own name states, so narrate can turn a byte length into seconds
 export const MP3_BITS_PER_SECOND = 48_000;

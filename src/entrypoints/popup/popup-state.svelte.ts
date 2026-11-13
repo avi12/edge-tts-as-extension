@@ -29,7 +29,7 @@ export const popup: PopupState = $state({
 });
 
 export async function speak() {
-  popup.player = await speechMessenger.sendMessage(SpeechMessage.Speak, {
+  popup.player = await speechMessenger.sendMessage(SpeechMessage.SPEAK, {
     text: popup.text,
     voice: popup.settings.voice,
     rate: popup.settings.rate,
@@ -38,7 +38,7 @@ export async function speak() {
 }
 
 export async function control(command: ControlCommand) {
-  popup.player = await speechMessenger.sendMessage(SpeechMessage.Control, command);
+  popup.player = await speechMessenger.sendMessage(SpeechMessage.CONTROL, command);
 }
 
 export async function updateText(text: string) {
@@ -67,9 +67,9 @@ async function showVoices() {
 }
 
 export async function startPopup() {
-  speechMessenger.onMessage(SpeechMessage.PlayerState, ({ data }) => {
+  speechMessenger.onMessage(SpeechMessage.PLAYER_STATE, ({ data }) => {
     popup.player = data;
   });
   [popup.settings, popup.text] = await Promise.all([readSettings(), draft.getValue()]);
-  await Promise.all([control(Command.GetState), showVoices()]);
+  await Promise.all([control(Command.GET_STATE), showVoices()]);
 }

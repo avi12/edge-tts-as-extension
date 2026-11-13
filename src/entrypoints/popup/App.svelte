@@ -20,7 +20,7 @@
   // A page's narration drives the same player, so the read-along pane is only for the popup's own
   // reading - otherwise the text you typed would be replaced by whatever the page is saying
   const isReadingHere = $derived(
-    isReadingStatus(popup.player.status) && popup.player.source === ReadingSource.Popup
+    isReadingStatus(popup.player.status) && popup.player.source === ReadingSource.POPUP
   );
   const readingVoice = $derived(popup.voices.find(voice => voice.ShortName === popup.player.voice));
 

@@ -1,6 +1,6 @@
 // ASCII and UTF-16 strings in a binary, like `strings`
 // Usage: node research/strings.mjs <input> <output>
-import fs from "node:fs";
+import fileSystem from "node:fs";
 
 const MIN_STRING_LENGTH = 6;
 const FIRST_PRINTABLE = 0x20;
@@ -8,7 +8,7 @@ const LAST_PRINTABLE = 0x7e;
 const UTF16_PREFIX = "[u16] ";
 
 const [, , inputPath, outputPath] = process.argv;
-const bytes = fs.readFileSync(inputPath);
+const bytes = fileSystem.readFileSync(inputPath);
 
 function isPrintable(byte) {
   return byte >= FIRST_PRINTABLE && byte <= LAST_PRINTABLE;
@@ -55,4 +55,4 @@ const utf16Strings = collectStrings({
   prefix: UTF16_PREFIX,
   readCharacter: readUtf16
 });
-fs.writeFileSync(outputPath, [...asciiStrings, ...utf16Strings].join("\n"));
+fileSystem.writeFileSync(outputPath, [...asciiStrings, ...utf16Strings].join("\n"));

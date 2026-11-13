@@ -35,13 +35,13 @@ export function createLiveEngine(reportState: ReportState) {
     }
 
     // Someone else took the player over (the popup, another page), or stopped it
-    const isPlayerBusyOrStopped = isReadingStatus(state.status) || state.status === PlayerStatus.Idle;
+    const isPlayerBusyOrStopped = isReadingStatus(state.status) || state.status === PlayerStatus.IDLE;
     const isTakenOver = !sentTexts.has(state.text) && isPlayerBusyOrStopped;
     if (isTakenOver) {
       speakingText = null;
       reportState({
         ...state,
-        status: PlayerStatus.Idle
+        status: PlayerStatus.IDLE
       });
     }
   }
@@ -49,11 +49,11 @@ export function createLiveEngine(reportState: ReportState) {
   // The bridge announces itself for a runtime that was already listening; a runtime that started
   // later asks instead, and a page with no extension is simply never answered - the one send that
   // cannot be awaited, since nothing settles it
-  narrationMessenger.onMessage(NarrationMessage.ExtensionReady, () => {
+  narrationMessenger.onMessage(NarrationMessage.EXTENSION_READY, () => {
     isAvailable = true;
   });
-  narrationMessenger.onMessage(NarrationMessage.PlayerState, ({ data }) => followPlayer(data));
-  void narrationMessenger.sendMessage(NarrationMessage.IsExtensionReady).then(() => {
+  narrationMessenger.onMessage(NarrationMessage.PLAYER_STATE, ({ data }) => followPlayer(data));
+  void narrationMessenger.sendMessage(NarrationMessage.IS_EXTENSION_READY).then(() => {
     isAvailable = true;
   });
 
@@ -61,7 +61,7 @@ export function createLiveEngine(reportState: ReportState) {
     spokenOffset = start;
     speakingText = fullText.slice(start);
     sentTexts.add(speakingText);
-    await narrationMessenger.sendMessage(NarrationMessage.Speak, {
+    await narrationMessenger.sendMessage(NarrationMessage.SPEAK, {
       text: speakingText,
       voice: pinnedVoice,
       locale: declaredLanguage
@@ -74,7 +74,7 @@ export function createLiveEngine(reportState: ReportState) {
       pinnedVoice = clip.pinnedVoice ?? undefined;
       declaredLanguage = clip.declaredLanguage ?? undefined;
       reportState({
-        status: PlayerStatus.Loading,
+        status: PlayerStatus.LOADING,
         text: clip.text,
         word: null,
         error: null,
@@ -91,10 +91,10 @@ export function createLiveEngine(reportState: ReportState) {
       await speakFrom(start);
     },
     async pause() {
-      await narrationMessenger.sendMessage(NarrationMessage.Control, Command.Pause);
+      await narrationMessenger.sendMessage(NarrationMessage.CONTROL, Command.PAUSE);
     },
     async resume() {
-      await narrationMessenger.sendMessage(NarrationMessage.Control, Command.Resume);
+      await narrationMessenger.sendMessage(NarrationMessage.CONTROL, Command.RESUME);
     },
     async stop() {
       if (speakingText === null) {
@@ -102,7 +102,7 @@ export function createLiveEngine(reportState: ReportState) {
       }
 
       speakingText = null;
-      await narrationMessenger.sendMessage(NarrationMessage.Control, Command.Stop);
+      await narrationMessenger.sendMessage(NarrationMessage.CONTROL, Command.STOP);
     }
   };
   return {

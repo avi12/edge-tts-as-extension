@@ -76,29 +76,43 @@
     await onvoice(shortName);
   }
 
-  function onVoiceListToggle(e: ToggleEvent) {
+  function onVoiceListToggle(event: ToggleEvent) {
     voiceQuery = "";
 
-    if (e.newState !== "open") {
+    if (event.newState !== "open") {
       return;
     }
 
     elVoiceSearch?.focus({ preventScroll: true });
     const elOptions = elVoiceList?.querySelector("ul");
     const elSelected = elVoiceList?.querySelector<HTMLElement>("[aria-selected='true']");
-    if (!elOptions || !elSelected) {
+    if (!elOptions) {
+      return;
+    }
+
+    if (!elSelected) {
       return;
     }
 
     elOptions.scrollTop = elSelected.offsetTop - (elOptions.clientHeight - elSelected.offsetHeight) / HALVED;
   }
 
-  const status = $derived(reading?.status ?? PlayerStatus.Idle);
+  const status = $derived(reading?.status ?? PlayerStatus.IDLE);
   const heading = $derived(title === null || iCard === null ? "" : `${iCard + 1}/${cardCount} ${title}`);
   const voiceName = $derived(reading?.voice ? getShortVoiceName(reading.voice) : "");
   const tourLabel = $derived(`Play tour · ${cardCount} ${cardCount === 1 ? "card" : "cards"}`);
   // An error has no words to follow, so the subtitle empties rather than freezing mid-sentence
-  const subtitleText = $derived(!reading || reading.status === PlayerStatus.Error ? "" : reading.text);
+  const subtitleText = $derived.by(() => {
+    if (!reading) {
+      return "";
+    }
+
+    if (reading.status === PlayerStatus.ERROR) {
+      return "";
+    }
+
+    return reading.text;
+  });
   const spokenStart = $derived(reading?.word?.start ?? -1);
   // Every word is its own span, so a click on one can jump the narration there
   const parts = $derived.by(() => {
@@ -126,7 +140,15 @@
   $effect(() => {
     const isFollowingAWord = spokenStart >= 0 && subtitleText !== "";
     const elSpoken = elSubtitle?.querySelector<HTMLElement>("[data-spoken]");
-    if (!isFollowingAWord || !elSubtitle || !elSpoken) {
+    if (!isFollowingAWord) {
+      return;
+    }
+
+    if (!elSubtitle) {
+      return;
+    }
+
+    if (!elSpoken) {
       return;
     }
 
@@ -183,48 +205,48 @@
     data-start={part.start}>{part.word}</span>{/each}{trailingText}</p>
   <p class="error">{reading?.error ?? ""}</p>
   <menu class="controls">
-    <li data-action={PanelAction.Tour}>
-      <button onclick={() => onaction(PanelAction.Tour)} type="button">
+    <li data-action={PanelAction.TOUR}>
+      <button onclick={() => onaction(PanelAction.TOUR)} type="button">
         <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
         <span class="tour-label">{tourLabel}</span>
       </button>
     </li>
-    <li data-action={PanelAction.Previous}>
-      <button {@attach interest("hint-previous")} onclick={() => onaction(PanelAction.Previous)} type="button">Prev</button>
+    <li data-action={PanelAction.PREVIOUS}>
+      <button {@attach interest("hint-previous")} onclick={() => onaction(PanelAction.PREVIOUS)} type="button">Prev</button>
       <span id="hint-previous" class="hint" popover="hint">Previous card</span>
     </li>
-    <li data-action={PanelAction.Back}>
-      <button {@attach interest("hint-back")} onclick={() => onaction(PanelAction.Back)} type="button">Back</button>
+    <li data-action={PanelAction.BACK}>
+      <button {@attach interest("hint-back")} onclick={() => onaction(PanelAction.BACK)} type="button">Back</button>
       <span id="hint-back" class="hint" popover="hint">Back to the start of the sentence</span>
     </li>
-    <li data-action={PanelAction.Pause}>
+    <li data-action={PanelAction.PAUSE}>
       <button
         {@attach interest("hint-pause")}
         aria-labelledby="hint-pause"
-        onclick={() => onaction(PanelAction.Pause)}
+        onclick={() => onaction(PanelAction.PAUSE)}
         type="button"
       >
         <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
       </button>
       <span id="hint-pause" class="hint" popover="hint">Pause</span>
     </li>
-    <li data-action={PanelAction.Resume}>
+    <li data-action={PanelAction.RESUME}>
       <button
         {@attach interest("hint-resume")}
         aria-labelledby="hint-resume"
-        onclick={() => onaction(PanelAction.Resume)}
+        onclick={() => onaction(PanelAction.RESUME)}
         type="button"
       >
         <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
       </button>
       <span id="hint-resume" class="hint" popover="hint">Resume</span>
     </li>
-    <li data-action={PanelAction.Next}>
-      <button {@attach interest("hint-next")} onclick={() => onaction(PanelAction.Next)} type="button">Next</button>
+    <li data-action={PanelAction.NEXT}>
+      <button {@attach interest("hint-next")} onclick={() => onaction(PanelAction.NEXT)} type="button">Next</button>
       <span id="hint-next" class="hint" popover="hint">Next card</span>
     </li>
-    <li data-action={PanelAction.Stop}>
-      <button {@attach interest("hint-stop")} onclick={() => onaction(PanelAction.Stop)} type="button">Stop</button>
+    <li data-action={PanelAction.STOP}>
+      <button {@attach interest("hint-stop")} onclick={() => onaction(PanelAction.STOP)} type="button">Stop</button>
       <span id="hint-stop" class="hint" popover="hint">Stop</span>
     </li>
   </menu>

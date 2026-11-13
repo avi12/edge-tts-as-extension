@@ -146,7 +146,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
   function stop() {
     release();
 
-    if (state.status !== PlayerStatus.Idle) {
+    if (state.status !== PlayerStatus.IDLE) {
       setState(IDLE_STATE);
     }
   }
@@ -156,7 +156,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     release();
     setState({
       ...IDLE_STATE,
-      status: PlayerStatus.Finished,
+      status: PlayerStatus.FINISHED,
       text,
       voice
     });
@@ -254,7 +254,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
         });
       }
 
-      const isWaitingToStart = elAudio.paused && state.status === PlayerStatus.Loading;
+      const isWaitingToStart = elAudio.paused && state.status === PlayerStatus.LOADING;
       if (isWaitingToStart) {
         await elAudio.play().catch(ignoreError);
       }
@@ -327,7 +327,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     const controller = new AbortController();
     session = controller;
     setState({
-      status: PlayerStatus.Loading,
+      status: PlayerStatus.LOADING,
       voice,
       word: null,
       error: null
@@ -347,7 +347,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
       release();
       setState({
-        status: PlayerStatus.Error,
+        status: PlayerStatus.ERROR,
         word: null,
         error: getErrorMessage(error)
       });
@@ -360,7 +360,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
     pausedVoiceChange = null;
     setState({
       ...IDLE_STATE,
-      status: PlayerStatus.Loading,
+      status: PlayerStatus.LOADING,
       text,
       voice,
       source
@@ -373,12 +373,12 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
 
   // The word being spoken is where the new voice takes over, so the listener keeps their place
   async function respeak(change: PlayerVoiceChange) {
-    if (state.status === PlayerStatus.Paused) {
+    if (state.status === PlayerStatus.PAUSED) {
       pausedVoiceChange = change;
       return;
     }
 
-    const isReading = state.status === PlayerStatus.Loading || state.status === PlayerStatus.Playing;
+    const isReading = state.status === PlayerStatus.LOADING || state.status === PlayerStatus.PLAYING;
     if (!isReading) {
       return;
     }
@@ -388,12 +388,12 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
   }
 
   function pause() {
-    if (state.status !== PlayerStatus.Playing) {
+    if (state.status !== PlayerStatus.PLAYING) {
       return;
     }
 
     elAudio.pause();
-    setState({ status: PlayerStatus.Paused });
+    setState({ status: PlayerStatus.PAUSED });
   }
 
   // Playback interrupted again before it starts rejects, which is nothing to report - play() returns a
@@ -401,7 +401,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
   // depending on browser implementation details"
   // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/play
   async function resume() {
-    if (state.status !== PlayerStatus.Paused) {
+    if (state.status !== PlayerStatus.PAUSED) {
       return;
     }
 
@@ -422,7 +422,7 @@ export function createPlayer(onChange: (state: SpeakingState) => void) {
   // "playback or streaming has stopped because the end of the media was reached"
   // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/playing_event
   // https://developer.mozilla.org/docs/Web/API/HTMLMediaElement/ended_event
-  elAudio.onplaying = () => setState({ status: PlayerStatus.Playing });
+  elAudio.onplaying = () => setState({ status: PlayerStatus.PLAYING });
   elAudio.onended = finish;
 
   return {

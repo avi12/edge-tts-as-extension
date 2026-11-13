@@ -3,9 +3,9 @@
 // (chrome.runtime.sendMessage with { type: "speak" | "pause" | "resume" | "stop" | "get-state" }),
 // so renaming one breaks a caller we do not ship
 export enum Command {
-  Speak = "speak",
-  Stop = "stop",
-  Pause = "pause",
-  Resume = "resume",
-  GetState = "get-state"
+  SPEAK = "speak",
+  STOP = "stop",
+  PAUSE = "pause",
+  RESUME = "resume",
+  GET_STATE = "get-state"
 }

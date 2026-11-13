@@ -4,12 +4,12 @@
   // Ours: the player's own statuses said in the popup's words, one label each so a new status cannot slip
   // through unlabelled
   const STATUS_LABEL: Record<PlayerStatus, string> = {
-    [PlayerStatus.Idle]: "Ready",
-    [PlayerStatus.Loading]: "Loading…",
-    [PlayerStatus.Playing]: "Reading",
-    [PlayerStatus.Paused]: "Paused",
-    [PlayerStatus.Finished]: "Done",
-    [PlayerStatus.Error]: "Error"
+    [PlayerStatus.IDLE]: "Ready",
+    [PlayerStatus.LOADING]: "Loading…",
+    [PlayerStatus.PLAYING]: "Reading",
+    [PlayerStatus.PAUSED]: "Paused",
+    [PlayerStatus.FINISHED]: "Done",
+    [PlayerStatus.ERROR]: "Error"
   };
 </script>
 
@@ -17,7 +17,7 @@
   const { status }: { status: PlayerStatus } = $props();
 </script>
 
-<output class="chip status" data-active={status === PlayerStatus.Playing} data-status={status}>
+<output class="chip status" data-active={status === PlayerStatus.PLAYING} data-status={status}>
   {STATUS_LABEL[status]}
 </output>
 
@@ -47,7 +47,7 @@
 
   @keyframes blink {
     50% {
-      opacity: 25%;
+      opacity: 0.25;
     }
   }
 

@@ -14,27 +14,27 @@ const NARRATION_NAMESPACE = "edge-read-aloud:narration";
 // Ours, like the extension bus's keys: the library routes on them, so they only have to stay distinct
 export enum NarrationMessage {
   // The bridge announcing itself, for a page whose runtime was already listening
-  ExtensionReady = "extension-ready",
+  EXTENSION_READY = "extension-ready",
   // The page asking whether the bridge is there, for a runtime that started after it
-  IsExtensionReady = "is-extension-ready",
-  Speak = "speak",
-  Control = "control",
-  PlayerState = "player-state",
+  IS_EXTENSION_READY = "is-extension-ready",
+  SPEAK = "speak",
+  CONTROL = "control",
+  PLAYER_STATE = "player-state",
   // The voice list and the picked voice, so a narrated page can offer a dropdown without a host of its own
-  ListVoices = "list-voices",
-  GetVoice = "get-voice",
-  SetVoice = "set-voice"
+  LIST_VOICES = "list-voices",
+  GET_VOICE = "get-voice",
+  SET_VOICE = "set-voice"
 }
 
 interface NarrationProtocolMap {
-  [NarrationMessage.ExtensionReady](): void;
-  [NarrationMessage.IsExtensionReady](): boolean;
-  [NarrationMessage.Speak](request: SpeakRequest): void;
-  [NarrationMessage.Control](command: ControlCommand): void;
-  [NarrationMessage.PlayerState](state: SpeakingState): void;
-  [NarrationMessage.ListVoices](): Voice[];
-  [NarrationMessage.GetVoice](): string;
-  [NarrationMessage.SetVoice](voice: string): void;
+  [NarrationMessage.EXTENSION_READY](): void;
+  [NarrationMessage.IS_EXTENSION_READY](): boolean;
+  [NarrationMessage.SPEAK](request: SpeakRequest): void;
+  [NarrationMessage.CONTROL](command: ControlCommand): void;
+  [NarrationMessage.PLAYER_STATE](state: SpeakingState): void;
+  [NarrationMessage.LIST_VOICES](): Voice[];
+  [NarrationMessage.GET_VOICE](): string;
+  [NarrationMessage.SET_VOICE](voice: string): void;
 }
 
 export const narrationMessenger = defineCustomEventMessaging<NarrationProtocolMap>({ namespace: NARRATION_NAMESPACE });

@@ -33,7 +33,7 @@ export async function recordClip({ script, voice, pinnedVoice, declaredLanguage,
       ...DEFAULT_PROSODY,
       rate
     },
-    outputFormat: OutputFormat.Mp3,
+    outputFormat: OutputFormat.MP3,
     openSocket: openEdgeSocket,
     onAudio: chunk => chunks.push(chunk),
     onWordBoundary: boundary => boundaries.push(boundary)
@@ -47,7 +47,7 @@ export async function recordClip({ script, voice, pinnedVoice, declaredLanguage,
     // The clip rides inside the page as a base64 data url, the form RFC 2397 defines, so a narrated
     // page needs no second request and survives being copied anywhere
     // https://www.rfc-editor.org/rfc/rfc2397
-    audio: `data:${OUTPUT_MIME_TYPES[OutputFormat.Mp3]};base64,${audio.toString("base64")}`,
+    audio: `data:${OUTPUT_MIME_TYPES[OutputFormat.MP3]};base64,${audio.toString("base64")}`,
     voice: voice.ShortName,
     locale: voice.Locale,
     pinnedVoice,

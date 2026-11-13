@@ -1,7 +1,6 @@
 // The Node half of a narration host (lib/narration-host.ts), bundled on its own by build-host.ts so an
 // app can load it without this repo's toolchain: it lists the voices and records one card at a time
 import { fetchVoices, type Voice } from "@/lib/edge-tts/voice-list";
-import type { HostRecording } from "@/lib/narration-host";
 import { recordClip } from "@/lib/record-clip";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -23,7 +22,7 @@ export function listVoices() {
 export async function recordVoice({ text, voice }: {
   text: string;
   voice: string;
-}): Promise<HostRecording> {
+}) {
   const found = (await listVoices()).find(candidate => candidate.ShortName === voice);
   if (!found) {
     throw new Error(`Unknown voice "${voice}"`);
@@ -43,7 +42,8 @@ export async function recordVoice({ text, voice }: {
         words: clip.words
       };
     } catch (error) {
-      if (attempt >= RECORD_ATTEMPTS) {
+      const isLastAttempt = attempt >= RECORD_ATTEMPTS;
+      if (isLastAttempt) {
         throw error;
       }
 

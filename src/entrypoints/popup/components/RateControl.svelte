@@ -19,8 +19,8 @@
 <label class="field">
   <span class="label speed">Speed <output class="num">{liveRate.toFixed(RATE_FRACTION_DIGITS)}×</output></span>
   <input
-    max={RATE_RANGE.max}
-    min={RATE_RANGE.min}
+    max={RATE_RANGE.MAX}
+    min={RATE_RANGE.MIN}
     onchange={() => onchange(liveRate)}
     oninput={e => {
       liveRate = e.currentTarget.valueAsNumber;

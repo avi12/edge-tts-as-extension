@@ -1,5 +1,4 @@
 import {
-  type CueTiming,
   getDeclaredLanguage,
   NarrationAttribute,
   type NarrationClip,
@@ -11,8 +10,8 @@ import {
 export function readPageClips() {
   const rootLanguage = document.documentElement.getAttribute("lang");
   const clips: NarrationClip[] = [];
-  for (const elCard of document.querySelectorAll<HTMLElement>(`[${NarrationAttribute.Script}]`)) {
-    const { text, cues } = parseNarrationScript(elCard.getAttribute(NarrationAttribute.Script) ?? "");
+  for (const elCard of document.querySelectorAll<HTMLElement>(`[${NarrationAttribute.SCRIPT}]`)) {
+    const { text, cues } = parseNarrationScript(elCard.getAttribute(NarrationAttribute.SCRIPT) ?? "");
     const declaredLanguage = getDeclaredLanguage({
       text,
       cardLanguage: elCard.closest("[lang]")?.getAttribute("lang") ?? null,
@@ -22,12 +21,12 @@ export function readPageClips() {
       audio: "",
       voice: "",
       locale: declaredLanguage ?? "",
-      pinnedVoice: elCard.getAttribute(NarrationAttribute.Voice),
+      pinnedVoice: elCard.getAttribute(NarrationAttribute.VOICE),
       declaredLanguage,
       duration: 0,
       text,
       words: [],
-      cues: cues.map((cue): CueTiming => [cue.name, 0, cue.start])
+      cues: cues.map(cue => [cue.name, 0, cue.start])
     });
   }
 

@@ -2,7 +2,7 @@
 // synthesis that writes the audio out
 // Usage: node research/probe.mjs
 import crypto from "node:crypto";
-import fs from "node:fs";
+import fileSystem from "node:fs";
 
 const TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
 const SYNTHESIZE_URL = "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1";
@@ -17,6 +17,7 @@ const BINARY_HEADER_LENGTH_BYTES = 2;
 const GEC_VERSION = "1-155.0.4283.45";
 const OUTPUT_FORMAT = "webm-24khz-16bit-mono-opus";
 const SAMPLE_PROBE = "A";
+const RESULT_COLUMN_WIDTH = 34;
 const DEFAULT_SAMPLE_PATH = "sample.webm";
 const SAMPLE_TEXT = "Hello from the reverse engineered read aloud service.";
 const ONE_WINDOW_MS = TOKEN_WINDOW_SECONDS * MILLISECONDS_PER_SECOND;
@@ -101,12 +102,14 @@ function createId() {
 
 function createUrl({ url, isSentInQuery, isKeySent, isGecSent, gec }) {
   const parameters = new URLSearchParams({ ConnectionId: createId() });
-  if (isSentInQuery && isKeySent) {
+  const isKeyInQuery = isSentInQuery && isKeySent;
+  if (isKeyInQuery) {
     parameters.set("TrustedClientToken", TOKEN);
     parameters.set(SUBSCRIPTION_KEY_HEADER, TOKEN);
   }
 
-  if (isSentInQuery && isGecSent) {
+  const isGecInQuery = isSentInQuery && isGecSent;
+  if (isGecInQuery) {
     parameters.set(GEC_HEADER, gec);
     parameters.set(GEC_VERSION_HEADER, GEC_VERSION);
   }
@@ -198,7 +201,7 @@ function probe({
     let wordMessageCount = 0;
     const audioChunks = [];
     function report(result) {
-      resolve(`${name} ${result.padEnd(34)} ${what}`);
+      resolve(`${name} ${result.padEnd(RESULT_COLUMN_WIDTH)} ${what}`);
     }
 
     const timeoutId = setTimeout(() => {
@@ -223,8 +226,9 @@ function probe({
       clearTimeout(timeoutId);
       socket.close();
 
-      if (name === SAMPLE_PROBE) {
-        fs.writeFileSync(process.env.OUT ?? DEFAULT_SAMPLE_PATH, Buffer.concat(audioChunks));
+      const isSampleProbe = name === SAMPLE_PROBE;
+      if (isSampleProbe) {
+        fileSystem.writeFileSync(process.env.OUT ?? DEFAULT_SAMPLE_PATH, Buffer.concat(audioChunks));
       }
 
       report(`OK bytes=${byteCount} wordMsgs=${wordMessageCount}`);
@@ -241,16 +245,16 @@ function probe({
       socket.send(createConfigMessage());
       socket.send(createSsmlMessage());
     };
-    socket.onmessage = e => {
-      if (typeof e.data === "string") {
-        handleTextMessage(e.data);
+    socket.onmessage = event => {
+      if (typeof event.data === "string") {
+        handleTextMessage(event.data);
         return;
       }
 
-      handleBinaryMessage(e.data);
+      handleBinaryMessage(event.data);
     };
     socket.onerror = () => finish("REFUSED (403 on the handshake)");
-    socket.onclose = e => finish(`CLOSED ${e.code} ${e.reason} bytes=${byteCount}`);
+    socket.onclose = event => finish(`CLOSED ${event.code} ${event.reason} bytes=${byteCount}`);
   });
 }
 

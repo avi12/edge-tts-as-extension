@@ -46,7 +46,8 @@ export function detectLanguage(text: string) {
       text,
       pattern
     });
-    if (letters > mostLetters) {
+    const isMoreLikely = letters > mostLetters;
+    if (isMoreLikely) {
       detectedLanguage = language;
       mostLetters = letters;
     }

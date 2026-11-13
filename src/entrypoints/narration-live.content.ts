@@ -4,7 +4,7 @@ import { readPageClips } from "@/narration-runtime/page-clips";
 import { startNarration } from "@/narration-runtime/start-narration";
 
 // Built from our own narration contract's attribute name, which lives in lib/narration.ts
-const NARRATED_CARD_SELECTOR = `[${NarrationAttribute.Script}]`;
+const NARRATED_CARD_SELECTOR = `[${NarrationAttribute.SCRIPT}]`;
 
 // Pages written with data-narrate scripts but never run through the narrate CLI - an artifact a chat just
 // wrote - speak live through the extension. A pre-rendered page brings its own runtime, so it is left alone
@@ -22,7 +22,8 @@ export default defineContentScript({
     function startWhenNarrated() {
       const isPreRendered = document.getElementById(NARRATION_DATA_ID) !== null;
       const isAnyCardNarrated = document.querySelector(NARRATED_CARD_SELECTOR) !== null;
-      if (isPreRendered || !isAnyCardNarrated) {
+      const shouldStopWaiting = isPreRendered || !isAnyCardNarrated;
+      if (shouldStopWaiting) {
         return isPreRendered;
       }
 

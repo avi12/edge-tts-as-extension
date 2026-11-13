@@ -27,10 +27,10 @@ import { buildSsml, type Prosody } from "./ssml";
 // per socket and a declarativeNetRequest rule carrying it would have to be rewritten each time - only
 // the User-Agent, which never changes, is rewritten that way
 enum QueryParameter {
-  SubscriptionKey = "Ocp-Apim-Subscription-Key",
-  SecMsGec = "Sec-MS-GEC",
-  SecMsGecVersion = "Sec-MS-GEC-Version",
-  ConnectionId = "ConnectionId"
+  SUBSCRIPTION_KEY = "Ocp-Apim-Subscription-Key",
+  SEC_MS_GEC = "Sec-MS-GEC",
+  SEC_MS_GEC_VERSION = "Sec-MS-GEC-Version",
+  CONNECTION_ID = "ConnectionId"
 }
 
 // Ours: the default is "blob", which Edge's audioStreamer.js reads through a FileReader - a DataView
@@ -58,10 +58,10 @@ interface SynthesizeOptions {
 
 async function createSynthesizeUrl() {
   const parameters = new URLSearchParams({
-    [QueryParameter.SubscriptionKey]: TRUSTED_CLIENT_TOKEN,
-    [QueryParameter.SecMsGec]: await secMsGec(),
-    [QueryParameter.SecMsGecVersion]: SEC_MS_GEC_VERSION,
-    [QueryParameter.ConnectionId]: createId()
+    [QueryParameter.SUBSCRIPTION_KEY]: TRUSTED_CLIENT_TOKEN,
+    [QueryParameter.SEC_MS_GEC]: await secMsGec(),
+    [QueryParameter.SEC_MS_GEC_VERSION]: SEC_MS_GEC_VERSION,
+    [QueryParameter.CONNECTION_ID]: createId()
   });
   return `${SYNTHESIZE_URL}?${parameters}`;
 }
@@ -112,12 +112,12 @@ async function synthesizeOnce({
 
     function handleTextFrame(data: string) {
       const frame = parseTextFrame(data);
-      if (frame.path === FramePath.TurnEnd) {
+      if (frame.path === FramePath.TURN_END) {
         finish();
         return;
       }
 
-      const isWordMetadata = frame.path === FramePath.AudioMetadata && onWordBoundary !== undefined;
+      const isWordMetadata = frame.path === FramePath.AUDIO_METADATA && onWordBoundary !== undefined;
       if (!isWordMetadata) {
         return;
       }
@@ -129,7 +129,7 @@ async function synthesizeOnce({
 
     function handleBinaryFrame(data: ArrayBuffer) {
       const frame = parseBinaryFrame(data);
-      const hasAudio = frame.path === FramePath.Audio && frame.audio.byteLength > 0;
+      const hasAudio = frame.path === FramePath.AUDIO && frame.audio.byteLength > 0;
       if (hasAudio) {
         onAudio(frame.audio);
       }
@@ -150,16 +150,16 @@ async function synthesizeOnce({
         })
       );
     };
-    socket.onmessage = e => {
-      if (typeof e.data === "string") {
-        handleTextFrame(e.data);
+    socket.onmessage = event => {
+      if (typeof event.data === "string") {
+        handleTextFrame(event.data);
         return;
       }
 
-      handleBinaryFrame(e.data);
+      handleBinaryFrame(event.data);
     };
     socket.onerror = () => finish(new Error("The Read Aloud service refused the connection"));
-    socket.onclose = e => finish(new Error(`Connection dropped before the audio finished (${e.code})`));
+    socket.onclose = event => finish(new Error(`Connection dropped before the audio finished (${event.code})`));
   });
 }
 

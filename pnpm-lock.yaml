@@ -35,10 +35,10 @@ importers:
         version: typescript@7.0.2
       '@wxt-dev/module-svelte':
         specifier: ^2.0.5
-        version: 2.0.5(svelte@5.57.1(@typescript-eslint/types@8.71.0))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(wxt@0.21.4(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(rolldown@1.2.12)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)))
+        version: 2.0.5(svelte@5.57.1(@typescript-eslint/types@8.72.2))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(wxt@0.21.4(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(rolldown@1.2.12)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)))
       avi12-lint:
-        specifier: github:avi12/lint-config#v0.4.4&path:/packages/avi12-lint
-        version: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/avi12-lint
+        specifier: github:avi12/lint-config#v0.4.9&path:/packages/avi12-lint
+        version: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/avi12-lint
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -46,17 +46,17 @@ importers:
         specifier: ^10.12.0
         version: 10.12.0(jiti@2.7.0)(supports-color@10.2.2)
       eslint-config-avi12:
-        specifier: github:avi12/lint-config#v0.4.4&path:/packages/eslint-config
-        version: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/eslint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint-plugin-svelte@3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.71.0)))(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(svelte-eslint-parser@1.8.1(svelte@5.57.1(@typescript-eslint/types@8.71.0)))
+        specifier: github:avi12/lint-config#v0.4.9&path:/packages/eslint-config
+        version: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/eslint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint-plugin-svelte@3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.72.2)))(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(svelte-eslint-parser@1.8.1(svelte@5.57.1(@typescript-eslint/types@8.72.2)))
       eslint-plugin-svelte:
         specifier: ^3.23.0
-        version: 3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.71.0))
+        version: 3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.72.2))
       fallow:
         specifier: 2.103.0
         version: 2.103.0
       fallow-config-avi12:
-        specifier: github:avi12/lint-config#v0.4.4&path:/packages/fallow-config
-        version: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/fallow-config(fallow@2.103.0)
+        specifier: github:avi12/lint-config#v0.4.9&path:/packages/fallow-config
+        version: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/fallow-config(fallow@2.103.0)
       linkedom:
         specifier: ^0.18.13
         version: 0.18.13
@@ -64,11 +64,11 @@ importers:
         specifier: 1.90.0
         version: 1.90.0
       oxlint-config-avi12:
-        specifier: github:avi12/lint-config#v0.4.4&path:/packages/oxlint-config
-        version: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/oxlint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(oxlint@1.90.0)(supports-color@10.2.2)
+        specifier: github:avi12/lint-config#v0.4.9&path:/packages/oxlint-config
+        version: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/oxlint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(oxlint@1.90.0)(supports-color@10.2.2)
       oxlint-plugin-naming:
-        specifier: github:avi12/lint-config#v0.4.4&path:/packages/oxlint-plugin-naming
-        version: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/oxlint-plugin-naming(oxlint@1.90.0)
+        specifier: github:avi12/lint-config#v0.4.9&path:/packages/oxlint-plugin-naming
+        version: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/oxlint-plugin-naming(oxlint@1.90.0)
       postcss:
         specifier: ^8.5.28
         version: 8.5.28
@@ -79,17 +79,17 @@ importers:
         specifier: ^17.16.0
         version: 17.16.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2)
       stylelint-config-avi12:
-        specifier: github:avi12/lint-config#v0.4.4&path:/packages/stylelint-config
-        version: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/stylelint-config(@typescript/typescript6@6.0.2)(postcss-html@2.0.0(postcss@8.5.28))(stylelint@17.16.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2))(supports-color@10.2.2)
+        specifier: github:avi12/lint-config#v0.4.9&path:/packages/stylelint-config
+        version: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/stylelint-config(@typescript/typescript6@6.0.2)(postcss-html@2.0.0(postcss@8.5.28))(stylelint@17.16.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2))(supports-color@10.2.2)
       svelte:
         specifier: ^5.57.1
-        version: 5.57.1(@typescript-eslint/types@8.71.0)
+        version: 5.57.1(@typescript-eslint/types@8.72.2)
       svelte-check:
         specifier: ^4.7.6
-        version: 4.7.6(@typescript/typescript6@6.0.2)(picomatch@4.0.7)(svelte@5.57.1(@typescript-eslint/types@8.71.0))
+        version: 4.7.6(@typescript/typescript6@6.0.2)(picomatch@4.0.7)(svelte@5.57.1(@typescript-eslint/types@8.72.2))
       svelte-eslint-parser:
         specifier: ^1.8.1
-        version: 1.8.1(svelte@5.57.1(@typescript-eslint/types@8.71.0))
+        version: 1.8.1(svelte@5.57.1(@typescript-eslint/types@8.72.2))
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
@@ -935,31 +935,15 @@ packages:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
 
-  '@typescript-eslint/project-service@8.71.0':
-    resolution: {integrity: sha512-aABjw5rjBacYONVPaPiWOCjJu0vEF4a25iQuodlmQYL1trtLZ0X/y+2Vzl3BKI1odM4LnwLE1oUDXYp1wzx1TQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-    peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
-
   '@typescript-eslint/project-service@8.72.2':
     resolution: {integrity: sha512-6y5dLTZdHhI8Eh3yIQ/bfQhRKwn5e+TpJj64o18Cngc0iW/BCrVvrr6zGYqXPnYH31u6YXAYiFh0+qxX5mybJw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       typescript: '>=4.8.4 <6.1.0'
 
-  '@typescript-eslint/scope-manager@8.71.0':
-    resolution: {integrity: sha512-gWF0BhUcnjZxSpLE8ngS/59n2SB0J3YqRxvX1+2aoRJk9hNtHSLOV+TcarFiOr5ipXm3yc1QrI4c9YZc8zyCxw==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
   '@typescript-eslint/scope-manager@8.72.2':
     resolution: {integrity: sha512-iIoMJ6/8c1/QpFNyFjU0d1YzPco4MsZjQw0k3V+vfzNWAFmUmvhlyMoYEoYYDQZXc+J6Gi1X5XcxlzW2taIIGQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@typescript-eslint/tsconfig-utils@8.71.0':
-    resolution: {integrity: sha512-Z1UlWHADEK2Mlb9NpWfDeSjqoZ5EyrOv4R3eQpbkzqn/EwaIdOpXXupEA1+0ZIOSJSZZDBHG0BrQyN8zUG6Pwg==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-    peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/tsconfig-utils@8.72.2':
     resolution: {integrity: sha512-+h3iCgZXuTNtoLXcnnjP12ZUHLMqoUcIHPfQrFEXTUqvb9dF8QK9b5nv5VtSo5fLkdHuks8ehbTzZj3rImAm9w==}
@@ -974,31 +958,14 @@ packages:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
 
-  '@typescript-eslint/types@8.71.0':
-    resolution: {integrity: sha512-cJ4OoxPGWvFnBTnSZyaU+qJzGTqPTGJY+gDchj6cRyLRdmIdt4rcsE4twj+zPfrNiWuVi38wijHzShL++Z9atQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
   '@typescript-eslint/types@8.72.2':
     resolution: {integrity: sha512-Xfn37OLZx03+PCU7qWx9DTv2FCRh1E6fk2+wONeNY15HXIwtcwuveaSwVpGAUptkNmPQegRxW5JyRel9T7wrog==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@typescript-eslint/typescript-estree@8.71.0':
-    resolution: {integrity: sha512-PEEF4G5sLLWAS5BpPrUvms4ySZkiBQQZM4z+3ReI46axK5Vqr/vXBQatJQIZZOYdGyPUAKTtsrWzpqKuU+3DEw==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-    peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/typescript-estree@8.72.2':
     resolution: {integrity: sha512-pQEGqIK/cqEvKivVWaFLYpe7XYejFxfuAOi4mu1oAWFvIo36aRHI9esRFTUxcIy/z8N482RJyH+LpZB0ZIU7Ow==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
-
-  '@typescript-eslint/utils@8.71.0':
-    resolution: {integrity: sha512-pKR/tEMVrXZG23UFKUn5BQf3zfmfk7KQceI2cGzywZ5nxM5Eu3hEJU1utjWzydtzBbcJAQhHN8iPCxobHpPcZQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-    peerDependencies:
-      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/utils@8.72.2':
@@ -1007,10 +974,6 @@ packages:
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
-
-  '@typescript-eslint/visitor-keys@8.71.0':
-    resolution: {integrity: sha512-8eQ9R218XORK+KLosnf4bu/QsUXvUyVwTbArg7/0NMB1Pu87OJKvj4nhFblkYE8gQV73mW1dx1ptlPCkwRGa7A==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@typescript-eslint/visitor-keys@8.72.2':
     resolution: {integrity: sha512-NAGrjn0Pitjqzq/GkgMC4kBYm233PQ8GffyQ9+kTA3AlNQYEzOf25EIM02BAHZv5FRJSpHpJk+OGUxVkOB93GQ==}
@@ -1246,9 +1209,9 @@ packages:
     resolution: {integrity: sha512-OZflgsa/czfAq6G5gECJmcHY7HANbQ4wtz1oHqOWTyqlZdWEWm2HIriR7sJS6EJQQDDhxut4c3YJ0EbLoxihSA==}
     deprecated: Use @augment-vir/common, @augment-vir/node, @augment-vir/web, @augment-vir/test, or @augment-vir/assert instead.
 
-  avi12-lint@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/avi12-lint:
-    resolution: {gitHosted: true, integrity: sha512-g8525Yt3iomOYI5angFQ69QuxMv0z7iQ1AbSKfzkXV1SSg9dSU8HqIa017aBHXl27KF1EmK44S8vDQLrQSNwvA==, path: /packages/avi12-lint, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf}
-    version: 0.4.4
+  avi12-lint@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/avi12-lint:
+    resolution: {gitHosted: true, integrity: sha512-qHLUg75V8Kz1zsALxlrh+mcBNkFgdR+Uq5ncqes8AnvK3itDc2IuT5ZEHc3Uif9g6G5bXkGHa+Ka8c4kKiT36w==, path: /packages/avi12-lint, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e}
+    version: 0.4.9
     hasBin: true
 
   axobject-query@4.1.0:
@@ -1565,9 +1528,9 @@ packages:
     resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
     engines: {node: '>=12'}
 
-  eslint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/eslint-config:
-    resolution: {gitHosted: true, integrity: sha512-g8525Yt3iomOYI5angFQ69QuxMv0z7iQ1AbSKfzkXV1SSg9dSU8HqIa017aBHXl27KF1EmK44S8vDQLrQSNwvA==, path: /packages/eslint-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf}
-    version: 0.4.4
+  eslint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/eslint-config:
+    resolution: {gitHosted: true, integrity: sha512-qHLUg75V8Kz1zsALxlrh+mcBNkFgdR+Uq5ncqes8AnvK3itDc2IuT5ZEHc3Uif9g6G5bXkGHa+Ka8c4kKiT36w==, path: /packages/eslint-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e}
+    version: 0.4.9
     peerDependencies:
       eslint: ^9.20.0 || ^10.0.0
       eslint-plugin-svelte: ^3.0.0
@@ -1692,9 +1655,9 @@ packages:
   exsolve@1.1.3:
     resolution: {integrity: sha512-kuzL9zherLQoqDeQaS55AiiIg1kb4KYXaSusTtgZTPlvKP2gGCI82LNmBNh5RjDVUXIcmgx+/Mx7vPwRzBbhJA==}
 
-  fallow-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/fallow-config:
-    resolution: {gitHosted: true, integrity: sha512-g8525Yt3iomOYI5angFQ69QuxMv0z7iQ1AbSKfzkXV1SSg9dSU8HqIa017aBHXl27KF1EmK44S8vDQLrQSNwvA==, path: /packages/fallow-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf}
-    version: 0.4.4
+  fallow-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/fallow-config:
+    resolution: {gitHosted: true, integrity: sha512-qHLUg75V8Kz1zsALxlrh+mcBNkFgdR+Uq5ncqes8AnvK3itDc2IuT5ZEHc3Uif9g6G5bXkGHa+Ka8c4kKiT36w==, path: /packages/fallow-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e}
+    version: 0.4.9
     peerDependencies:
       fallow: '>=2.103.0'
 
@@ -2237,15 +2200,15 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
-  oxlint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/oxlint-config:
-    resolution: {gitHosted: true, integrity: sha512-g8525Yt3iomOYI5angFQ69QuxMv0z7iQ1AbSKfzkXV1SSg9dSU8HqIa017aBHXl27KF1EmK44S8vDQLrQSNwvA==, path: /packages/oxlint-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf}
-    version: 0.4.4
+  oxlint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/oxlint-config:
+    resolution: {gitHosted: true, integrity: sha512-qHLUg75V8Kz1zsALxlrh+mcBNkFgdR+Uq5ncqes8AnvK3itDc2IuT5ZEHc3Uif9g6G5bXkGHa+Ka8c4kKiT36w==, path: /packages/oxlint-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e}
+    version: 0.4.9
     peerDependencies:
       oxlint: '>=1.90.0'
 
-  oxlint-plugin-naming@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/oxlint-plugin-naming:
-    resolution: {gitHosted: true, integrity: sha512-g8525Yt3iomOYI5angFQ69QuxMv0z7iQ1AbSKfzkXV1SSg9dSU8HqIa017aBHXl27KF1EmK44S8vDQLrQSNwvA==, path: /packages/oxlint-plugin-naming, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf}
-    version: 0.4.4
+  oxlint-plugin-naming@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/oxlint-plugin-naming:
+    resolution: {gitHosted: true, integrity: sha512-qHLUg75V8Kz1zsALxlrh+mcBNkFgdR+Uq5ncqes8AnvK3itDc2IuT5ZEHc3Uif9g6G5bXkGHa+Ka8c4kKiT36w==, path: /packages/oxlint-plugin-naming, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e}
+    version: 0.4.9
     peerDependencies:
       oxlint: '>=1.90.0'
 
@@ -2576,9 +2539,9 @@ packages:
     peerDependencies:
       stylelint: '>=8.0.0'
 
-  stylelint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/stylelint-config:
-    resolution: {gitHosted: true, integrity: sha512-g8525Yt3iomOYI5angFQ69QuxMv0z7iQ1AbSKfzkXV1SSg9dSU8HqIa017aBHXl27KF1EmK44S8vDQLrQSNwvA==, path: /packages/stylelint-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf}
-    version: 0.4.4
+  stylelint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/stylelint-config:
+    resolution: {gitHosted: true, integrity: sha512-qHLUg75V8Kz1zsALxlrh+mcBNkFgdR+Uq5ncqes8AnvK3itDc2IuT5ZEHc3Uif9g6G5bXkGHa+Ka8c4kKiT36w==, path: /packages/stylelint-config, tarball: https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e}
+    version: 0.4.9
     peerDependencies:
       postcss-html: ^1.8.1
       stylelint: '>=16'
@@ -3533,7 +3496,7 @@ snapshots:
   '@stylistic/eslint-plugin@5.10.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))':
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
-      '@typescript-eslint/types': 8.71.0
+      '@typescript-eslint/types': 8.72.2
       eslint: 10.12.0(jiti@2.7.0)(supports-color@10.2.2)
       eslint-visitor-keys: 4.2.1
       espree: 10.4.0
@@ -3557,12 +3520,12 @@ snapshots:
 
   '@sveltejs/load-config@0.2.3': {}
 
-  '@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1(@typescript-eslint/types@8.71.0))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))':
+  '@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1(@typescript-eslint/types@8.72.2))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))':
     dependencies:
       deepmerge: 4.3.1
       magic-string: 1.4.2
       obug: 2.2.1
-      svelte: 5.57.1(@typescript-eslint/types@8.71.0)
+      svelte: 5.57.1(@typescript-eslint/types@8.72.2)
       vite: 8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)
       vitefu: 1.1.3(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
@@ -3630,15 +3593,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/project-service@8.71.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2)':
-    dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.71.0(@typescript/typescript6@6.0.2)
-      '@typescript-eslint/types': 8.71.0
-      debug: 4.4.3(supports-color@10.2.2)
-      typescript: '@typescript/typescript6@6.0.2'
-    transitivePeerDependencies:
-      - supports-color
-
   '@typescript-eslint/project-service@8.72.2(@typescript/typescript6@6.0.2)(supports-color@10.2.2)':
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.72.2(@typescript/typescript6@6.0.2)
@@ -3648,19 +3602,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/scope-manager@8.71.0':
-    dependencies:
-      '@typescript-eslint/types': 8.71.0
-      '@typescript-eslint/visitor-keys': 8.71.0
-
   '@typescript-eslint/scope-manager@8.72.2':
     dependencies:
       '@typescript-eslint/types': 8.72.2
       '@typescript-eslint/visitor-keys': 8.72.2
-
-  '@typescript-eslint/tsconfig-utils@8.71.0(@typescript/typescript6@6.0.2)':
-    dependencies:
-      typescript: '@typescript/typescript6@6.0.2'
 
   '@typescript-eslint/tsconfig-utils@8.72.2(@typescript/typescript6@6.0.2)':
     dependencies:
@@ -3678,24 +3623,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/types@8.71.0': {}
-
   '@typescript-eslint/types@8.72.2': {}
-
-  '@typescript-eslint/typescript-estree@8.71.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2)':
-    dependencies:
-      '@typescript-eslint/project-service': 8.71.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2)
-      '@typescript-eslint/tsconfig-utils': 8.71.0(@typescript/typescript6@6.0.2)
-      '@typescript-eslint/types': 8.71.0
-      '@typescript-eslint/visitor-keys': 8.71.0
-      debug: 4.4.3(supports-color@10.2.2)
-      minimatch: 10.2.6
-      semver: 7.8.5
-      tinyglobby: 0.2.17
-      ts-api-utils: 2.5.0(@typescript/typescript6@6.0.2)
-      typescript: '@typescript/typescript6@6.0.2'
-    transitivePeerDependencies:
-      - supports-color
 
   '@typescript-eslint/typescript-estree@8.72.2(@typescript/typescript6@6.0.2)(supports-color@10.2.2)':
     dependencies:
@@ -3705,20 +3633,9 @@ snapshots:
       '@typescript-eslint/visitor-keys': 8.72.2
       debug: 4.4.3(supports-color@10.2.2)
       minimatch: 10.2.6
-      semver: 7.8.5
+      semver: 7.8.6
       tinyglobby: 0.2.17
       ts-api-utils: 2.5.0(@typescript/typescript6@6.0.2)
-      typescript: '@typescript/typescript6@6.0.2'
-    transitivePeerDependencies:
-      - supports-color
-
-  '@typescript-eslint/utils@8.71.0(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)':
-    dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
-      '@typescript-eslint/scope-manager': 8.71.0
-      '@typescript-eslint/types': 8.71.0
-      '@typescript-eslint/typescript-estree': 8.71.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2)
-      eslint: 10.12.0(jiti@2.7.0)(supports-color@10.2.2)
       typescript: '@typescript/typescript6@6.0.2'
     transitivePeerDependencies:
       - supports-color
@@ -3733,11 +3650,6 @@ snapshots:
       typescript: '@typescript/typescript6@6.0.2'
     transitivePeerDependencies:
       - supports-color
-
-  '@typescript-eslint/visitor-keys@8.71.0':
-    dependencies:
-      '@typescript-eslint/types': 8.71.0
-      eslint-visitor-keys: 5.0.1
 
   '@typescript-eslint/visitor-keys@8.72.2':
     dependencies:
@@ -3841,10 +3753,10 @@ snapshots:
       '@types/filesystem': 0.0.36
       '@types/har-format': 1.2.16
 
-  '@wxt-dev/module-svelte@2.0.5(svelte@5.57.1(@typescript-eslint/types@8.71.0))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(wxt@0.21.4(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(rolldown@1.2.12)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)))':
+  '@wxt-dev/module-svelte@2.0.5(svelte@5.57.1(@typescript-eslint/types@8.72.2))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(wxt@0.21.4(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(rolldown@1.2.12)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 7.3.1(svelte@5.57.1(@typescript-eslint/types@8.71.0))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
-      svelte: 5.57.1(@typescript-eslint/types@8.71.0)
+      '@sveltejs/vite-plugin-svelte': 7.3.1(svelte@5.57.1(@typescript-eslint/types@8.72.2))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
+      svelte: 5.57.1(@typescript-eslint/types@8.72.2)
       wxt: 0.21.4(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(rolldown@1.2.12)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
     transitivePeerDependencies:
       - vite
@@ -3902,7 +3814,7 @@ snapshots:
     dependencies:
       fs-extra: 10.0.1
 
-  avi12-lint@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/avi12-lint: {}
+  avi12-lint@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/avi12-lint: {}
 
   axobject-query@4.1.0: {}
 
@@ -4219,13 +4131,13 @@ snapshots:
 
   escape-string-regexp@5.0.0: {}
 
-  eslint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/eslint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint-plugin-svelte@3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.71.0)))(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(svelte-eslint-parser@1.8.1(svelte@5.57.1(@typescript-eslint/types@8.71.0))):
+  eslint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/eslint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint-plugin-svelte@3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.72.2)))(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(svelte-eslint-parser@1.8.1(svelte@5.57.1(@typescript-eslint/types@8.72.2))):
     dependencies:
       eslint: 10.12.0(jiti@2.7.0)(supports-color@10.2.2)
-      eslint-plugin-svelte: 3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.71.0))
+      eslint-plugin-svelte: 3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.72.2))
       eslint-plugin-unused-imports: 4.4.1(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
       globals: 17.13.0
-      svelte-eslint-parser: 1.8.1(svelte@5.57.1(@typescript-eslint/types@8.71.0))
+      svelte-eslint-parser: 1.8.1(svelte@5.57.1(@typescript-eslint/types@8.72.2))
       typescript: '@typescript/typescript6@6.0.2'
       typescript-eslint: 8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -4258,8 +4170,8 @@ snapshots:
 
   eslint-plugin-perfectionist@5.12.1(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2):
     dependencies:
-      '@typescript-eslint/types': 8.71.0
-      '@typescript-eslint/utils': 8.71.0(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
+      '@typescript-eslint/types': 8.72.2
+      '@typescript-eslint/utils': 8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       natural-orderby: 5.0.0
     optionalDependencies:
       eslint: 10.12.0(jiti@2.7.0)(supports-color@10.2.2)
@@ -4267,7 +4179,7 @@ snapshots:
       - supports-color
       - typescript
 
-  eslint-plugin-svelte@3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.71.0)):
+  eslint-plugin-svelte@3.23.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.1(@typescript-eslint/types@8.72.2)):
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
       '@jridgewell/sourcemap-codec': 1.6.0
@@ -4279,9 +4191,9 @@ snapshots:
       postcss-load-config: 3.1.4(postcss@8.5.28)
       postcss-safe-parser: 7.1.0(postcss@8.5.28)
       semver: 7.8.5
-      svelte-eslint-parser: 1.8.1(svelte@5.57.1(@typescript-eslint/types@8.71.0))
+      svelte-eslint-parser: 1.8.1(svelte@5.57.1(@typescript-eslint/types@8.72.2))
     optionalDependencies:
-      svelte: 5.57.1(@typescript-eslint/types@8.71.0)
+      svelte: 5.57.1(@typescript-eslint/types@8.72.2)
     transitivePeerDependencies:
       - ts-node
 
@@ -4366,11 +4278,11 @@ snapshots:
     dependencies:
       estraverse: 5.3.0
 
-  esrap@2.4.0(@typescript-eslint/types@8.71.0):
+  esrap@2.4.0(@typescript-eslint/types@8.72.2):
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
     optionalDependencies:
-      '@typescript-eslint/types': 8.71.0
+      '@typescript-eslint/types': 8.72.2
 
   esrecurse@4.3.0:
     dependencies:
@@ -4388,7 +4300,7 @@ snapshots:
 
   exsolve@1.1.3: {}
 
-  fallow-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/fallow-config(fallow@2.103.0):
+  fallow-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/fallow-config(fallow@2.103.0):
     dependencies:
       fallow: 2.103.0
 
@@ -4853,7 +4765,7 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  oxlint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/oxlint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(oxlint@1.90.0)(supports-color@10.2.2):
+  oxlint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/oxlint-config(@typescript-eslint/eslint-plugin@8.72.2(@typescript-eslint/parser@8.72.2(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(oxlint@1.90.0)(supports-color@10.2.2):
     dependencies:
       '@stylistic/eslint-plugin': 5.10.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
       eslint-plugin-jsdoc: 65.4.5(@typescript/typescript6@6.0.2)(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
@@ -4866,7 +4778,7 @@ snapshots:
       - supports-color
       - typescript
 
-  oxlint-plugin-naming@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/oxlint-plugin-naming(oxlint@1.90.0):
+  oxlint-plugin-naming@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/oxlint-plugin-naming(oxlint@1.90.0):
     dependencies:
       oxlint: 1.90.0
 
@@ -5180,7 +5092,7 @@ snapshots:
       style-search: 0.1.0
       stylelint: 17.16.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2)
 
-  stylelint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/68fa1a95a05eaef07ff50041ad015abe7091e4bf#path:/packages/stylelint-config(@typescript/typescript6@6.0.2)(postcss-html@2.0.0(postcss@8.5.28))(stylelint@17.16.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2))(supports-color@10.2.2):
+  stylelint-config-avi12@https://codeload.github.com/avi12/lint-config/tar.gz/8c510be436a7d2489f44c1c494c98518a1c35f9e#path:/packages/stylelint-config(@typescript/typescript6@6.0.2)(postcss-html@2.0.0(postcss@8.5.28))(stylelint@17.16.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2))(supports-color@10.2.2):
     dependencies:
       postcss-html: 2.0.0(postcss@8.5.28)
       stylelint: 17.16.0(@typescript/typescript6@6.0.2)(supports-color@10.2.2)
@@ -5412,7 +5324,7 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  svelte-check@4.7.6(@typescript/typescript6@6.0.2)(picomatch@4.0.7)(svelte@5.57.1(@typescript-eslint/types@8.71.0)):
+  svelte-check@4.7.6(@typescript/typescript6@6.0.2)(picomatch@4.0.7)(svelte@5.57.1(@typescript-eslint/types@8.72.2)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@sveltejs/load-config': 0.2.3
@@ -5420,12 +5332,12 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.7)
       picocolors: 1.1.1
       sade: 1.8.1
-      svelte: 5.57.1(@typescript-eslint/types@8.71.0)
+      svelte: 5.57.1(@typescript-eslint/types@8.72.2)
       typescript: '@typescript/typescript6@6.0.2'
     transitivePeerDependencies:
       - picomatch
 
-  svelte-eslint-parser@1.8.1(svelte@5.57.1(@typescript-eslint/types@8.71.0)):
+  svelte-eslint-parser@1.8.1(svelte@5.57.1(@typescript-eslint/types@8.72.2)):
     dependencies:
       eslint-scope: 8.4.0
       eslint-visitor-keys: 4.2.1
@@ -5435,9 +5347,9 @@ snapshots:
       postcss-selector-parser: 7.1.6
       semver: 7.8.5
     optionalDependencies:
-      svelte: 5.57.1(@typescript-eslint/types@8.71.0)
+      svelte: 5.57.1(@typescript-eslint/types@8.72.2)
 
-  svelte@5.57.1(@typescript-eslint/types@8.71.0):
+  svelte@5.57.1(@typescript-eslint/types@8.72.2):
     dependencies:
       '@jridgewell/remapping': 2.3.5
       '@jridgewell/sourcemap-codec': 1.6.0
@@ -5449,7 +5361,7 @@ snapshots:
       clsx: 2.1.1
       devalue: 5.9.4
       esm-env: 1.2.2
-      esrap: 2.4.0(@typescript-eslint/types@8.71.0)
+      esrap: 2.4.0(@typescript-eslint/types@8.72.2)
       is-reference: 3.0.3
       locate-character: 3.0.0
       magic-string: 0.30.21

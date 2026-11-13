@@ -7,7 +7,7 @@ Issues and pull requests are welcome.
 ```sh
 pnpm install
 pnpm dev:edge       # builds, opens one isolated browser, reloads the extension in place on every save
-pnpm check          # compile, svelte-check, lint, stylelint, dead-code audit, tests - about 13 seconds
+pnpm check          # compile, svelte-check, lint, tests - about 13 seconds
 ```
 
 `pnpm check` has to pass before a pull request. `LIVE=1 pnpm test` additionally hits the real Read Aloud

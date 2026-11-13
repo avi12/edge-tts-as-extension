@@ -119,7 +119,7 @@ pnpm dev            # opens a Chrome with the extension and hot reload
 ```sh
 pnpm test           # unit tests
 LIVE=1 pnpm test    # also hits the real service
-pnpm check          # compile, svelte-check, lint, stylelint, fallow dead-code, tests
+pnpm check          # compile, svelte-check, lint, tests
 ```
 
 ## Caveat

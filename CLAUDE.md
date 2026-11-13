@@ -70,12 +70,11 @@ The user's global rules (SSOT/DRY, pure CSS over JavaScript, digestible commits 
 After each modification, run the checks (`pnpm check` runs all of them in order):
 - `pnpm compile` - `tsc --noEmit`
 - `pnpm svelte:check` - `svelte-check`, type-checks `.svelte` files (tsc does not see them)
-- `pnpm lint` runs `oxlint --type-aware --fix && eslint --fix` (then a final plain oxlint as the gate) - oxlint owns the logic and type-aware rules (`.oxlintrc.json`, with `oxlint-tsgolint`), ESLint owns the stylistic ones (`eslint.config.js` + local rules in `eslint-rules/`); always run with `--fix`. oxlint does not inherit `ignorePatterns` through `extends`, so `.oxlintrc.fix.json` repeats the list - keep the two in sync
-- `pnpm stylelint` runs `stylelint "**/*.{css,svelte}" --fix` (`stylelint.config.mjs`, the youtube-time-manager config: postcss-html lints `<style>` in `.svelte`)
+- `pnpm lint` runs `avi12-lint` (oxlint with the shared `oxlint-config-avi12` wxt preset and `oxlint-plugin-naming`, then ESLint for Svelte templates only, then stylelint); `pnpm lint:fix` adds `--fix`. Rules come from `avi12/lint-config` (`.oxlintrc.json`, `eslint.config.js`, `.stylelintrc.json`); never silence one with a comment
 - `pnpm test`
 - After every bug fix, feature, or refactor - anything that removes or rewires code - run a fallow dead-code audit and clean up what it flags as newly unused (imports, helpers, exports, whole files) so changes never leave orphans behind. Never run `fallow fix` automatically - act on the audit by hand
   - ONE root config at `/.fallowrc.json`. It carries only `health` thresholds, the `research/*.mjs` entries, two fixed ignores (the vendored `research/edge-microsoft-voices/**`, and `@typescript/native`, whose `tsc` bin fallow attributes to `typescript`) and `unused-enum-members: warn` (enums double as zod value vocabularies via `z.enum(SomeEnum)`, so not every member is referenced by name). Always run it as `pnpm fallow` (= `fallow audit --base HEAD`), which `pnpm check` chains - never `fallow dead-code`, whose full sweep reports the whole repo's inherited findings instead of what this change left behind
   - fallow is PINNED to 2.103.0 (devDep). Never invoke it via `pnpx`/`pnpm dlx` (that fetches latest and ignores the pin) - always the local bin (`pnpm fallow` / `pnpm exec fallow`)
   - An export used only WITHIN its own file is an over-export: drop the `export` keyword rather than adding an ignore - never grow the ignore lists
-- Lint coverage: `src/**` (any new entrypoint, e.g. a content script, is covered automatically), `research/*.mjs` (Node globals), `eslint-rules/`, configs. Excluded: `research/edge-microsoft-voices/`, `.output/`, `.wxt/`
+- Lint coverage: `src/**`, `research/*.mjs`, configs. Excluded: `research/edge-microsoft-voices/`, `.output/`, `.wxt/`
 - Never blanket-disable a rule; a narrowly justified disable comment is acceptable only when a rule truly cannot be satisfied

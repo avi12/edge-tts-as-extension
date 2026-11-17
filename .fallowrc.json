@@ -18,6 +18,8 @@
   "ignoreDependencies": [
     "@typescript/native",
     "avi12-lint",
+    "svelte-check",
+    "tsrs",
     "eslint-config-avi12",
     "fallow-config-avi12",
     "oxlint-config-avi12",

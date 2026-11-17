@@ -69,7 +69,7 @@ The user's global rules (SSOT/DRY, pure CSS over JavaScript, digestible commits 
 # Linting
 After each modification, run the checks (`pnpm check` runs all of them in order):
 - `pnpm compile` - `tsc --noEmit`
-- `pnpm svelte:check` - `svelte-check`, type-checks `.svelte` files (tsc does not see them)
+- `pnpm svelte:check` - `avi12-svelte-check` (svelte-check on tsrs), type-checks `.svelte` files (tsc does not see them)
 - `pnpm lint` runs `avi12-lint` (oxlint with the shared `oxlint-config-avi12` wxt preset and `oxlint-plugin-naming`, then ESLint for Svelte templates only, then stylelint); `pnpm lint:fix` adds `--fix`. Rules come from `avi12/lint-config` (`.oxlintrc.json`, `eslint.config.js`, `.stylelintrc.json`); never silence one with a comment
 - `pnpm test`
 - After every bug fix, feature, or refactor - anything that removes or rewires code - run a fallow dead-code audit and clean up what it flags as newly unused (imports, helpers, exports, whole files) so changes never leave orphans behind. Never run `fallow fix` automatically - act on the audit by hand
